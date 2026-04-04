@@ -15,10 +15,12 @@ class CVEngine:
         # State from frontend
         self.current_color = (128, 128, 128) # BGR: Gray by default
         self.current_status = "IDLE"
+        self.current_name = ""
         self.is_alarm_active = False
         self.last_update_time = time.time()
 
-    def set_member_status(self, status: str):
+    def set_member_status(self, name: str, status: str):
+        self.current_name = name
         self.current_status = status
         self.last_update_time = time.time()
         if status == "DEUDA":
@@ -40,6 +42,7 @@ class CVEngine:
             # Auto reset to IDLE after 10 seconds
             if time.time() - self.last_update_time > 10 and self.current_status != "IDLE":
                 self.current_status = "IDLE"
+                self.current_name = ""
                 self.current_color = (128, 128, 128)
                 self.is_alarm_active = False
 
@@ -63,7 +66,7 @@ class CVEngine:
                     # Draw bounding box based on current status color
                     cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), self.current_color, 3)
                     
-                    label_text = f"Persona Detectada" if self.current_status == "IDLE" else f"Persona - {self.current_status}"
+                    label_text = f"Persona Detectada" if self.current_status == "IDLE" else f"{self.current_name} - {self.current_status}"
                     cv2.putText(annotated_frame, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, self.current_color, 2)
 
             with self.lock:

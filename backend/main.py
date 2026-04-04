@@ -34,7 +34,7 @@ def get_member(dni: str, db: Session = Depends(get_db)):
         return {"error": "Member not found"}
     
     # Update camera box color based on recent checkin
-    cv_engine.set_member_status(member.status)
+    cv_engine.set_member_status(member.name, member.status)
     return member
 
 def gen_frames():
