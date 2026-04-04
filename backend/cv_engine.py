@@ -13,12 +13,14 @@ class CVEngine:
         self.output_frame = None
         
         # State from frontend
-        self.current_color = (0, 255, 0) # BGR: Green by default
-        self.current_status = "AL DIA"
+        self.current_color = (128, 128, 128) # BGR: Gray by default
+        self.current_status = "IDLE"
         self.is_alarm_active = False
+        self.last_update_time = time.time()
 
     def set_member_status(self, status: str):
         self.current_status = status
+        self.last_update_time = time.time()
         if status == "DEUDA":
             self.current_color = (0, 0, 255) # Red
         elif status == "POR VENCER":
@@ -35,6 +37,12 @@ class CVEngine:
 
     def _run_loop(self):
         while self.is_running and self.cap.isOpened():
+            # Auto reset to IDLE after 10 seconds
+            if time.time() - self.last_update_time > 10 and self.current_status != "IDLE":
+                self.current_status = "IDLE"
+                self.current_color = (128, 128, 128)
+                self.is_alarm_active = False
+
             ret, frame = self.cap.read()
             if not ret:
                 time.sleep(0.1)
@@ -55,7 +63,7 @@ class CVEngine:
                     # Draw bounding box based on current status color
                     cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), self.current_color, 3)
                     
-                    label_text = f"Persona Detectada" if self.current_status == "AL DIA" else f"Persona - {self.current_status}"
+                    label_text = f"Persona Detectada" if self.current_status == "IDLE" else f"Persona - {self.current_status}"
                     cv2.putText(annotated_frame, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, self.current_color, 2)
 
             with self.lock:

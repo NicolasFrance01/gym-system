@@ -5,7 +5,7 @@ import AlarmOverlay from './components/AlarmOverlay';
 import { useGymStore } from './store/useGymStore';
 
 function App() {
-  const { setAlarmActive } = useGymStore();
+  const { setAlarmActive, currentMember, setCurrentMember } = useGymStore();
   const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
@@ -28,6 +28,16 @@ function App() {
 
     return () => ws.close();
   }, [setAlarmActive]);
+
+  // Clean the Check-in panel exactly 10s after someone checks in
+  useEffect(() => {
+    if (currentMember) {
+      const timer = setTimeout(() => {
+        setCurrentMember(null);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentMember, setCurrentMember]);
 
   return (
     <div className="flex h-screen bg-neutral-950 text-white overflow-hidden font-sans selection:bg-blue-500/30">
