@@ -19,7 +19,7 @@ export default function CheckInPanel({ className = '' }: { className?: string })
     setError('');
     
     try {
-      const res = await fetch(`http://localhost:8000/members/${dni}`);
+      const res = await fetch(`http://127.0.0.1:8000/members/${dni}`);
       const data = await res.json();
       
       if (res.ok && !data.error) {

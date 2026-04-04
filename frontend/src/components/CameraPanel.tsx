@@ -13,7 +13,7 @@ export default function CameraPanel({ className = '' }: { className?: string }) 
       img.onerror = () => setIsConnected(false);
       
       // Attempting to stream the MJPEG
-      img.src = "http://localhost:8000/video_feed";
+      img.src = "http://127.0.0.1:8000/video_feed";
     }
   }, []);
 
