@@ -56,13 +56,7 @@ class CVEngine:
                     cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), self.current_color, 3)
                     
                     label_text = f"Persona Detectada" if self.current_status == "AL DIA" else f"Persona - {self.current_status}"
-                    if self.current_status == "DEUDA":
-                         cv2.rectangle(annotated_frame, (x1, y1 - 40), (x2, y1), self.current_color, -1)
-                         cv2.putText(annotated_frame, "ALERTA INTENTO INGRESO", (x1 + 5, y1 - 10), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-                    else:
-                         cv2.putText(annotated_frame, label_text, (x1, y1 - 10), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, self.current_color, 2)
+                    cv2.putText(annotated_frame, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, self.current_color, 2)
 
             with self.lock:
                 self.output_frame = annotated_frame

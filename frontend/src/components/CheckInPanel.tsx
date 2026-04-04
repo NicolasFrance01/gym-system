@@ -57,16 +57,16 @@ export default function CheckInPanel({ className = '' }: { className?: string })
   };
 
   return (
-    <div className={`p-10 flex flex-col ${className}`}>
-      <div className="mb-12">
-        <div className="inline-flex items-center justify-center p-3 bg-blue-500/20 rounded-2xl mb-6 ring-1 ring-white/10">
-          <Search className="text-blue-400" size={28} />
+    <div className={`p-6 flex flex-col ${className}`}>
+      <div className="mb-8">
+        <div className="inline-flex items-center justify-center p-2 bg-blue-500/20 rounded-xl mb-4 ring-1 ring-white/10">
+          <Search className="text-blue-400" size={20} />
         </div>
-        <h1 className="text-4xl font-black mb-2 tracking-tight bg-gradient-to-br from-white to-neutral-500 bg-clip-text text-transparent">Access Control</h1>
-        <p className="text-neutral-400 font-medium">Ingrese su DNI para acceder</p>
+        <h1 className="text-3xl font-black mb-1 tracking-tight bg-gradient-to-br from-white to-neutral-500 bg-clip-text text-transparent">Access Control</h1>
+        <p className="text-neutral-400 text-sm font-medium">Ingrese su DNI para acceder</p>
       </div>
 
-      <form onSubmit={handleCheckIn} className="mb-12 relative w-full group">
+      <form onSubmit={handleCheckIn} className="mb-8 relative w-full group">
         <input 
           ref={inputRef}
           type="text" 
@@ -74,17 +74,17 @@ export default function CheckInPanel({ className = '' }: { className?: string })
           onChange={(e) => setDni(e.target.value)}
           placeholder="Número de DNI" 
           autoFocus
-          className="w-full bg-white/5 text-white text-4xl p-6 rounded-3xl border border-white/10 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-neutral-600 backdrop-blur-md" 
+          className="w-full bg-white/5 text-white text-2xl p-4 rounded-2xl border border-white/10 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-neutral-600 backdrop-blur-md" 
         />
         <button 
           type="submit" 
           disabled={loading}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"
         >
           {loading ? (
-             <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+             <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <Search size={32} />
+            <Search size={24} />
           )}
         </button>
       </form>
@@ -93,38 +93,38 @@ export default function CheckInPanel({ className = '' }: { className?: string })
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-red-500/10 text-red-400 p-4 rounded-2xl border border-red-500/20 mb-8 backdrop-blur-md text-center font-medium shadow-lg shadow-red-500/10"
+          className="bg-red-500/10 text-red-400 p-3 rounded-xl border border-red-500/20 mb-6 backdrop-blur-md text-center text-sm font-medium shadow-lg shadow-red-500/10"
         >
           {error}
         </motion.div>
       )}
 
-      <div className="flex-grow flex flex-col justify-end pb-8">
+      <div className="flex-grow flex flex-col justify-end pb-4">
         <AnimatePresence mode="wait">
           {currentMember && (
             <motion.div
               key={currentMember.dni}
-              initial={{ opacity: 0, scale: 0.9, y: 50, filter: 'blur(10px)' }}
+              initial={{ opacity: 0, scale: 0.9, y: 30, filter: 'blur(10px)' }}
               animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scale: 0.9, y: 50, filter: 'blur(10px)' }}
+              exit={{ opacity: 0, scale: 0.9, y: 30, filter: 'blur(10px)' }}
               transition={{ type: "spring", bounce: 0.4 }}
-              className={`bg-white/5 rounded-[2rem] p-10 flex flex-col items-center text-center transition-all duration-500 backdrop-blur-xl border border-white/10 ${getGlowColor(currentMember.status)}`}
+              className={`bg-white/5 rounded-[1.5rem] p-6 flex flex-col items-center text-center transition-all duration-500 backdrop-blur-xl border border-white/10 ${getGlowColor(currentMember.status)}`}
             >
               {currentMember.photo_url ? (
                 <img 
                   src={currentMember.photo_url} 
                   alt="Member" 
-                  className="w-48 h-48 rounded-full object-cover border-4 border-neutral-700 mb-6 drop-shadow-2xl" 
+                  className="w-32 h-32 rounded-full object-cover border-4 border-neutral-700/50 mb-4 drop-shadow-2xl" 
                 />
               ) : (
-                <div className="w-48 h-48 rounded-full bg-neutral-700 mb-6" />
+                <div className="w-32 h-32 rounded-full bg-neutral-700 mb-4" />
               )}
               
-              <h2 className="text-3xl font-bold mb-2">{currentMember.name}</h2>
-              <p className="text-xl text-neutral-400 mb-4">DNI: {currentMember.dni}</p>
+              <h2 className="text-2xl font-bold mb-1">{currentMember.name}</h2>
+              <p className="text-sm text-neutral-400 mb-3">DNI: {currentMember.dni}</p>
               
-              <div className="mt-4 px-6 py-2 rounded-full bg-black/50 border border-neutral-700">
-                <span className={`text-2xl font-bold ${getStatusText(currentMember.status)}`}>
+              <div className="mt-2 px-4 py-1.5 rounded-full bg-black/50 border border-neutral-700/50">
+                <span className={`text-base font-bold ${getStatusText(currentMember.status)}`}>
                   {currentMember.status}
                 </span>
               </div>

@@ -35,13 +35,13 @@ function App() {
       {/* Background gradients */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 to-red-900/10 pointer-events-none" />
       
-      {/* Left Area - Form and Data (40%) */}
-      <div className="w-[40%] flex-shrink-0 z-10 border-r border-white/5 bg-black/40 backdrop-blur-3xl shadow-2xl shadow-black/50">
+      {/* Left Area - Form and Data (30%) */}
+      <div className="w-[30%] min-w-[350px] flex-shrink-0 z-10 border-r border-white/5 bg-black/40 backdrop-blur-3xl shadow-2xl shadow-black/50">
         <CheckInPanel className="h-full bg-transparent" />
       </div>
 
-      {/* Right Area - Camera Details (60%) */}
-      <div className="w-[60%] flex flex-col z-0 relative bg-neutral-900">
+      {/* Right Area - Camera Details (70%) */}
+      <div className="flex-1 flex flex-col z-0 relative bg-neutral-900">
         <CameraPanel className="h-full w-full object-cover" />
         
         {/* Status bar */}
