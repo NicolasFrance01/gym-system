@@ -15,6 +15,7 @@ class CVEngine:
         # State from frontend
         self.current_color = (0, 255, 0) # BGR: Green by default
         self.current_status = "AL DIA"
+        self.is_alarm_active = False
 
     def set_member_status(self, status: str):
         self.current_status = status
@@ -44,17 +45,28 @@ class CVEngine:
 
             annotated_frame = frame.copy()
             
+            person_detected = False
             for r in results:
                 boxes = r.boxes
+                if len(boxes) > 0:
+                    person_detected = True
                 for box in boxes:
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
                     # Draw bounding box based on current status color
                     cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), self.current_color, 3)
-                    cv2.putText(annotated_frame, f"Person - {self.current_status}", (x1, y1 - 10), 
+                    
+                    label_text = f"Persona Detectada" if self.current_status == "AL DIA" else f"Persona - {self.current_status}"
+                    if self.current_status == "DEUDA":
+                         cv2.rectangle(annotated_frame, (x1, y1 - 40), (x2, y1), self.current_color, -1)
+                         cv2.putText(annotated_frame, "ALERTA INTENTO INGRESO", (x1 + 5, y1 - 10), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                    else:
+                         cv2.putText(annotated_frame, label_text, (x1, y1 - 10), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.9, self.current_color, 2)
 
             with self.lock:
                 self.output_frame = annotated_frame
+                self.is_alarm_active = person_detected and self.current_status == "DEUDA"
 
     def stop(self):
         self.is_running = False

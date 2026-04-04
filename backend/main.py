@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import models
 from database import engine, get_db
@@ -63,6 +64,19 @@ class ConnectionManager:
             await connection.send_json(message)
 
 manager = ConnectionManager()
+
+async def ws_announcer():
+    last_alarm_state = False
+    while True:
+        current_alarm = cv_engine.is_alarm_active
+        if current_alarm != last_alarm_state:
+            await manager.broadcast({"type": "alarm_state", "active": current_alarm})
+            last_alarm_state = current_alarm
+        await asyncio.sleep(0.1)
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(ws_announcer())
 
 @app.websocket("/ws")
 async def websocket_clients(websocket: WebSocket):
