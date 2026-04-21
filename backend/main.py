@@ -7,13 +7,15 @@ import models
 from database import engine, get_db
 from cv_engine import CVEngine
 
+import admin_routes
+import user_routes
+
 models.Base.metadata.create_all(bind=engine)
 
 cv_engine = CVEngine()
-# Start the camera when the app starts
 cv_engine.start()
 
-app = FastAPI()
+app = FastAPI(title="Gym-Atlas API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,9 +25,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include Routers
+app.include_router(admin_routes.router)
+app.include_router(user_routes.router)
+
 @app.get("/")
 def read_root():
-    return {"status": "Backend is running"}
+    return {"status": "Gym-Atlas Backend is running", "version": "2.0.0"}
 
 @app.get("/members/{dni}")
 def get_member(dni: str, db: Session = Depends(get_db)):
@@ -33,7 +39,7 @@ def get_member(dni: str, db: Session = Depends(get_db)):
     if not member:
         return {"error": "Member not found"}
     
-    # Update camera box color based on recent checkin
+    # Logic for access control
     cv_engine.set_member_status(member.name, member.status)
     return member
 
