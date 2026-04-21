@@ -6,7 +6,7 @@ export default function UserApp() {
   const [wellness, setWellness] = useState<any>(null);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/user/${dni}/wellness`)
+    fetch(`/api/user/${dni}/wellness`)
       .then(res => res.json())
       .then(data => setWellness(data));
   }, [dni]);
