@@ -17,7 +17,9 @@ export default function KioskView() {
         return;
     }
 
-    const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = isLocal ? `${protocol}//${window.location.host}/ws` : 'ws://127.0.0.1:8000/ws';
+    const ws = new WebSocket(wsUrl);
     ws.onopen = () => setWsConnected(true);
     ws.onclose = () => setWsConnected(false);
     ws.onmessage = (event) => {
