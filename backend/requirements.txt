@@ -8,3 +8,5 @@ websockets
 python-dotenv
 asyncpg
 greenlet
+customtkinter
+Pillow
