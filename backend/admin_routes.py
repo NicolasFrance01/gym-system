@@ -29,9 +29,30 @@ def get_gym_stats(db: Session = Depends(get_db)):
 def get_all_members(db: Session = Depends(get_db)):
     return db.query(models.Member).all()
 
-@router.post("/pricing/dynamic")
-def calculate_dynamic_price(demand_factor: float = 1.0):
-    # Aerolinea-style dynamic pricing logic
-    base_price = 10.0
-    dynamic_price = base_price * demand_factor
-    return {"calculated_price": round(dynamic_price, 2)}
+@router.post("/members", response_model=schemas.MemberSchema)
+def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
+    db_member = models.Member(**member.dict())
+    db.add(db_member)
+    db.commit()
+    db.refresh(db_member)
+    return db_member
+
+@router.post("/payments")
+def record_payment(member_id: int, amount: float, db: Session = Depends(get_db)):
+    payment = models.Payment(member_id=member_id, amount=amount, status="paid", method="card")
+    db.add(payment)
+    # Also update member status to ACTIVO if they were in debt
+    member = db.query(models.Member).get(member_id)
+    if member:
+        member.status = "ACTIVO"
+        member.payment_status = "paid"
+    db.commit()
+    return {"status": "payment recorded"}
+
+@router.get("/pricing/dynamic")
+def calculate_dynamic_price(db: Session = Depends(get_db)):
+    # Real logic: increase price if active members > 80
+    active_count = db.query(models.Member).filter(models.Member.status == "ACTIVO").count()
+    base_price = 49.99
+    demand_factor = 1.0 + (max(0, active_count - 50) * 0.01)
+    return {"calculated_price": round(base_price * demand_factor, 2), "demand_factor": round(demand_factor, 2)}

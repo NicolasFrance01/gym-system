@@ -13,8 +13,6 @@ class MemberBase(BaseModel):
 
 class MemberSchema(MemberBase):
     id: int
-    joined_at: datetime
-    last_checkin: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -23,12 +23,21 @@ def get_wellness_score(dni: str, db: Session = Depends(get_db)):
         "suggestions": ["Take a rest day", "Focus on hydration"] if score < 50 else ["High intensity session recommended"]
     }
 
+@router.get("/marketplace")
+def get_products(db: Session = Depends(get_db)):
+    return db.query(models.Product).all()
+
 @router.post("/{dni}/book")
 def book_class(dni: str, class_name: str, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == dni).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
     
+    # Check for duplicates or limit
+    existing = db.query(models.Booking).filter(models.Booking.member_id == member.id, models.Booking.class_name == class_name).first()
+    if existing:
+        return {"status": "already_booked", "booking_id": existing.id}
+
     new_booking = models.Booking(
         member_id=member.id,
         class_name=class_name,
@@ -37,4 +46,5 @@ def book_class(dni: str, class_name: str, db: Session = Depends(get_db)):
     )
     db.add(new_booking)
     db.commit()
+    db.refresh(new_booking)
     return {"status": "success", "booking_id": new_booking.id}
