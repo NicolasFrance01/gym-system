@@ -11,6 +11,16 @@ export default function UserApp() {
       .then(data => setWellness(data));
   }, [dni]);
 
+  const handleBooking = async (className: string) => {
+    const res = await fetch(`/api/user/${dni}/book?class_name=${className}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'success') {
+      alert(`Clase de ${className} reservada con éxito!`);
+    } else if (data.status === 'already_booked') {
+      alert(`Ya tienes una reserva para ${className}.`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans p-6 mb-20 overflow-x-hidden">
       {/* Background Glows */}
@@ -22,7 +32,7 @@ export default function UserApp() {
       <header className="relative z-10 flex items-center justify-between mb-8 pb-6 border-b border-white/5">
         <div className="flex items-center gap-4">
            <div className="w-12 h-12 rounded-full border-2 border-blue-500 p-0.5">
-             <div className="w-full h-full bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">JD</div>
+             <div className="w-full h-full bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">NF</div>
            </div>
            <div>
              <h2 className="text-xl font-bold tracking-tight">Nicolas France</h2>
@@ -77,7 +87,10 @@ export default function UserApp() {
                 <p className="text-xs text-white/40">Modified for 85% fatigue level</p>
               </div>
             </div>
-            <button className="w-full py-4 bg-white text-black font-bold rounded-2xl active:scale-95 transition-transform hover:shadow-[0_20px_40px_rgba(255,255,255,0.1)]">
+            <button 
+              onClick={() => handleBooking('Adaptive Push B')}
+              className="w-full py-4 bg-white text-black font-bold rounded-2xl active:scale-95 transition-transform hover:shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
+            >
               Start Session
             </button>
           </div>
@@ -89,9 +102,9 @@ export default function UserApp() {
             <h3 className="text-sm font-bold tracking-widest uppercase text-white/40 uppercaseTracking">Quick Actions</h3>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <ActionBtn icon={<Calendar size={20} />} label="Classes" color="bg-blue-500/10 text-blue-400" />
-            <ActionBtn icon={<ShoppingBag size={20} />} label="Store" color="bg-green-500/10 text-green-400" />
-            <ActionBtn icon={<User size={20} />} label="Profile" color="bg-purple-500/10 text-purple-400" />
+            <ActionBtn onClick={() => handleBooking('General Class')} icon={<Calendar size={20} />} label="Classes" color="bg-blue-500/10 text-blue-400" />
+            <ActionBtn onClick={() => alert('Próximamente: Marketplace de Suplementos')} icon={<ShoppingBag size={20} />} label="Store" color="bg-green-500/10 text-green-400" />
+            <ActionBtn onClick={() => alert('DNI: ' + dni)} icon={<User size={20} />} label="Profile" color="bg-purple-500/10 text-purple-400" />
           </div>
         </section>
       </main>
