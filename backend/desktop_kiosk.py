@@ -20,6 +20,8 @@ load_dotenv()
 # UI Settings
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
+ctk.set_widget_scaling(1.0)
+ctk.set_window_scaling(1.0)
 
 class SplashScreen(ctk.CTkToplevel):
     def __init__(self):
@@ -27,6 +29,7 @@ class SplashScreen(ctk.CTkToplevel):
         self.title("GYM-ATLAS Boot")
         self.geometry("400x500")
         self.overrideredirect(True) # Remove title bar
+        self.attributes("-topmost", True)
         self.configure(fg_color="#050505")
         
         # Center on screen
@@ -89,42 +92,41 @@ class GymDesktopKiosk:
         self.root.deiconify() # Show main window
         self.setup_ui()
         self.update_video()
-        self.check_alarm_loop()
-
-    def setup_ui(self):
-        self.root.grid_columnconfigure(0, weight=3)
-        self.root.grid_columnconfigure(1, weight=1)
+        # Responsive grid: Sidebar (col 0 - fixed), Video (col 1 - flexible)
+        self.root.grid_columnconfigure(0, weight=0, minsize=400) # Sidebar fixed width
+        self.root.grid_columnconfigure(1, weight=1) # Video takes the rest
         self.root.grid_rowconfigure(0, weight=1)
 
-        # Left Panel: Video Display
-        self.video_frame = ctk.CTkFrame(self.root, fg_color="black", corner_radius=30, border_width=1, border_color="#1a1a1a")
-        self.video_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        # LEFT Panel: Sidebar (moved to left for better usability)
+        self.sidebar = ctk.CTkFrame(self.root, fg_color="#0a0a0a", corner_radius=0, border_width=0)
+        self.sidebar.grid(row=0, column=0, sticky="nsew")
         
-        self.video_label = ctk.CTkLabel(self.video_frame, text="")
-        self.video_label.pack(expand=True, fill="both", padx=5, pady=5)
+        # RIGHT Panel: Video Display
+        self.video_container = ctk.CTkFrame(self.root, fg_color="black", corner_radius=0)
+        self.video_container.grid(row=0, column=1, sticky="nsew", padx=2, pady=2)
+        
+        self.video_label = ctk.CTkLabel(self.video_container, text="")
+        self.video_label.pack(expand=True, fill="both")
 
-        # Right Panel: Sidebar
-        self.sidebar = ctk.CTkFrame(self.root, fg_color="#0a0a0a", corner_radius=30, border_width=1, border_color="#1a1a1a")
-        self.sidebar.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
-        
-        ctk.CTkLabel(self.sidebar, text="GYM-ATLAS", font=ctk.CTkFont(size=28, weight="bold")).pack(pady=(40, 40))
+        # Sidebar Content
+        ctk.CTkLabel(self.sidebar, text="GYM-ATLAS", font=ctk.CTkFont(size=32, weight="bold")).pack(pady=(60, 40))
 
-        # DNI Input with Glow Border
-        self.input_container = ctk.CTkFrame(self.sidebar, fg_color="transparent")
-        self.input_container.pack(pady=10, padx=20, fill="x")
+        # DNI Input Box (More prominent)
+        self.input_card = ctk.CTkFrame(self.sidebar, fg_color="#111", corner_radius=15, border_width=1, border_color="#222")
+        self.input_card.pack(pady=10, padx=30, fill="x")
         
-        ctk.CTkLabel(self.input_container, text="DNI SOCIO", font=ctk.CTkFont(size=12, weight="bold"), text_color="#333").pack(anchor="w", padx=10)
-        self.dni_entry = ctk.CTkEntry(self.input_container, placeholder_text="00000000", 
-                                      height=70, font=ctk.CTkFont(size=32, weight="bold"),
-                                      fg_color="#111", border_color="#222", corner_radius=20, 
+        ctk.CTkLabel(self.input_card, text="CONTROL DE ACCESO", font=ctk.CTkFont(size=12, weight="bold"), text_color="#555").pack(pady=(15, 0))
+        self.dni_entry = ctk.CTkEntry(self.input_card, placeholder_text="DNI", 
+                                      height=60, font=ctk.CTkFont(size=36, weight="bold"),
+                                      fg_color="transparent", border_width=0,
                                       justify="center")
-        self.dni_entry.pack(pady=5, fill="x")
+        self.dni_entry.pack(pady=(5, 15), padx=20, fill="x")
         self.dni_entry.bind("<Return>", self.check_member)
         self.dni_entry.focus_set()
 
-        # Premium Status Indicator
-        self.status_card = ctk.CTkFrame(self.sidebar, fg_color="#111", height=300, corner_radius=30, border_width=2, border_color="#1a1a1a")
-        self.status_card.pack(pady=40, padx=20, fill="x")
+        # Status Card (Bigger and cleaner)
+        self.status_card = ctk.CTkFrame(self.sidebar, fg_color="#111", height=320, corner_radius=20, border_width=2, border_color="#1a1a1a")
+        self.status_card.pack(pady=30, padx=30, fill="x")
         self.status_card.pack_propagate(False)
 
         self.status_indicator = ctk.CTkLabel(self.status_card, text="●", font=ctk.CTkFont(size=40), text_color="#333")
