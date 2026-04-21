@@ -4,11 +4,15 @@ import { motion } from 'framer-motion';
 export default function CameraPanel({ className = '' }: { className?: string }) {
   const imgRef = useRef<HTMLImageElement>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
 
   useEffect(() => {
     const isHttps = window.location.protocol === 'https:';
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
+    // Bypass proxy for high-bandwidth MJPEG stream on local
+    setVideoUrl(isLocal ? 'http://localhost:8000/video_feed' : '/video_feed');
+
     if (isHttps && !isLocal) {
         // Mixed content protection - camera won't work on HTTPS unless backend is also HTTPS
         setIsConnected(false);
@@ -20,9 +24,6 @@ export default function CameraPanel({ className = '' }: { className?: string }) 
     if (img) {
       img.onload = () => setIsConnected(true);
       img.onerror = () => setIsConnected(false);
-      
-      // Attempting to stream the MJPEG
-      img.src = "http://127.0.0.1:8000/video_feed";
     }
   }, []);
 
