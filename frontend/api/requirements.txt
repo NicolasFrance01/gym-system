@@ -1,7 +1,5 @@
 fastapi
 uvicorn
-ultralytics
-opencv-python
 sqlalchemy
 psycopg2-binary
 websockets

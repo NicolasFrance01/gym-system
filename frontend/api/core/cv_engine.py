@@ -1,12 +1,20 @@
-import cv2
-from ultralytics import YOLO
+try:
+    import cv2
+    from ultralytics import YOLO
+    HAS_CV = True
+except ImportError:
+    HAS_CV = False
+
 import threading
 import time
 
 class CVEngine:
     def __init__(self):
         # Using the smallest YOLOv8 model for faster real-time detection on CPU
-        self.model = YOLO('yolov8n.pt')
+        if HAS_CV:
+            self.model = YOLO('yolov8n.pt')
+        else:
+            self.model = None
         self.cap = None
         self.is_running = False
         self.lock = threading.Lock()
@@ -31,6 +39,9 @@ class CVEngine:
             self.current_color = (0, 255, 0) # Green
 
     def start(self):
+        if not HAS_CV:
+            print("CV libraries not available. Camera engine disabled.")
+            return
         self.cap = cv2.VideoCapture(0) # Open first webcam
         self.is_running = True
         self.thread = threading.Thread(target=self._run_loop)
