@@ -27,8 +27,10 @@ class CVEngine:
             self.current_color = (0, 0, 255) # Red
         elif status == "POR VENCER":
             self.current_color = (0, 255, 255) # Yellow
-        else:
+        elif status in ["AL DIA", "ACTIVO"]:
             self.current_color = (0, 255, 0) # Green
+        else:
+            self.current_color = (128, 128, 128) # Gray
 
     def start(self):
         self.cap = cv2.VideoCapture(0) # Open first webcam

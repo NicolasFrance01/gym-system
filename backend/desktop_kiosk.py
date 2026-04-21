@@ -124,7 +124,7 @@ class GymDesktopKiosk:
         self.input_card.pack(pady=20, padx=40, fill="x")
         
         ctk.CTkLabel(self.input_card, text="INGRESE DNI", font=ctk.CTkFont(size=10, weight="bold"), text_color="#555").pack(pady=(15, 0))
-        self.dni_entry = ctk.CTkEntry(self.input_card, placeholder_text="00.000.000", 
+        self.dni_entry = ctk.CTkEntry(self.input_card, placeholder_text="12345678", 
                                       height=70, font=ctk.CTkFont(size=34, weight="bold"),
                                       fg_color="transparent", border_width=0, justify="center")
         self.dni_entry.pack(pady=(5, 15), padx=20, fill="x")
@@ -198,10 +198,11 @@ class GymDesktopKiosk:
 
     def trigger_alarm_sound(self):
         for _ in range(3):
-            winsound.Beep(500, 600)
+            winsound.Beep(1800, 600) # Higher frequency for more 'alert' sound
             time.sleep(0.1)
 
     def return_to_idle(self):
+        # Only reset if we are not currently verifying someone else
         self.status_box.configure(fg_color="#111", border_color="#1a1a1a")
         self.status_label.configure(text="ESPERANDO", text_color="#444")
         self.indicator.configure(text_color="#222")
@@ -211,15 +212,25 @@ class GymDesktopKiosk:
     def update_video_loop(self):
         frame = self.cv_engine.output_frame
         if frame is not None:
-            # OpenCV to PIL
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(rgb_frame)
             
-            # Scale to fit window
-            w = self.video_label.winfo_width()
-            h = self.video_label.winfo_height()
-            if w > 100 and h > 100:
-                ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(w, h))
+            # Maintain aspect ratio to avoid 'Zoom' effect
+            w_win = self.video_label.winfo_width()
+            h_win = self.video_label.winfo_height()
+            
+            if w_win > 100 and h_win > 100:
+                img_w, img_h = img.size
+                aspect = img_w / img_h
+                
+                if w_win / h_win > aspect:
+                    new_h = h_win
+                    new_w = int(h_win * aspect)
+                else:
+                    new_w = w_win
+                    new_h = int(w_win / aspect)
+                
+                ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(new_w, new_h))
                 self.video_label.configure(image=ctk_img)
         
         self.root.after(20, self.update_video_loop)
