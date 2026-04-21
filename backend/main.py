@@ -56,6 +56,11 @@ def gen_frames():
         if frame is not None:
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            # Cap at ~30 FPS
+            time.sleep(0.03) 
+        else:
+            # Wait for next frame
+            time.sleep(0.1)
 
 @app.get("/video_feed")
 def video_feed():

@@ -17,7 +17,8 @@ export default defineConfig({
       },
       '/video_feed': {
         target: 'http://localhost:8000',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 0
       }
     }
   }

@@ -10,8 +10,8 @@ export default function CameraPanel({ className = '' }: { className?: string }) 
     const isHttps = window.location.protocol === 'https:';
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    // Bypass proxy for high-bandwidth MJPEG stream on local
-    setVideoUrl(isLocal ? 'http://localhost:8000/video_feed' : '/video_feed');
+    // Use proxy for MJPEG stream on local
+    setVideoUrl(isLocal ? '/video_feed' : 'http://127.0.0.1:8000/video_feed');
 
     if (isHttps && !isLocal) {
         // Mixed content protection - camera won't work on HTTPS unless backend is also HTTPS
