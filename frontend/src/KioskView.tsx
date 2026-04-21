@@ -63,6 +63,37 @@ export default function KioskView() {
       </div>
       
       <AlarmOverlay />
+
+      {window.location.protocol === 'https:' && !window.location.hostname.includes('127.0.0.1') && !window.location.hostname.includes('localhost') && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8">
+          <div className="max-w-md w-full bg-neutral-900 border border-red-500/30 rounded-[40px] p-10 text-center shadow-2xl">
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-8 text-red-500">
+              <AlertTriangle size={48} />
+            </div>
+            <h2 className="text-3xl font-black mb-4 tracking-tight">Acceso Seguro Detectado</h2>
+            <p className="text-neutral-400 mb-8 leading-relaxed">
+              Vercel (HTTPS) bloquea la conexión con la cámara local por seguridad. Para usar el control de acceso, por favor abre:
+            </p>
+            <div className="bg-black/50 p-6 rounded-3xl border border-white/10 mb-8 font-mono text-blue-400 break-all">
+              http://localhost:5173
+            </div>
+            <button 
+              onClick={() => window.location.href = 'http://localhost:5173'}
+              className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-neutral-200 transition-all"
+            >
+              Ir al Kiosko Local
+            </button>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function AlertTriangle(props: any) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+    </svg>
   );
 }
