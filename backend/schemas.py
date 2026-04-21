@@ -6,13 +6,18 @@ class MemberBase(BaseModel):
     dni: str
     name: str
     email: Optional[str] = None
-    status: str
+    status: str = "ACTIVO"
     photo_url: Optional[str] = None
     membership_type: Optional[str] = None
     wellness_data: Optional[Dict] = None
 
+class MemberCreate(MemberBase):
+    pass
+
 class MemberSchema(MemberBase):
     id: int
+    joined_at: datetime
+    last_checkin: Optional[datetime] = None
 
     class Config:
         from_attributes = True
