@@ -6,6 +6,15 @@ export default function CameraPanel({ className = '' }: { className?: string }) 
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    const isHttps = window.location.protocol === 'https:';
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isHttps && !isLocal) {
+        // Mixed content protection - camera won't work on HTTPS unless backend is also HTTPS
+        setIsConnected(false);
+        return;
+    }
+
     // Ping to check if video feed is alive by checking image load
     const img = imgRef.current;
     if (img) {

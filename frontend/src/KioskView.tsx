@@ -9,6 +9,14 @@ export default function KioskView() {
   const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
+    const isHttps = window.location.protocol === 'https:';
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isHttps && !isLocal) {
+        setWsConnected(false);
+        return;
+    }
+
     const ws = new WebSocket("ws://127.0.0.1:8000/ws");
     ws.onopen = () => setWsConnected(true);
     ws.onclose = () => setWsConnected(false);
