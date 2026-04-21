@@ -39,11 +39,11 @@ class CVEngine:
 
     def _run_loop(self):
         while self.is_running and self.cap.isOpened():
-            # Auto reset to IDLE after 10 seconds
-            if time.time() - self.last_update_time > 10 and self.current_status != "IDLE":
+            # Auto reset to IDLE after 8 seconds
+            if time.time() - self.last_update_time > 8 and self.current_status != "IDLE":
                 self.current_status = "IDLE"
                 self.current_name = ""
-                self.current_color = (128, 128, 128)
+                self.current_color = (128, 128, 128) # Back to Gray
                 self.is_alarm_active = False
 
             ret, frame = self.cap.read()
