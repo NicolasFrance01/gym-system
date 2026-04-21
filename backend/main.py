@@ -13,7 +13,13 @@ import user_routes
 models.Base.metadata.create_all(bind=engine)
 
 cv_engine = CVEngine()
-cv_engine.start()
+
+# Start camera only if explicitly requested or in local environments
+if os.getenv("LOCAL_CAMERA", "false").lower() == "true":
+    try:
+        cv_engine.start()
+    except Exception as e:
+        print(f"Failed to start camera: {e}")
 
 app = FastAPI(title="Gym-Atlas API", version="2.0.0")
 
