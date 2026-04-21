@@ -8,18 +8,16 @@ taskkill /f /im python.exe >nul 2>&1
 
 :: Start Backend (Camera API)
 echo [1/2] Starting Backend...
-start "GYM-BACKEND" cmd /k "cd backend && set LOCAL_CAMERA=true && .\venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000"
+start "GYM-BACKEND" echo 1. Iniciar App de Escritorio (Control de Acceso)
+start cmd /k "cd backend && .\venv\Scripts\activate && python desktop_kiosk.py"
 
-:: Start Frontend (Kiosk)
-echo [2/2] Starting Frontend...
-start "GYM-FRONTEND" cmd /k "cd frontend && npm run dev"
+echo 2. Iniciar Backend API (Para Dashboard en la Nube)
+start cmd /k "cd backend && .\venv\Scripts\activate && uvicorn main:app --host 0.0.0.0 --port 8000"
 
-echo.
-echo ==================================================
-echo Gym-Atlas is running!
-echo LOCAL Kiosk: http://localhost:5173
-echo CLOUD Admin: https://gym-system-sigma.vercel.app/admin
-echo CLOUD User App: https://gym-system-sigma.vercel.app/app
-echo ==================================================
+echo --------------------------------------------------
+echo Gym-Atlas Desktop is running!
+echo Use the Desktop Window for Access Control.
+echo Use Vercel for Admin/User Dashboard.
+echo --------------------------------------------------
 echo.
 timeout /t 10
