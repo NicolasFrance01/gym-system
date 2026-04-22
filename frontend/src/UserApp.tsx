@@ -1,4 +1,4 @@
-import { Heart, Calendar, ShoppingBag, User, Activity, Zap, ChevronRight, Brain } from 'lucide-react';
+import { Heart, Calendar, ShoppingBag, Activity, Zap, ChevronRight, Brain } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function UserApp() {
@@ -126,7 +126,7 @@ export default function UserApp() {
   );
 }
 
-function ActivityModule({ wellness }: any) {
+function ActivityModule() {
   return (
     <div className="p-6 bg-neutral-900 rounded-[40px] border border-white/5 text-center py-20 animate-in zoom-in duration-500">
       <Activity size={48} className="mx-auto mb-4 text-blue-500 opacity-20" />
@@ -180,14 +180,6 @@ function MetricMini({ icon, label, value }: any) {
   );
 }
 
-function ActionBtn({ icon, label, color }: any) {
-  return (
-    <div className={`p-4 rounded-[28px] border border-white/5 flex flex-col items-center gap-2 group cursor-pointer hover:border-white/20 transition-all`}>
-       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${color}`}>{icon}</div>
-       <span className="text-[11px] font-bold text-white/40 tracking-wider uppercase uppercaseTracking">{label}</span>
-    </div>
-  );
-}
 
 function NavIcon({ icon, active = false }: any) {
   return (

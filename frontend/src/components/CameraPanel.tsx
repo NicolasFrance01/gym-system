@@ -51,6 +51,7 @@ export default function CameraPanel({ className = '' }: { className?: string }) 
       {/* MJPEG Stream rendered into an img element */}
       <img
         ref={imgRef}
+        src={videoUrl}
         className={`w-full h-full object-cover transition-all duration-1000 ease-in-out ${isConnected ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
         alt="Live Gym Stream"
       />
