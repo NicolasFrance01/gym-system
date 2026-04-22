@@ -6,7 +6,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [members, setMembers] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newMember, setNewMember] = useState({ name: '', dni: '', status: 'ACTIVO', plan: 'Gold' });
+  const [newMember, setNewMember] = useState({ name: '', dni: '', status: 'ACTIVO', membership_type: 'Gold' });
 
   useEffect(() => {
     refreshData();
@@ -28,9 +28,14 @@ export default function AdminDashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newMember)
     });
+    
     if (res.ok) {
       setIsModalOpen(false);
+      setNewMember({ name: '', dni: '', status: 'ACTIVO', membership_type: 'Gold' }); // Reset
       refreshData();
+    } else {
+      const errorData = await res.json();
+      alert(`Error al crear socio: ${JSON.stringify(errorData.detail)}`);
     }
   };
 
