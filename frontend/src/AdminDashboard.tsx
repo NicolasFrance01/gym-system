@@ -4,17 +4,53 @@ import { useEffect, useState } from 'react';
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [members, setMembers] = useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newMember, setNewMember] = useState({ name: '', dni: '', status: 'ACTIVO', plan: 'Gold' });
 
   useEffect(() => {
+    refreshData();
+  }, []);
+
+  const refreshData = () => {
     fetch('/api/admin/stats')
       .then(res => res.json())
       .then(data => setStats(data));
-  }, []);
+    
+    fetch('/api/admin/members')
+      .then(res => res.json())
+      .then(data => setMembers(data));
+  };
+
+  const handleAddMember = async () => {
+    const res = await fetch('/api/admin/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newMember)
+    });
+    if (res.ok) {
+      setIsModalOpen(false);
+      refreshData();
+    }
+  };
+
+  const handleDeleteMember = async (id: number) => {
+    if (confirm('¿Estás seguro de eliminar este socio?')) {
+      await fetch(`/api/admin/members/${id}`, { method: 'DELETE' });
+      refreshData();
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'Members':
-        return <MembersModule />;
+        return (
+          <MembersModule 
+            members={members} 
+            onDelete={handleDeleteMember} 
+            onAddClick={() => setIsModalOpen(true)} 
+          />
+        );
       case 'Finance':
         return <FinanceModule />;
       case 'AI Analytics':
@@ -56,11 +92,13 @@ export default function AdminDashboard() {
 
             {/* Placeholder for Dynamic Pricing Table */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-               <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl h-96 flex items-center justify-center text-white/20 border-dashed">
-                  Dynamic Pricing Motor Dashboard
+               <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl h-96 flex flex-col justify-center px-12 border-dashed">
+                  <h4 className="text-xl font-bold mb-4 opacity-50">Dynamic Pricing Motor</h4>
+                  <p className="text-white/30 max-w-md">Adjustments based on real-time gym occupancy and peak-hour demand. Currently scaling with +15% demand factor.</p>
                </div>
-               <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl h-96 flex items-center justify-center text-white/20 border-dashed">
-                  Labor Scheduler (AI)
+               <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl h-96 flex flex-col justify-center px-10 border-dashed">
+                  <h4 className="text-xl font-bold mb-4 opacity-50">Labor Optimizer</h4>
+                  <p className="text-white/30">Shift recommendations for staff based on predicted attendance.</p>
                </div>
             </section>
           </>
@@ -70,14 +108,46 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans overflow-x-hidden">
-      {/* Premium background effects */}
+      {/* Modal for Adding Member */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+          <div className="bg-neutral-900 border border-white/10 p-10 rounded-[40px] w-full max-w-md animate-in zoom-in duration-300">
+            <h2 className="text-2xl font-bold mb-8">Add New Member</h2>
+            <div className="space-y-6">
+              <input 
+                type="text" placeholder="Full Name" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-blue-500 outline-none"
+                value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})}
+              />
+              <input 
+                type="text" placeholder="DNI Number" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-blue-500 outline-none"
+                value={newMember.dni} onChange={e => setNewMember({...newMember, dni: e.target.value})}
+              />
+              <select 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-blue-500 outline-none"
+                value={newMember.status} onChange={e => setNewMember({...newMember, status: e.target.value})}
+              >
+                <option value="ACTIVO">Activo</option>
+                <option value="DEUDA">Deuda</option>
+              </select>
+            </div>
+            <div className="flex gap-4 mt-12">
+              <button className="flex-1 py-4 text-white/40 font-bold" onClick={() => setIsModalOpen(false)}>Cancel</button>
+              <button className="flex-1 py-4 bg-blue-600 rounded-2xl font-bold text-white shadow-lg shadow-blue-600/20" onClick={handleAddMember}>Create Member</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Layout as before ... */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <div className="relative z-10 flex h-screen overflow-hidden">
-        {/* Sidebar */}
+        {/* Sidebar as before ... */}
         <aside className="w-64 border-r border-white/5 bg-black/20 backdrop-blur-2xl flex flex-col p-6">
           <div className="flex items-center gap-3 mb-12">
             <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
@@ -160,26 +230,36 @@ function SidebarItem({ icon, label, active = false, onClick }: any) {
   );
 }
 
-function MembersModule() {
+function MembersModule({ members, onDelete, onAddClick }: any) {
   return (
     <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-10">
           <h3 className="text-xl font-bold">Member Database</h3>
-          <button className="bg-blue-600 px-4 py-2 rounded-xl text-sm font-bold">Add Member</button>
+          <button onClick={onAddClick} className="bg-blue-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Add Member</button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
-             <div className="flex items-center gap-4 mb-4">
-               <div className="w-12 h-12 bg-neutral-700 rounded-full" />
-               <div>
-                 <p className="font-bold">Nicolas France</p>
-                 <p className="text-xs text-green-400">Status: AL DIA</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+           {members.map((m: any) => (
+             <div key={m.id} className="p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group">
+               <div className="flex items-center gap-4 mb-6">
+                 <div className="w-14 h-14 bg-gradient-to-br from-neutral-700 to-neutral-900 rounded-2xl flex items-center justify-center font-bold text-xl">{m.name[0]}</div>
+                 <div>
+                   <p className="font-bold text-white text-lg">{m.name}</p>
+                   <p className={`text-xs font-bold tracking-widest ${m.status === 'ACTIVO' ? 'text-green-400' : 'text-red-400'}`}>● {m.status}</p>
+                 </div>
                </div>
+               <div className="space-y-2 mb-8">
+                 <p className="text-xs text-white/30 flex justify-between">DNI: <span className="text-white/70 font-mono">{m.dni}</span></p>
+                 <p className="text-xs text-white/30 flex justify-between">Plan: <span className="text-white/70">{m.plan || 'Standard'}</span></p>
+               </div>
+               <button 
+                 onClick={() => onDelete(m.id)}
+                 className="w-full py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-xs font-bold transition-all opacity-0 group-hover:opacity-100"
+               >
+                 Remove Member
+               </button>
              </div>
-             <p className="text-xs text-white/40 mb-4">DNI: 1212</p>
-             <button className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs transition-colors">Edit Profile</button>
-           </div>
+           ))}
         </div>
       </div>
     </div>

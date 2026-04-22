@@ -51,8 +51,28 @@ def record_payment(member_id: int, amount: float, db: Session = Depends(get_db))
 
 @router.get("/pricing/dynamic")
 def calculate_dynamic_price(db: Session = Depends(get_db)):
-    # Real logic: increase price if active members > 80
     active_count = db.query(models.Member).filter(models.Member.status == "ACTIVO").count()
     base_price = 49.99
     demand_factor = 1.0 + (max(0, active_count - 50) * 0.01)
     return {"calculated_price": round(base_price * demand_factor, 2), "demand_factor": round(demand_factor, 2)}
+
+@router.delete("/members/{member_id}")
+def delete_member(member_id: int, db: Session = Depends(get_db)):
+    member = db.query(models.Member).get(member_id)
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    db.delete(member)
+    db.commit()
+    return {"status": "deleted"}
+
+@router.get("/finance/summary")
+def get_finance_summary(db: Session = Depends(get_db)):
+    payments = db.query(models.Payment).all()
+    # Mock data for chart
+    return {
+        "recent_payments": [
+            {"id": p.id, "member_id": p.member_id, "amount": p.amount, "date": p.date.strftime("%Y-%m-%d")} 
+            for p in payments[-10:]
+        ],
+        "total_revenue": sum(p.amount for p in payments)
+    }
