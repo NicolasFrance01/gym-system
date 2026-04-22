@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 export default function UserApp() {
   const [dni] = useState('1111'); // Default test DNI
   const [wellness, setWellness] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('Home');
 
   useEffect(() => {
     fetch(`/api/user/${dni}/wellness`)
@@ -18,6 +19,71 @@ export default function UserApp() {
       alert(`Clase de ${className} reservada con éxito!`);
     } else if (data.status === 'already_booked') {
       alert(`Ya tienes una reserva para ${className}.`);
+    }
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'Activity':
+        return <ActivityModule wellness={wellness} />;
+      case 'Calendar':
+        return <CalendarModule handleBooking={handleBooking} />;
+      case 'Store':
+        return <StoreModule />;
+      default:
+        return (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Wellness Score Card */}
+            <section className="bg-gradient-to-br from-neutral-900 to-black p-8 rounded-[40px] border border-white/10 shadow-3xl text-center group">
+              <p className="text-xs uppercase tracking-[0.3em] font-semibold text-white/40 mb-6 group-hover:text-blue-400 transition-colors uppercaseTracking">Wellness Score</p>
+              <div className="relative inline-block mb-6">
+                <svg className="w-48 h-48 transform -rotate-90">
+                  <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-white/5" />
+                  <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={552} strokeDashoffset={552 - (552 * (wellness?.score || 0)) / 100} className="text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-out" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-6xl font-black tracking-tighter">{wellness?.score || '0'}</span>
+                  <span className="text-xs font-bold text-white/50 tracking-widest uppercase">Ready</span>
+                </div>
+              </div>
+              <div className="bg-white/5 p-4 rounded-3xl border border-white/5 text-sm text-white/80 leading-relaxed font-medium">
+                 {wellness?.suggestions?.[0] || 'Analyzing biosensors...'}
+              </div>
+            </section>
+
+            {/* Metrics Grid */}
+            <section className="grid grid-cols-2 gap-4">
+               <MetricMini icon={<Heart className="text-red-500" />} label="HRV" value={`${wellness?.metrics?.hrv || 0} ms`} />
+               <MetricMini icon={<Activity className="text-blue-500" />} label="Sleep" value={`${(wellness?.metrics?.sleep || 0) * 100}%`} />
+            </section>
+
+            {/* AI Trainer Section */}
+            <section>
+              <div className="flex items-center justify-between mb-4 px-2">
+                <h3 className="text-sm font-bold tracking-widest uppercase text-white/40 uppercaseTracking">Autonomous Trainer</h3>
+                <ChevronRight size={16} className="text-white/20" />
+              </div>
+              <div className="bg-neutral-900/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+                <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-600/5 rounded-full blur-2xl group-hover:bg-indigo-600/10 transition-all" />
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400">
+                    <Brain size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">Adaptive Push B</h4>
+                    <p className="text-xs text-white/40">Modified for 85% fatigue level</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleBooking('Adaptive Push B')}
+                  className="w-full py-4 bg-white text-black font-bold rounded-2xl active:scale-95 transition-transform hover:shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
+                >
+                  Start Session
+                </button>
+              </div>
+            </section>
+          </div>
+        );
     }
   };
 
@@ -45,77 +111,59 @@ export default function UserApp() {
         </div>
       </header>
 
-      <main className="relative z-10 space-y-8 max-w-lg mx-auto">
-        {/* Wellness Score Card */}
-        <section className="bg-gradient-to-br from-neutral-900 to-black p-8 rounded-[40px] border border-white/10 shadow-3xl text-center group">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold text-white/40 mb-6 group-hover:text-blue-400 transition-colors uppercaseTracking">Wellness Score</p>
-          <div className="relative inline-block mb-6">
-            <svg className="w-48 h-48 transform -rotate-90">
-              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-white/5" />
-              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={552} strokeDashoffset={552 - (552 * (wellness?.score || 0)) / 100} className="text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-out" />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-6xl font-black tracking-tighter">{wellness?.score || '0'}</span>
-              <span className="text-xs font-bold text-white/50 tracking-widest uppercase">Ready</span>
-            </div>
-          </div>
-          <div className="bg-white/5 p-4 rounded-3xl border border-white/5 text-sm text-white/80 leading-relaxed font-medium">
-             {wellness?.suggestions?.[0] || 'Analyzing biosensors...'}
-          </div>
-        </section>
-
-        {/* Metrics Grid */}
-        <section className="grid grid-cols-2 gap-4">
-           <MetricMini icon={<Heart className="text-red-500" />} label="HRV" value={`${wellness?.metrics?.hrv || 0} ms`} />
-           <MetricMini icon={<Activity className="text-blue-500" />} label="Sleep" value={`${(wellness?.metrics?.sleep || 0) * 100}%`} />
-        </section>
-
-        {/* AI Trainer Section */}
-        <section>
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="text-sm font-bold tracking-widest uppercase text-white/40 uppercaseTracking">Autonomous Trainer</h3>
-            <ChevronRight size={16} className="text-white/20" />
-          </div>
-          <div className="bg-neutral-900/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-600/5 rounded-full blur-2xl group-hover:bg-indigo-600/10 transition-all" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400">
-                <Brain size={24} />
-              </div>
-              <div>
-                <h4 className="font-bold text-white">Adaptive Push B</h4>
-                <p className="text-xs text-white/40">Modified for 85% fatigue level</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => handleBooking('Adaptive Push B')}
-              className="w-full py-4 bg-white text-black font-bold rounded-2xl active:scale-95 transition-transform hover:shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
-            >
-              Start Session
-            </button>
-          </div>
-        </section>
-
-        {/* Categories / Marketplace Header */}
-        <section>
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="text-sm font-bold tracking-widest uppercase text-white/40 uppercaseTracking">Quick Actions</h3>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <ActionBtn onClick={() => handleBooking('General Class')} icon={<Calendar size={20} />} label="Classes" color="bg-blue-500/10 text-blue-400" />
-            <ActionBtn onClick={() => alert('Próximamente: Marketplace de Suplementos')} icon={<ShoppingBag size={20} />} label="Store" color="bg-green-500/10 text-green-400" />
-            <ActionBtn onClick={() => alert('DNI: ' + dni)} icon={<User size={20} />} label="Profile" color="bg-purple-500/10 text-purple-400" />
-          </div>
-        </section>
+      <main className="relative z-10 max-w-lg mx-auto">
+        {renderTabContent()}
       </main>
 
       {/* Bottom Nav Bar */}
       <nav className="fixed bottom-6 left-6 right-6 h-18 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[30px] z-50 flex items-center justify-around px-8 shadow-2xl">
-        <NavIcon icon={<LayoutDashboard size={24} />} active />
-        <NavIcon icon={<Activity size={24} />} />
-        <NavIcon icon={<Calendar size={24} />} />
-        <NavIcon icon={<ShoppingBag size={24} />} />
+        <NavIcon icon={<LayoutDashboard size={24} />} active={activeTab === 'Home'} onClick={() => setActiveTab('Home')} />
+        <NavIcon icon={<Activity size={24} />} active={activeTab === 'Activity'} onClick={() => setActiveTab('Activity')} />
+        <NavIcon icon={<Calendar size={24} />} active={activeTab === 'Calendar'} onClick={() => setActiveTab('Calendar')} />
+        <NavIcon icon={<ShoppingBag size={24} />} active={activeTab === 'Store'} onClick={() => setActiveTab('Store')} />
       </nav>
+    </div>
+  );
+}
+
+function ActivityModule({ wellness }: any) {
+  return (
+    <div className="p-6 bg-neutral-900 rounded-[40px] border border-white/5 text-center py-20 animate-in zoom-in duration-500">
+      <Activity size={48} className="mx-auto mb-4 text-blue-500 opacity-20" />
+      <h3 className="text-xl font-bold mb-2">Training History</h3>
+      <p className="text-white/40">Log of all your gym sessions.</p>
+    </div>
+  );
+}
+
+function CalendarModule({ handleBooking }: any) {
+  return (
+    <div className="space-y-4 animate-in fade-in duration-500">
+      <h3 className="text-xl font-bold px-2">Book a Class</h3>
+      <div className="bg-white/5 p-6 rounded-3xl border border-white/5 flex justify-between items-center">
+        <div>
+          <p className="font-bold">Yoga Flow</p>
+          <p className="text-xs text-white/40">09:00 AM - 60 min</p>
+        </div>
+        <button onClick={() => handleBooking('Yoga')} className="px-4 py-2 bg-blue-500 rounded-xl text-xs font-bold">Book</button>
+      </div>
+      <div className="bg-white/5 p-6 rounded-3xl border border-white/5 flex justify-between items-center">
+        <div>
+          <p className="font-bold">CrossFit HIIT</p>
+          <p className="text-xs text-white/40">05:00 PM - 45 min</p>
+        </div>
+        <button onClick={() => handleBooking('CrossFit')} className="px-4 py-2 bg-blue-500 rounded-xl text-xs font-bold">Book</button>
+      </div>
+    </div>
+  );
+}
+
+function StoreModule() {
+  return (
+    <div className="p-6 bg-neutral-900 rounded-[40px] border border-white/5 text-center py-20 animate-in zoom-in duration-500">
+      <ShoppingBag size={48} className="mx-auto mb-4 text-green-500 opacity-20" />
+      <h3 className="text-xl font-bold mb-2">Gym Store</h3>
+      <p className="text-white/40">Browse supplement and apparel.</p>
     </div>
   );
 }
