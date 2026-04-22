@@ -203,13 +203,6 @@ function AIAnalyticsModule() {
     </div>
   );
 }
-  return (
-    <div className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all cursor-pointer group ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-white/40 hover:text-white hover:bg-white/5'}`}>
-      {icon}
-      <span className="font-medium">{label}</span>
-    </div>
-  );
-}
 
 function StatCard({ title, value, trend, delay, caution = false }: any) {
   return (
