@@ -25,7 +25,7 @@ export default function UserApp() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'Activity':
-        return <ActivityModule wellness={wellness} />;
+        return <ActivityModule />;
       case 'Calendar':
         return <CalendarModule handleBooking={handleBooking} />;
       case 'Store':
