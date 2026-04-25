@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity, Wallet, Target, UsersRound, Search, Download, Lock, ShieldCheck, Briefcase, Flame } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity, Wallet, Target, UsersRound, Search, Download, Lock, ShieldCheck, Briefcase, Flame, Calendar } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -16,6 +16,7 @@ export default function AdminDashboard() {
 
   const [stats, setStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('Resumen');
+  const [timeRange, setTimeRange] = useState('6_meses');
   const [members, setMembers] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [financeData, setFinanceData] = useState<any>(null);
@@ -35,7 +36,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (isAuthenticated) refreshData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, timeRange]);
 
   const handleLogin = (e: any) => {
     e.preventDefault();
@@ -54,9 +55,10 @@ export default function AdminDashboard() {
       if (statsRes.ok) setStats(await statsRes.json());
       else throw new Error('API failed');
     } catch {
+      const multiplier = timeRange === '1_mes' ? 0.4 : timeRange === '3_meses' ? 0.7 : 1;
       setStats({
         active_members: 142,
-        total_revenue: 18450.50,
+        total_revenue: 18450.50 * multiplier,
         churn_risk_count: 8,
         por_vencer_count: 15,
         alerts: [
@@ -102,15 +104,19 @@ export default function AdminDashboard() {
         else throw new Error('Empty DB');
       } else throw new Error('API failed');
     } catch {
+      let cashflow = [
+        { month: "Nov", ingresos: 4200, gastos: 2100 }, 
+        { month: "Dic", ingresos: 5100, gastos: 2800 },
+        { month: "Ene", ingresos: 4800, gastos: 2000 }, 
+        { month: "Feb", ingresos: 6500, gastos: 3100 },
+        { month: "Mar", ingresos: 8900, gastos: 4200 }, 
+        { month: "Abr", ingresos: 12450, gastos: 4800 }
+      ];
+      if (timeRange === '1_mes') cashflow = cashflow.slice(-1);
+      if (timeRange === '3_meses') cashflow = cashflow.slice(-3);
+
       setFinanceData({
-        cashflow_data: [
-          { month: "Nov", ingresos: 4200, gastos: 2100 }, 
-          { month: "Dic", ingresos: 5100, gastos: 2800 },
-          { month: "Ene", ingresos: 4800, gastos: 2000 }, 
-          { month: "Feb", ingresos: 6500, gastos: 3100 },
-          { month: "Mar", ingresos: 8900, gastos: 4200 }, 
-          { month: "Abr", ingresos: 12450, gastos: 4800 }
-        ],
+        cashflow_data: cashflow,
         revenue_distribution: [
           { name: "Basic", value: 3000 },
           { name: "Premium", value: 5500 },
@@ -124,7 +130,7 @@ export default function AdminDashboard() {
         ],
         arpu: 87.67,
         operating_margin: 61.4,
-        total_revenue: 18450.50
+        total_revenue: cashflow.reduce((acc, curr) => acc + curr.ingresos, 0)
       });
     }
 
@@ -255,11 +261,11 @@ export default function AdminDashboard() {
         pdf.text('GYM-ATLAS: REPORTE OFICIAL', 15, 25);
         pdf.setFontSize(10);
         pdf.text(`Fecha: ${new Date().toLocaleDateString()}`, 15, 33);
-        pdf.text(title, pageWidth - 60, 33);
+        pdf.text(title, pageWidth - 80, 33);
         pdf.setTextColor(0, 0, 0);
       };
 
-      addHeader(`Modulo: ${activeTab.toUpperCase()}`);
+      addHeader(`Modulo: ${activeTab.toUpperCase()} | Filtro: ${timeRange}`);
 
       let currentY = 50;
 
@@ -273,7 +279,7 @@ export default function AdminDashboard() {
         head: [['Métrica', 'Valor']],
         body: [
           ['Socios Activos', stats?.active_members || '142'],
-          ['Ingresos Totales', `$${stats?.total_revenue?.toFixed(2) || '18450.50'}`],
+          ['Ingresos Totales (Período)', `$${stats?.total_revenue?.toFixed(2) || '0.00'}`],
           ['Riesgo de Abandono', stats?.churn_risk_count || '8'],
           ['Alertas Críticas', stats?.alerts?.length || '2'],
         ],
@@ -308,22 +314,21 @@ export default function AdminDashboard() {
 
       // Capture and Add Charts
       const charts = [
-        { ref: chartRef1, title: 'Visualización de Tendencias' },
-        { ref: chartRef2, title: 'Distribución Analítica' }
+        { ref: chartRef1, title: 'Visualización de Tendencias y Flujo' },
+        { ref: chartRef2, title: 'Análisis de Distribución y Crecimiento' }
       ];
 
       for (const chart of charts) {
         if (chart.ref.current) {
           try {
             const canvas = await html2canvas(chart.ref.current, { 
-              scale: 1.5, 
+              scale: 2, 
               backgroundColor: '#050505',
               useCORS: true,
               logging: false
             });
             const imgData = canvas.toDataURL('image/png');
             
-            // Add new page if not enough space
             const imgWidth = 180;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             
@@ -345,7 +350,8 @@ export default function AdminDashboard() {
         }
       }
 
-      pdf.save(`GymAtlas_Reporte_${activeTab}.pdf`);
+      const safeTimeRange = timeRange.replace(/ /g, '_');
+      pdf.save(`GymAtlas_${activeTab}_${safeTimeRange}.pdf`);
     } catch (err) {
       console.error('Error generando PDF:', err);
       alert('Error al generar el PDF completo.');
@@ -442,14 +448,30 @@ export default function AdminDashboard() {
         <button onClick={() => setIsAuthenticated(false)} className="w-full p-4 hover:bg-white/5 rounded-2xl text-white/50 text-sm font-bold border-t border-white/5 mt-6">Cerrar Sesión</button>
       </aside>
       <main className="flex-1 overflow-y-auto p-10 bg-black/10 z-10 relative">
-        <header className="flex items-center justify-between mb-12">
+        <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
           <div><h2 className="text-3xl font-bold text-white mb-2">{activeTab}</h2><p className="text-white/40">Gestión predictiva y analítica de Gym-Atlas.</p></div>
-          {(activeTab === 'Finanzas' || activeTab === 'Analítica IA') && (
-            <button onClick={handleExportPDF} disabled={isExporting} className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-full text-sm font-bold hover:bg-white/10 transition-all shadow-xl group">
-              {isExporting ? <Activity className="animate-spin text-blue-400" /> : <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />}
-              {isExporting ? 'Generando Reporte...' : 'Descargar Reporte PDF'}
-            </button>
-          )}
+          
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-2xl border border-white/10">
+                <Calendar size={18} className="text-blue-400" />
+                <select 
+                  className="bg-transparent text-sm font-bold outline-none border-none text-white cursor-pointer"
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
+                >
+                   <option value="1_mes">Último Mes</option>
+                   <option value="3_meses">Últimos 3 Meses</option>
+                   <option value="6_meses">Últimos 6 Meses</option>
+                </select>
+             </div>
+
+            {(activeTab === 'Finanzas' || activeTab === 'Analítica IA') && (
+              <button onClick={handleExportPDF} disabled={isExporting} className="flex items-center gap-2 px-6 py-3 bg-blue-600 rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-xl group">
+                {isExporting ? <Activity className="animate-spin text-white" /> : <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />}
+                {isExporting ? 'Generando Reporte...' : 'Descargar PDF'}
+              </button>
+            )}
+          </div>
         </header>
         {renderContent()}
       </main>
@@ -514,13 +536,13 @@ function FinanceModule({ data, chartRef, pieChartRef }: any) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center gap-4"><div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400"><DollarSign /></div><div><p className="text-white/40 text-xs uppercase font-bold">Ingreso Total</p><h4 className="text-2xl font-bold">${data.total_revenue}</h4></div></div>
+         <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center gap-4"><div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400"><DollarSign /></div><div><p className="text-white/40 text-xs uppercase font-bold">Ingreso Período</p><h4 className="text-2xl font-bold">${data.total_revenue.toFixed(2)}</h4></div></div>
          <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center gap-4"><div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400"><UsersRound /></div><div><p className="text-white/40 text-xs uppercase font-bold">ARPU</p><h4 className="text-2xl font-bold">${data.arpu}</h4></div></div>
          <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center gap-4"><div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-400"><Wallet /></div><div><p className="text-white/40 text-xs uppercase font-bold">Margen</p><h4 className="text-2xl font-bold">{data.operating_margin}%</h4></div></div>
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div ref={chartRef} className="xl:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
-          <h3 className="text-xl font-bold mb-8">Flujo de Caja Anual</h3>
+          <h3 className="text-xl font-bold mb-8">Flujo de Caja del Período</h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.cashflow_data}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} /><XAxis dataKey="month" stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} /><YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} /><Tooltip contentStyle={{ backgroundColor: '#171717', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px' }} cursor={{fill: 'rgba(255,255,255,0.05)'}} /><Legend iconType="circle" wrapperStyle={{ fontSize: '12px', opacity: 0.8 }} /><Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} /><Bar dataKey="gastos" name="Gastos" fill="#f43f5e" radius={[4, 4, 0, 0]} /></BarChart>
