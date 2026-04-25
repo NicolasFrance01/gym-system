@@ -34,6 +34,8 @@ class CVEngine:
 
     def start(self):
         self.cap = cv2.VideoCapture(0) # Open first webcam
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         self.is_running = True
         self.thread = threading.Thread(target=self._run_loop)
         self.thread.daemon = True
@@ -52,6 +54,9 @@ class CVEngine:
             if not ret:
                 time.sleep(0.1)
                 continue
+            
+            # Flip horizontally to fix mirroring
+            frame = cv2.flip(frame, 1)
 
             # Run YOLO Person detection
             results = self.model(frame, classes=[0], verbose=False) # class 0 is person

@@ -132,18 +132,21 @@ class GymDesktopKiosk:
         self.dni_entry.focus_set()
 
         # STATUS DISPLAY
-        self.status_box = ctk.CTkFrame(self.sidebar, fg_color="#111", height=320, corner_radius=24, border_width=2, border_color="#1a1a1a")
+        self.status_box = ctk.CTkFrame(self.sidebar, fg_color="#111", height=400, corner_radius=24, border_width=2, border_color="#1a1a1a")
         self.status_box.pack(pady=40, padx=40, fill="x")
         self.status_box.pack_propagate(False)
 
         self.indicator = ctk.CTkLabel(self.status_box, text="●", font=ctk.CTkFont(size=50), text_color="#222")
-        self.indicator.pack(pady=(40, 0))
+        self.indicator.pack(pady=(30, 0))
+
+        self.name_label = ctk.CTkLabel(self.status_box, text="BIENVENIDO", font=ctk.CTkFont(size=24, weight="bold"), text_color="#111")
+        self.name_label.pack(pady=(0, 5))
+
+        self.dni_label = ctk.CTkLabel(self.status_box, text="DNI: ---", font=ctk.CTkFont(size=14, family="Courier"), text_color="#222")
+        self.dni_label.pack(pady=(0, 20))
 
         self.status_label = ctk.CTkLabel(self.status_box, text="ESPERANDO", font=ctk.CTkFont(size=36, weight="bold"), text_color="#444")
-        self.status_label.pack(expand=True)
-        
-        self.name_label = ctk.CTkLabel(self.sidebar, text="BIENVENIDO", font=ctk.CTkFont(size=18, weight="bold"), text_color="#111")
-        self.name_label.pack(pady=10)
+        self.status_label.pack(expand=True, pady=(0, 40))
 
         # Versioning
         ctk.CTkLabel(self.sidebar, text="ATLAS ENGINE v2.6 | SYNC: ONLINE", font=ctk.CTkFont(size=9), text_color="#1a1a1a").pack(side="bottom", pady=20)
@@ -163,15 +166,15 @@ class GymDesktopKiosk:
             member = db.query(models.Member).filter(models.Member.dni == dni).first()
             if member:
                 self.cv_engine.set_member_status(member.name, member.status)
-                self.root.after(0, lambda: self.render_status_result(member.name, member.status))
+                self.root.after(0, lambda: self.render_status_result(member.name, member.status, dni))
             else:
-                self.root.after(0, lambda: self.render_status_result("ERROR", "NO EXISTE"))
+                self.root.after(0, lambda: self.render_status_result("ERROR", "NO EXISTE", dni))
         except Exception:
-            self.root.after(0, lambda: self.render_status_result("ERROR", "DB ERROR"))
+            self.root.after(0, lambda: self.render_status_result("ERROR", "DB ERROR", dni))
         finally:
             db.close()
 
-    def render_status_result(self, name, status):
+    def render_status_result(self, name, status, dni):
         color = "#ff3333" # Default error
         bg = "#1a0000"
         
@@ -192,6 +195,7 @@ class GymDesktopKiosk:
         self.status_label.configure(text=status, text_color=color)
         self.indicator.configure(text_color=color)
         self.name_label.configure(text=name, text_color=color)
+        self.dni_label.configure(text=f"DNI: {dni}", text_color=color)
         
         # Reset after 8s
         self.root.after(8000, self.return_to_idle)
@@ -207,6 +211,7 @@ class GymDesktopKiosk:
         self.status_label.configure(text="ESPERANDO", text_color="#444")
         self.indicator.configure(text_color="#222")
         self.name_label.configure(text="BIENVENIDO", text_color="#111")
+        self.dni_label.configure(text="DNI: ---", text_color="#222")
         self.cv_engine.set_member_status("", "IDLE")
 
     def update_video_loop(self):
