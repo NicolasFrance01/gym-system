@@ -228,12 +228,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleStatusChange = async (id: number, status: string) => {
-    try {
-      await fetch(`/api/admin/members/${id}/status?status=${status}`, { method: 'PUT' });
-    } catch(e) {}
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, status } : m));
-  };
+
 
   const handlePayment = async () => {
     if (!selectedMember || !paymentAmount) return;
