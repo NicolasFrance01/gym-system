@@ -4,7 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [activeTab, setActiveTab] = useState('Resumen');
   const [members, setMembers] = useState<any[]>([]);
   const [financeData, setFinanceData] = useState<any>(null);
   const [aiData, setAiData] = useState<any>(null);
@@ -33,8 +33,8 @@ export default function AdminDashboard() {
         churn_risk_count: 8,
         por_vencer_count: 15,
         alerts: [
-          {"type": "churn", "message": "8 members exhibit low attendance patterns. Recommended action: Send re-engagement promo."},
-          {"type": "revenue", "message": "Projected 15% revenue increase this month based on historical trends."}
+          {"type": "abandono", "message": "8 socios muestran patrones de baja asistencia. Acción recomendada: Enviar promo de reactivación."},
+          {"type": "ingresos", "message": "Aumento proyectado del 15% en ingresos este mes basado en tendencias históricas."}
         ]
       });
     }
@@ -67,9 +67,9 @@ export default function AdminDashboard() {
     } catch {
       setFinanceData({
         chart_data: [
-          { month: "Nov", revenue: 4200 }, { month: "Dec", revenue: 5100 },
-          { month: "Jan", revenue: 4800 }, { month: "Feb", revenue: 6500 },
-          { month: "Mar", revenue: 8900 }, { month: "Apr", revenue: 12450 }
+          { month: "Nov", revenue: 4200 }, { month: "Dic", revenue: 5100 },
+          { month: "Ene", revenue: 4800 }, { month: "Feb", revenue: 6500 },
+          { month: "Mar", revenue: 8900 }, { month: "Abr", revenue: 12450 }
         ],
         recent_payments: [
           { id: 101, member_id: 1, amount: 99.99, date: new Date().toISOString().split('T')[0] },
@@ -90,19 +90,19 @@ export default function AdminDashboard() {
     } catch {
       setAiData({
         attendance_heatmap: [
-          {"day": "Mon", "morning": 85, "afternoon": 45, "evening": 120},
-          {"day": "Tue", "morning": 90, "afternoon": 35, "evening": 110},
-          {"day": "Wed", "morning": 75, "afternoon": 50, "evening": 95},
-          {"day": "Thu", "morning": 80, "afternoon": 40, "evening": 130},
-          {"day": "Fri", "morning": 60, "afternoon": 65, "evening": 80},
-          {"day": "Sat", "morning": 110, "afternoon": 90, "evening": 40},
-          {"day": "Sun", "morning": 130, "afternoon": 60, "evening": 20},
+          {"day": "Lun", "morning": 85, "afternoon": 45, "evening": 120},
+          {"day": "Mar", "morning": 90, "afternoon": 35, "evening": 110},
+          {"day": "Mié", "morning": 75, "afternoon": 50, "evening": 95},
+          {"day": "Jue", "morning": 80, "afternoon": 40, "evening": 130},
+          {"day": "Vie", "morning": 60, "afternoon": 65, "evening": 80},
+          {"day": "Sáb", "morning": 110, "afternoon": 90, "evening": 40},
+          {"day": "Dom", "morning": 130, "afternoon": 60, "evening": 20},
         ],
         churn_factors: [
-          {"factor": "Low Attendance (<2x/week)", "impact": 55},
-          {"factor": "Price Sensitivity", "impact": 20},
-          {"factor": "No Trainer Engagement", "impact": 15},
-          {"factor": "Facility Distance", "impact": 10},
+          {"factor": "Baja Asistencia (<2x/sem)", "impact": 55},
+          {"factor": "Sensibilidad al Precio", "impact": 20},
+          {"factor": "Falta de Entrenador", "impact": 15},
+          {"factor": "Distancia al Gimnasio", "impact": 10},
         ]
       });
     }
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Members':
+      case 'Socios':
         return (
           <MembersModule 
             members={members} 
@@ -170,19 +170,19 @@ export default function AdminDashboard() {
             onPayClick={(m: any) => { setSelectedMember(m); setIsPaymentModalOpen(true); }}
           />
         );
-      case 'Finance':
+      case 'Finanzas':
         return <FinanceModule data={financeData} />;
-      case 'AI Analytics':
-        return <AIAnalyticsModule data={aiData} pricing={pricingData} />;
+      case 'Analítica IA':
+        return <AIAnalyticsModule data={aiData} />;
       default:
         return (
           <>
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <StatCard title="Active Members" value={stats?.active_members || '0'} trend="+4.5%" delay="0s" />
-              <StatCard title="Total Revenue" value={`$${stats?.total_revenue?.toFixed(2) || '0'}`} trend="+12.2%" delay="0.1s" />
-              <StatCard title="Churn Risk" value={stats?.churn_risk_count || '0'} trend="-2.1%" caution delay="0.2s" />
-              <StatCard title="Expiring Soon" value={stats?.por_vencer_count || '0'} trend="Alert" caution delay="0.3s" />
+              <StatCard title="Socios Activos" value={stats?.active_members || '0'} trend="+4.5%" delay="0s" />
+              <StatCard title="Ingresos Totales" value={`$${stats?.total_revenue?.toFixed(2) || '0'}`} trend="+12.2%" delay="0.1s" />
+              <StatCard title="Riesgo de Abandono" value={stats?.churn_risk_count || '0'} trend="-2.1%" caution delay="0.2s" />
+              <StatCard title="Próximos a Vencer" value={stats?.por_vencer_count || '0'} trend="Alerta" caution delay="0.3s" />
             </div>
 
             {/* AI Alerts Section */}
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center gap-3 mb-6">
                 <TrendingUp className="text-blue-500" />
-                <h3 className="text-xl font-semibold text-white">AI Predictive Insights</h3>
+                <h3 className="text-xl font-semibold text-white">Predicciones Inteligentes</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {stats?.alerts?.map((alert: any, i: number) => (
@@ -201,11 +201,11 @@ export default function AdminDashboard() {
                       <AlertTriangle size={24} />
                     </div>
                     <div>
-                      <h4 className="font-medium text-white mb-1 uppercase text-xs tracking-widest text-blue-400">{alert.type} Alert</h4>
+                      <h4 className="font-medium text-white mb-1 uppercase text-xs tracking-widest text-blue-400">Alerta de {alert.type}</h4>
                       <p className="text-white/70 leading-relaxed">{alert.message}</p>
                     </div>
                   </div>
-                )) || <p className="text-white/20 italic">Scanning data for insights...</p>}
+                )) || <p className="text-white/20 italic">Analizando datos para generar insights...</p>}
               </div>
             </section>
 
@@ -214,27 +214,27 @@ export default function AdminDashboard() {
                <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl flex flex-col justify-center">
                   <div className="flex items-center gap-3 mb-4">
                     <Activity className="text-green-400" />
-                    <h4 className="text-xl font-bold">Dynamic Pricing Motor</h4>
+                    <h4 className="text-xl font-bold">Motor de Precios Dinámicos</h4>
                   </div>
-                  <p className="text-white/50 mb-6">Adjustments based on real-time gym occupancy and peak-hour demand.</p>
+                  <p className="text-white/50 mb-6">Ajustes basados en ocupación en tiempo real y demanda en horas pico.</p>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/5 rounded-2xl p-6">
-                      <p className="text-sm text-white/40 mb-2">Demand Factor</p>
+                      <p className="text-sm text-white/40 mb-2">Factor de Demanda</p>
                       <p className="text-3xl font-bold text-white">x{pricingData?.demand_factor || '1.0'}</p>
                     </div>
                     <div className="bg-white/5 rounded-2xl p-6">
-                      <p className="text-sm text-white/40 mb-2">Suggested Price</p>
+                      <p className="text-sm text-white/40 mb-2">Precio Sugerido</p>
                       <p className="text-3xl font-bold text-green-400">${pricingData?.calculated_price || '0.00'}</p>
                     </div>
                   </div>
                </div>
                <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl flex flex-col justify-center">
-                  <h4 className="text-xl font-bold mb-4 opacity-50">Labor Optimizer</h4>
-                  <p className="text-white/30 text-sm mb-4">Shift recommendations for staff based on predicted attendance.</p>
+                  <h4 className="text-xl font-bold mb-4 opacity-50">Optimizador de Personal</h4>
+                  <p className="text-white/30 text-sm mb-4">Recomendaciones de turnos para el personal basadas en asistencia prevista.</p>
                   <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                    <p className="text-blue-400 font-bold text-sm">Suggested Action:</p>
-                    <p className="text-white/70 text-sm mt-1">+1 Trainer needed for today's 18:00 peak.</p>
+                    <p className="text-blue-400 font-bold text-sm">Acción Sugerida:</p>
+                    <p className="text-white/70 text-sm mt-1">Se requiere +1 Entrenador para el pico de hoy a las 18:00hs.</p>
                   </div>
                </div>
             </section>
@@ -249,15 +249,15 @@ export default function AdminDashboard() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
           <div className="bg-neutral-900 border border-white/10 p-10 rounded-[40px] w-full max-w-md animate-in zoom-in duration-300">
-            <h2 className="text-2xl font-bold mb-8">Add New Member</h2>
+            <h2 className="text-2xl font-bold mb-8">Agregar Nuevo Socio</h2>
             <div className="space-y-6">
               <input 
-                type="text" placeholder="Full Name" 
+                type="text" placeholder="Nombre Completo" 
                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-blue-500 outline-none"
                 value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})}
               />
               <input 
-                type="text" placeholder="DNI Number" 
+                type="text" placeholder="Número de DNI" 
                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-blue-500 outline-none"
                 value={newMember.dni} onChange={e => setNewMember({...newMember, dni: e.target.value})}
               />
@@ -271,8 +271,8 @@ export default function AdminDashboard() {
               </select>
             </div>
             <div className="flex gap-4 mt-12">
-              <button className="flex-1 py-4 text-white/40 font-bold" onClick={() => setIsModalOpen(false)}>Cancel</button>
-              <button className="flex-1 py-4 bg-blue-600 rounded-2xl font-bold text-white shadow-lg shadow-blue-600/20" onClick={handleAddMember}>Create Member</button>
+              <button className="flex-1 py-4 text-white/40 font-bold" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+              <button className="flex-1 py-4 bg-blue-600 rounded-2xl font-bold text-white shadow-lg shadow-blue-600/20" onClick={handleAddMember}>Crear Socio</button>
             </div>
           </div>
         </div>
@@ -282,18 +282,18 @@ export default function AdminDashboard() {
       {isPaymentModalOpen && selectedMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
           <div className="bg-neutral-900 border border-white/10 p-10 rounded-[40px] w-full max-w-md animate-in zoom-in duration-300">
-            <h2 className="text-2xl font-bold mb-2">Record Payment</h2>
-            <p className="text-white/50 mb-8">For {selectedMember.name}</p>
+            <h2 className="text-2xl font-bold mb-2">Registrar Pago</h2>
+            <p className="text-white/50 mb-8">Para {selectedMember.name}</p>
             <div className="space-y-6">
               <input 
-                type="number" placeholder="Amount ($)" 
+                type="number" placeholder="Monto ($)" 
                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-green-500 outline-none"
                 value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)}
               />
             </div>
             <div className="flex gap-4 mt-12">
-              <button className="flex-1 py-4 text-white/40 font-bold" onClick={() => { setIsPaymentModalOpen(false); setSelectedMember(null); }}>Cancel</button>
-              <button className="flex-1 py-4 bg-green-600 rounded-2xl font-bold text-white shadow-lg shadow-green-600/20" onClick={handlePayment}>Record</button>
+              <button className="flex-1 py-4 text-white/40 font-bold" onClick={() => { setIsPaymentModalOpen(false); setSelectedMember(null); }}>Cancelar</button>
+              <button className="flex-1 py-4 bg-green-600 rounded-2xl font-bold text-white shadow-lg shadow-green-600/20" onClick={handlePayment}>Registrar</button>
             </div>
           </div>
         </div>
@@ -314,16 +314,16 @@ export default function AdminDashboard() {
           </div>
 
           <nav className="space-y-2 flex-1">
-            <SidebarItem icon={<LayoutDashboard size={20} />} label="Overview" active={activeTab === 'Overview'} onClick={() => setActiveTab('Overview')} />
-            <SidebarItem icon={<Users size={20} />} label="Members" active={activeTab === 'Members'} onClick={() => setActiveTab('Members')} />
-            <SidebarItem icon={<CreditCard size={20} />} label="Finance" active={activeTab === 'Finance'} onClick={() => setActiveTab('Finance')} />
-            <SidebarItem icon={<TrendingUp size={20} />} label="AI Analytics" active={activeTab === 'AI Analytics'} onClick={() => setActiveTab('AI Analytics')} />
+            <SidebarItem icon={<LayoutDashboard size={20} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => setActiveTab('Resumen')} />
+            <SidebarItem icon={<Users size={20} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
+            <SidebarItem icon={<CreditCard size={20} />} label="Finanzas" active={activeTab === 'Finanzas'} onClick={() => setActiveTab('Finanzas')} />
+            <SidebarItem icon={<TrendingUp size={20} />} label="Analítica IA" active={activeTab === 'Analítica IA'} onClick={() => setActiveTab('Analítica IA')} />
           </nav>
 
           <div className="pt-6 border-t border-white/5">
             <div className="p-4 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-2xl border border-white/10">
-              <p className="text-xs text-blue-400 font-semibold mb-1 uppercase tracking-widest">SaaS Status</p>
-              <p className="text-sm font-medium">Enterprise Plan</p>
+              <p className="text-xs text-blue-400 font-semibold mb-1 uppercase tracking-widest">Estado SaaS</p>
+              <p className="text-sm font-medium">Plan Enterprise</p>
             </div>
           </div>
         </aside>
@@ -332,17 +332,17 @@ export default function AdminDashboard() {
           <header className="flex items-center justify-between mb-12">
             <div>
               <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
-                {activeTab === 'Overview' ? 'Welcome Back, Admin' : activeTab}
+                {activeTab === 'Resumen' ? 'Bienvenido de vuelta, Admin' : activeTab}
               </h2>
               <p className="text-white/40">
-                {activeTab === 'Overview' 
-                  ? "Here's what's happening at Gym-Atlas today." 
-                  : `Managing your ${activeTab.toLowerCase()} in real-time.`}
+                {activeTab === 'Resumen' 
+                  ? "Esto es lo que está pasando en Gym-Atlas hoy." 
+                  : `Gestionando tu sección de ${activeTab.toLowerCase()} en tiempo real.`}
               </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer">
-                Generate Report
+                Generar Reporte
               </div>
             </div>
           </header>
@@ -371,8 +371,8 @@ function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayCli
     <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
         <div className="flex justify-between items-center mb-10">
-          <h3 className="text-xl font-bold">Member Database</h3>
-          <button onClick={onAddClick} className="bg-blue-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Add Member</button>
+          <h3 className="text-xl font-bold">Base de Datos de Socios</h3>
+          <button onClick={onAddClick} className="bg-blue-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Agregar Socio</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
            {members.map((m: any) => (
@@ -387,7 +387,7 @@ function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayCli
                  </div>
                  <div className="space-y-2 mb-8">
                    <p className="text-xs text-white/30 flex justify-between">DNI: <span className="text-white/70 font-mono">{m.dni}</span></p>
-                   <p className="text-xs text-white/30 flex justify-between">Plan: <span className="text-white/70">{m.membership_type || 'Standard'}</span></p>
+                   <p className="text-xs text-white/30 flex justify-between">Plan: <span className="text-white/70">{m.membership_type || 'Estándar'}</span></p>
                  </div>
                </div>
                
@@ -397,7 +397,7 @@ function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayCli
                       onClick={() => onPayClick(m)}
                       className="w-full py-2 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded-xl text-xs font-bold transition-all"
                     >
-                      Record Payment
+                      Registrar Pago
                     </button>
                  )}
                  <div className="flex gap-2">
@@ -414,7 +414,7 @@ function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayCli
                      onClick={() => onDelete(m.id)}
                      className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-xs font-bold transition-all"
                    >
-                     Del
+                     Elim
                    </button>
                  </div>
                </div>
@@ -427,15 +427,15 @@ function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayCli
 }
 
 function FinanceModule({ data }: any) {
-  if (!data) return <p>Loading finance data...</p>;
+  if (!data) return <p className="text-white/50 animate-pulse">Cargando datos financieros...</p>;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-bold">Revenue Timeline</h3>
-            <div className="px-4 py-2 bg-white/5 rounded-full text-xs font-bold text-white/50 tracking-widest uppercase">Last 6 Months</div>
+            <h3 className="text-xl font-bold">Línea de Tiempo de Ingresos</h3>
+            <div className="px-4 py-2 bg-white/5 rounded-full text-xs font-bold text-white/50 tracking-widest uppercase">Últimos 6 Meses</div>
           </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -460,7 +460,7 @@ function FinanceModule({ data }: any) {
         </div>
 
         <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl flex flex-col">
-          <h3 className="text-xl font-bold mb-8">Recent Transactions</h3>
+          <h3 className="text-xl font-bold mb-8">Transacciones Recientes</h3>
           <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
             {data.recent_payments.map((tx: any) => (
               <div key={tx.id} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
@@ -469,7 +469,7 @@ function FinanceModule({ data }: any) {
                     <DollarSign size={16} />
                   </div>
                   <div>
-                    <p className="font-bold text-sm">Member #{tx.member_id}</p>
+                    <p className="font-bold text-sm">Socio #{tx.member_id}</p>
                     <p className="text-xs text-white/40">{tx.date}</p>
                   </div>
                 </div>
@@ -484,7 +484,7 @@ function FinanceModule({ data }: any) {
 }
 
 function AIAnalyticsModule({ data }: any) {
-  if (!data) return <p>Loading analytics...</p>;
+  if (!data) return <p className="text-white/50 animate-pulse">Cargando analíticas...</p>;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -493,7 +493,7 @@ function AIAnalyticsModule({ data }: any) {
         <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-8">
             <Brain className="text-purple-500" />
-            <h3 className="text-xl font-bold">Predicted Attendance</h3>
+            <h3 className="text-xl font-bold">Asistencia Prevista</h3>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -505,9 +505,9 @@ function AIAnalyticsModule({ data }: any) {
                   cursor={{fill: 'rgba(255,255,255,0.05)'}}
                   contentStyle={{ backgroundColor: '#171717', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px' }}
                 />
-                <Bar dataKey="morning" stackId="a" fill="#8b5cf6" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="afternoon" stackId="a" fill="#ec4899" />
-                <Bar dataKey="evening" stackId="a" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="morning" name="Mañana" stackId="a" fill="#8b5cf6" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="afternoon" name="Tarde" stackId="a" fill="#ec4899" />
+                <Bar dataKey="evening" name="Noche" stackId="a" fill="#f43f5e" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -517,14 +517,14 @@ function AIAnalyticsModule({ data }: any) {
         <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-8">
             <AlertTriangle className="text-yellow-500" />
-            <h3 className="text-xl font-bold">Churn Drivers</h3>
+            <h3 className="text-xl font-bold">Factores de Abandono</h3>
           </div>
           <div className="space-y-6">
             {data.churn_factors.map((factor: any, i: number) => (
               <div key={i}>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-white/70">{factor.factor}</span>
-                  <span className="font-bold">{factor.impact}% Impact</span>
+                  <span className="font-bold">{factor.impact}% de Impacto</span>
                 </div>
                 <div className="w-full bg-white/5 rounded-full h-2">
                   <div className="bg-gradient-to-r from-yellow-500 to-red-500 h-2 rounded-full" style={{ width: `${factor.impact}%` }}></div>
