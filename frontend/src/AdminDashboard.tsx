@@ -245,21 +245,25 @@ export default function AdminDashboard() {
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       
-      // Header
-      pdf.setFillColor(5, 5, 5);
-      pdf.rect(0, 0, pageWidth, 40, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(22);
-      pdf.text('GYM-ATLAS: REPORTE OFICIAL', 15, 25);
-      pdf.setFontSize(10);
-      pdf.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 15, 33);
-      pdf.text(`Modulo: ${activeTab.toUpperCase()}`, pageWidth - 60, 33);
+      const addHeader = (title: string) => {
+        pdf.setFillColor(5, 5, 5);
+        pdf.rect(0, 0, pageWidth, 40, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(22);
+        pdf.text('GYM-ATLAS: REPORTE OFICIAL', 15, 25);
+        pdf.setFontSize(10);
+        pdf.text(`Fecha: ${new Date().toLocaleDateString()}`, 15, 33);
+        pdf.text(title, pageWidth - 60, 33);
+        pdf.setTextColor(0, 0, 0);
+      };
+
+      addHeader(`Modulo: ${activeTab.toUpperCase()}`);
 
       let currentY = 50;
 
       // Resumen Ejecutivo
-      pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(14);
       pdf.text('Resumen Ejecutivo', 15, currentY);
       currentY += 10;
@@ -289,6 +293,7 @@ export default function AdminDashboard() {
           body: financeData.recent_transactions.map((tx: any) => [tx.socio, `$${tx.amount}`, tx.date, tx.method, tx.status]),
           theme: 'grid'
         });
+        currentY = (pdf as any).lastAutoTable.finalY + 15;
       } else if (activeTab === 'Analítica IA' && aiData) {
         pdf.text('Analítica de Rachas y Riesgo', 15, currentY);
         currentY += 10;
@@ -298,34 +303,52 @@ export default function AdminDashboard() {
           body: aiData.streaks.map((s: any) => [s.name, `${s.racha} días`, s.status, `${Math.floor(Math.random() * 100)}%`]),
           theme: 'grid'
         });
+        currentY = (pdf as any).lastAutoTable.finalY + 15;
       }
 
-      // Capture Chart if available
-      const chartElement = chartRef1.current;
-      if (chartElement) {
-        try {
-          const canvas = await html2canvas(chartElement, { 
-            scale: 1.5, 
-            backgroundColor: '#050505',
-            useCORS: true,
-            logging: false
-          });
-          const imgData = canvas.toDataURL('image/png');
-          pdf.addPage();
-          pdf.setTextColor(0, 0, 0);
-          pdf.text('Visualización de Datos Gráficos', 15, 20);
-          const imgWidth = 180;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          pdf.addImage(imgData, 'PNG', 15, 30, imgWidth, imgHeight);
-        } catch (canvasErr) {
-          console.error('Error capturando gráfico:', canvasErr);
+      // Capture and Add Charts
+      const charts = [
+        { ref: chartRef1, title: 'Visualización de Tendencias' },
+        { ref: chartRef2, title: 'Distribución Analítica' }
+      ];
+
+      for (const chart of charts) {
+        if (chart.ref.current) {
+          try {
+            const canvas = await html2canvas(chart.ref.current, { 
+              scale: 1.5, 
+              backgroundColor: '#050505',
+              useCORS: true,
+              logging: false
+            });
+            const imgData = canvas.toDataURL('image/png');
+            
+            // Add new page if not enough space
+            const imgWidth = 180;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            if (currentY + imgHeight + 20 > pageHeight) {
+              pdf.addPage();
+              currentY = 20;
+            } else {
+              currentY += 10;
+            }
+            
+            pdf.setFontSize(14);
+            pdf.text(chart.title, 15, currentY);
+            currentY += 10;
+            pdf.addImage(imgData, 'PNG', 15, currentY, imgWidth, imgHeight);
+            currentY += imgHeight + 10;
+          } catch (canvasErr) {
+            console.error('Error capturando gráfico:', canvasErr);
+          }
         }
       }
 
       pdf.save(`GymAtlas_Reporte_${activeTab}.pdf`);
     } catch (err) {
       console.error('Error generando PDF:', err);
-      alert('Hubo un error al generar el PDF. Por favor intenta de nuevo.');
+      alert('Error al generar el PDF completo.');
     } finally {
       setIsExporting(false);
     }
