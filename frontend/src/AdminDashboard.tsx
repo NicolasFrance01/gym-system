@@ -1,14 +1,22 @@
-import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity, Wallet, Target, UsersRound } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity, Wallet, Target, UsersRound, Search, Filter, Download, Lock, ShieldCheck, Briefcase } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   BarChart, Bar, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend
 } from 'recharts';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function AdminDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginUser, setLoginUser] = useState('');
+  const [loginPass, setLoginPass] = useState('');
+  const [loginError, setLoginError] = useState(false);
+
   const [stats, setStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('Resumen');
   const [members, setMembers] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [financeData, setFinanceData] = useState<any>(null);
   const [aiData, setAiData] = useState<any>(null);
   const [pricingData, setPricingData] = useState<any>(null);
@@ -16,12 +24,22 @@ export default function AdminDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
-  const [newMember, setNewMember] = useState({ name: '', dni: '', status: 'ACTIVO', membership_type: 'Gold' });
+  const [newMember, setNewMember] = useState({ name: '', dni: '', status: 'ACTIVO', membership_type: 'Elite' });
   const [paymentAmount, setPaymentAmount] = useState('');
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    if (isAuthenticated) refreshData();
+  }, [isAuthenticated]);
+
+  const handleLogin = (e: any) => {
+    e.preventDefault();
+    if (loginUser === 'admin' && loginPass === 'admin123') {
+      setIsAuthenticated(true);
+      setLoginError(false);
+    } else {
+      setLoginError(true);
+    }
+  };
 
   const refreshData = async () => {
     // Stats Fallback
@@ -56,10 +74,20 @@ export default function AdminDashboard() {
         { id: 2, name: "Sarah Connor", dni: "10101010", status: "DEUDA", membership_type: "Premium" },
         { id: 3, name: "John Wick", dni: "99999999", status: "ACTIVO", membership_type: "Basic" },
         { id: 4, name: "Trinity Silva", dni: "77777777", status: "POR VENCER", membership_type: "Elite" },
+        { id: 5, name: "Bruce Wayne", dni: "55555555", status: "DEUDA", membership_type: "Elite" },
+        { id: 6, name: "Clark Kent", dni: "22334455", status: "ACTIVO", membership_type: "Basic" },
       ]);
     }
 
-    // Finance Fallback (Epic Expansion)
+    // Staff Fallback
+    setStaff([
+      { id: 101, name: "Marcus Rossi", role: "Entrenador Principal", status: "ACTIVO", shift: "Mañana (06:00 - 14:00)" },
+      { id: 102, name: "Elena Rojas", role: "Recepcionista", status: "ACTIVO", shift: "Tarde (14:00 - 22:00)" },
+      { id: 103, name: "Dr. Selva", role: "Médico Deportivo", status: "ACTIVO", shift: "Por Turno" },
+      { id: 104, name: "Julio M.", role: "Mantenimiento", status: "VACACIONES", shift: "Rotativo" }
+    ]);
+
+    // Finance Fallback
     try {
       const finRes = await fetch('/api/admin/finance/summary');
       if (finRes.ok) {
@@ -88,13 +116,13 @@ export default function AdminDashboard() {
           { id: "TX-1003", socio: "Sarah Connor", date: new Date(Date.now() - 86400000).toISOString().split('T')[0], amount: 79.99, method: "Efectivo", status: "Completado" },
           { id: "TX-1004", socio: "Trinity Silva", date: new Date(Date.now() - 86400000*2).toISOString().split('T')[0], amount: 99.99, method: "Tarjeta de Débito", status: "Pendiente" },
         ],
-        arpu: 87.67, // Average Revenue Per User
-        operating_margin: 61.4, // %
+        arpu: 87.67,
+        operating_margin: 61.4,
         total_revenue: 18450.50
       });
     }
 
-    // AI Analytics Fallback (Epic Expansion)
+    // AI Analytics Fallback
     try {
       const aiRes = await fetch('/api/admin/analytics/ai');
       if (aiRes.ok) {
@@ -156,42 +184,130 @@ export default function AdminDashboard() {
   };
 
   const handleAddMember = async () => {
-    const res = await fetch('/api/admin/members', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newMember)
-    });
-    
-    if (res.ok) {
+    try {
+      const res = await fetch('/api/admin/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMember)
+      });
+      
+      if (res.ok) {
+        setIsModalOpen(false);
+        setNewMember({ name: '', dni: '', status: 'ACTIVO', membership_type: 'Elite' });
+        refreshData();
+      } else {
+        throw new Error('Fallback Local');
+      }
+    } catch (e) {
+      // Fallback Vercel Local State
+      setMembers(prev => [...prev, { id: Math.floor(Math.random() * 9000) + 1000, ...newMember }]);
       setIsModalOpen(false);
-      setNewMember({ name: '', dni: '', status: 'ACTIVO', membership_type: 'Gold' });
-      refreshData();
-    } else {
-      const errorData = await res.json();
-      alert(`Error al crear socio: ${JSON.stringify(errorData.detail)}`);
+      setNewMember({ name: '', dni: '', status: 'ACTIVO', membership_type: 'Elite' });
     }
   };
 
   const handleDeleteMember = async (id: number) => {
     if (confirm('¿Estás seguro de eliminar este socio?')) {
-      await fetch(`/api/admin/members/${id}`, { method: 'DELETE' });
-      refreshData();
+      try {
+        await fetch(`/api/admin/members/${id}`, { method: 'DELETE' });
+      } catch (e) { }
+      setMembers(prev => prev.filter(m => m.id !== id));
     }
   };
 
   const handleStatusChange = async (id: number, status: string) => {
-    await fetch(`/api/admin/members/${id}/status?status=${status}`, { method: 'PUT' });
-    refreshData();
+    try {
+      await fetch(`/api/admin/members/${id}/status?status=${status}`, { method: 'PUT' });
+    } catch(e) {}
+    setMembers(prev => prev.map(m => m.id === id ? { ...m, status } : m));
   };
 
   const handlePayment = async () => {
     if (!selectedMember || !paymentAmount) return;
-    await fetch(`/api/admin/payments?member_id=${selectedMember.id}&amount=${paymentAmount}`, { method: 'POST' });
+    try {
+      await fetch(`/api/admin/payments?member_id=${selectedMember.id}&amount=${paymentAmount}`, { method: 'POST' });
+    } catch(e) {}
+    setMembers(prev => prev.map(m => m.id === selectedMember.id ? { ...m, status: 'ACTIVO' } : m));
     setIsPaymentModalOpen(false);
     setSelectedMember(null);
     setPaymentAmount('');
-    refreshData();
   };
+
+  const handleExportPDF = async () => {
+    const element = document.getElementById('export-content');
+    if (!element) return;
+    
+    // Mostramos un mensaje temporal
+    const originalStyle = element.style.cssText;
+    element.style.background = '#050505';
+    element.style.padding = '20px';
+
+    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#050505' });
+    const imgData = canvas.toDataURL('image/png');
+    
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Reporte_GymAtlas_${activeTab}.pdf`);
+    
+    element.style.cssText = originalStyle;
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="w-full max-w-md bg-white/5 border border-white/10 p-10 rounded-[40px] backdrop-blur-2xl z-10 shadow-2xl animate-in zoom-in duration-500">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30">
+              <ShieldCheck size={32} className="text-white" />
+            </div>
+          </div>
+          <h2 className="text-3xl font-bold text-center text-white tracking-tighter mb-2">Acceso Administrativo</h2>
+          <p className="text-center text-white/50 mb-8">Ingresa tus credenciales para continuar</p>
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <div className="relative">
+                <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Usuario" 
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:border-blue-500 outline-none transition-colors"
+                  value={loginUser}
+                  onChange={(e) => setLoginUser(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+                <input 
+                  type="password" 
+                  placeholder="Contraseña" 
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:border-blue-500 outline-none transition-colors"
+                  value={loginPass}
+                  onChange={(e) => setLoginPass(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            {loginError && <p className="text-red-400 text-sm text-center font-bold bg-red-500/10 py-2 rounded-lg">Credenciales incorrectas</p>}
+
+            <button type="submit" className="w-full py-4 bg-blue-600 rounded-2xl font-bold text-white shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
+              Ingresar al Sistema
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -205,6 +321,8 @@ export default function AdminDashboard() {
             onPayClick={(m: any) => { setSelectedMember(m); setIsPaymentModalOpen(true); }}
           />
         );
+      case 'Staff':
+        return <StaffModule staff={staff} />;
       case 'Finanzas':
         return <FinanceModule data={financeData} />;
       case 'Analítica IA':
@@ -298,11 +416,11 @@ export default function AdminDashboard() {
               />
               <select 
                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-blue-500 outline-none"
-                value={newMember.status} onChange={e => setNewMember({...newMember, status: e.target.value})}
+                value={newMember.membership_type} onChange={e => setNewMember({...newMember, membership_type: e.target.value})}
               >
-                <option value="ACTIVO">Activo</option>
-                <option value="DEUDA">Deuda</option>
-                <option value="POR VENCER">Por Vencer</option>
+                <option value="Basic">Basic</option>
+                <option value="Premium">Premium</option>
+                <option value="Elite">Elite</option>
               </select>
             </div>
             <div className="flex gap-4 mt-12">
@@ -335,7 +453,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Decorative Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
@@ -352,15 +470,15 @@ export default function AdminDashboard() {
           <nav className="space-y-2 flex-1">
             <SidebarItem icon={<LayoutDashboard size={20} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => setActiveTab('Resumen')} />
             <SidebarItem icon={<Users size={20} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
+            <SidebarItem icon={<Briefcase size={20} />} label="Staff" active={activeTab === 'Staff'} onClick={() => setActiveTab('Staff')} />
             <SidebarItem icon={<CreditCard size={20} />} label="Finanzas" active={activeTab === 'Finanzas'} onClick={() => setActiveTab('Finanzas')} />
             <SidebarItem icon={<TrendingUp size={20} />} label="Analítica IA" active={activeTab === 'Analítica IA'} onClick={() => setActiveTab('Analítica IA')} />
           </nav>
 
           <div className="pt-6 border-t border-white/5">
-            <div className="p-4 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-2xl border border-white/10">
-              <p className="text-xs text-blue-400 font-semibold mb-1 uppercase tracking-widest">Estado SaaS</p>
-              <p className="text-sm font-medium">Plan Enterprise</p>
-            </div>
+            <button onClick={() => setIsAuthenticated(false)} className="w-full p-4 hover:bg-white/5 rounded-2xl transition-colors text-white/50 hover:text-red-400 font-bold text-sm text-center">
+              Cerrar Sesión
+            </button>
           </div>
         </aside>
 
@@ -377,13 +495,21 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer">
-                Generar Reporte
-              </div>
+              {(activeTab === 'Finanzas' || activeTab === 'Analítica IA') && (
+                <button 
+                  onClick={handleExportPDF}
+                  className="flex items-center gap-2 px-5 py-3 bg-white/5 border border-white/10 rounded-full text-sm font-bold hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer shadow-lg"
+                >
+                  <Download size={16} />
+                  Descargar Reporte PDF
+                </button>
+              )}
             </div>
           </header>
 
-          {renderContent()}
+          <div id="export-content">
+            {renderContent()}
+          </div>
         </main>
       </div>
     </div>
@@ -402,20 +528,110 @@ function SidebarItem({ icon, label, active = false, onClick }: any) {
   );
 }
 
-function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayClick }: any) {
+function StaffModule({ staff }: any) {
   return (
     <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
         <div className="flex justify-between items-center mb-10">
-          <h3 className="text-xl font-bold">Base de Datos de Socios</h3>
-          <button onClick={onAddClick} className="bg-blue-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Agregar Socio</button>
+          <h3 className="text-xl font-bold">Gestión de Usuarios / Staff</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-           {members.map((m: any) => (
+           {staff.map((s: any) => (
+             <div key={s.id} className="p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group flex flex-col justify-between">
+               <div>
+                 <div className="flex items-center gap-4 mb-6">
+                   <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg shadow-purple-500/20">{s.name[0]}</div>
+                   <div>
+                     <p className="font-bold text-white text-lg">{s.name}</p>
+                     <p className="text-xs font-bold text-purple-400 tracking-widest uppercase">{s.role}</p>
+                   </div>
+                 </div>
+                 <div className="space-y-3 mb-4">
+                   <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                     <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Turno Actual</p>
+                     <p className="text-sm text-white/80">{s.shift}</p>
+                   </div>
+                 </div>
+               </div>
+               <div className="pt-4 border-t border-white/5 mt-4 flex justify-between items-center">
+                 <span className={`text-xs font-bold px-3 py-1 rounded-full ${s.status === 'ACTIVO' ? 'bg-green-500/10 text-green-400' : 'bg-white/10 text-white/50'}`}>
+                   {s.status}
+                 </span>
+                 <button className="text-xs text-blue-400 hover:text-white font-bold transition-colors">Editar Perfil</button>
+               </div>
+             </div>
+           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayClick }: any) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterPlan, setFilterPlan] = useState('ALL');
+
+  const filteredMembers = members.filter((m: any) => {
+    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || String(m.dni).includes(searchTerm);
+    const matchesStatus = filterStatus === 'ALL' || m.status === filterStatus;
+    const matchesPlan = filterPlan === 'ALL' || m.membership_type === filterPlan;
+    return matchesSearch && matchesStatus && matchesPlan;
+  });
+
+  return (
+    <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+          <h3 className="text-xl font-bold">Directorio de Socios</h3>
+          
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            {/* Search Bar */}
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={16} />
+              <input 
+                type="text" 
+                placeholder="Buscar por Nombre o DNI..." 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white focus:border-blue-500 outline-none"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-2">
+              <select 
+                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none"
+                value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              >
+                <option value="ALL">Cualquier Estado</option>
+                <option value="ACTIVO">Activos</option>
+                <option value="DEUDA">Con Deuda</option>
+                <option value="POR VENCER">Por Vencer</option>
+              </select>
+              <select 
+                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none"
+                value={filterPlan} onChange={e => setFilterPlan(e.target.value)}
+              >
+                <option value="ALL">Cualquier Plan</option>
+                <option value="Basic">Basic</option>
+                <option value="Premium">Premium</option>
+                <option value="Elite">Elite</option>
+              </select>
+            </div>
+
+            <button onClick={onAddClick} className="bg-blue-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
+              + Nuevo Socio
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+           {filteredMembers.map((m: any) => (
              <div key={m.id} className="p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all group flex flex-col justify-between">
                <div>
                  <div className="flex items-center gap-4 mb-6">
-                   <div className="w-14 h-14 bg-gradient-to-br from-neutral-700 to-neutral-900 rounded-2xl flex items-center justify-center font-bold text-xl">{m.name[0]}</div>
+                   <div className="w-14 h-14 bg-gradient-to-br from-neutral-700 to-neutral-900 rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg">{m.name[0]}</div>
                    <div>
                      <p className="font-bold text-white text-lg">{m.name}</p>
                      <p className={`text-xs font-bold tracking-widest ${m.status === 'ACTIVO' ? 'text-green-400' : m.status === 'DEUDA' ? 'text-red-400' : 'text-yellow-400'}`}>● {m.status}</p>
@@ -450,12 +666,18 @@ function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayCli
                      onClick={() => onDelete(m.id)}
                      className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-xs font-bold transition-all"
                    >
-                     Elim
+                     Eliminar
                    </button>
                  </div>
                </div>
              </div>
            ))}
+           {filteredMembers.length === 0 && (
+             <div className="col-span-full py-12 text-center text-white/30">
+               <Filter size={48} className="mx-auto mb-4 opacity-20" />
+               <p>No se encontraron socios que coincidan con la búsqueda.</p>
+             </div>
+           )}
         </div>
       </div>
     </div>
@@ -649,7 +871,7 @@ function AIAnalyticsModule({ data }: any) {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Attendance Prediction (Existing) */}
+        {/* Attendance Prediction */}
         <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-8">
             <Brain className="text-purple-500" />
