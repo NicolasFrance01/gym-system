@@ -1,6 +1,6 @@
 import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -391,7 +391,7 @@ function FinanceModule({ data }: any) {
   );
 }
 
-function AIAnalyticsModule({ data, pricing }: any) {
+function AIAnalyticsModule({ data }: any) {
   if (!data) return <p>Loading analytics...</p>;
 
   return (
