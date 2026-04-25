@@ -1,6 +1,9 @@
-import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity, Wallet, Target, UsersRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  BarChart, Bar, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend
+} from 'recharts';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -29,7 +32,7 @@ export default function AdminDashboard() {
     } catch {
       setStats({
         active_members: 142,
-        total_revenue: 12450.50,
+        total_revenue: 18450.50,
         churn_risk_count: 8,
         por_vencer_count: 15,
         alerts: [
@@ -56,7 +59,7 @@ export default function AdminDashboard() {
       ]);
     }
 
-    // Finance Fallback
+    // Finance Fallback (Epic Expansion)
     try {
       const finRes = await fetch('/api/admin/finance/summary');
       if (finRes.ok) {
@@ -66,20 +69,32 @@ export default function AdminDashboard() {
       } else throw new Error('API failed');
     } catch {
       setFinanceData({
-        chart_data: [
-          { month: "Nov", revenue: 4200 }, { month: "Dic", revenue: 5100 },
-          { month: "Ene", revenue: 4800 }, { month: "Feb", revenue: 6500 },
-          { month: "Mar", revenue: 8900 }, { month: "Abr", revenue: 12450 }
+        cashflow_data: [
+          { month: "Nov", ingresos: 4200, gastos: 2100 }, 
+          { month: "Dic", ingresos: 5100, gastos: 2800 },
+          { month: "Ene", ingresos: 4800, gastos: 2000 }, 
+          { month: "Feb", ingresos: 6500, gastos: 3100 },
+          { month: "Mar", ingresos: 8900, gastos: 4200 }, 
+          { month: "Abr", ingresos: 12450, gastos: 4800 }
         ],
-        recent_payments: [
-          { id: 101, member_id: 1, amount: 99.99, date: new Date().toISOString().split('T')[0] },
-          { id: 102, member_id: 3, amount: 49.99, date: new Date().toISOString().split('T')[0] }
+        revenue_distribution: [
+          { name: "Basic", value: 3000 },
+          { name: "Premium", value: 5500 },
+          { name: "Elite", value: 3950 }
         ],
-        total_revenue: 12450.50
+        recent_transactions: [
+          { id: "TX-1001", socio: "Neon Matrix", date: new Date().toISOString().split('T')[0], amount: 99.99, method: "Tarjeta de Crédito", status: "Completado" },
+          { id: "TX-1002", socio: "John Wick", date: new Date().toISOString().split('T')[0], amount: 49.99, method: "Transferencia", status: "Completado" },
+          { id: "TX-1003", socio: "Sarah Connor", date: new Date(Date.now() - 86400000).toISOString().split('T')[0], amount: 79.99, method: "Efectivo", status: "Completado" },
+          { id: "TX-1004", socio: "Trinity Silva", date: new Date(Date.now() - 86400000*2).toISOString().split('T')[0], amount: 99.99, method: "Tarjeta de Débito", status: "Pendiente" },
+        ],
+        arpu: 87.67, // Average Revenue Per User
+        operating_margin: 61.4, // %
+        total_revenue: 18450.50
       });
     }
 
-    // AI Analytics Fallback
+    // AI Analytics Fallback (Epic Expansion)
     try {
       const aiRes = await fetch('/api/admin/analytics/ai');
       if (aiRes.ok) {
@@ -103,6 +118,26 @@ export default function AdminDashboard() {
           {"factor": "Sensibilidad al Precio", "impact": 20},
           {"factor": "Falta de Entrenador", "impact": 15},
           {"factor": "Distancia al Gimnasio", "impact": 10},
+        ],
+        performance_radar: [
+          { subject: 'Retención', A: 85, B: 65, fullMark: 100 },
+          { subject: 'Adquisición', A: 90, B: 75, fullMark: 100 },
+          { subject: 'Asistencia', A: 78, B: 70, fullMark: 100 },
+          { subject: 'Satisfacción', A: 95, B: 80, fullMark: 100 },
+          { subject: 'Ingresos', A: 88, B: 60, fullMark: 100 },
+        ],
+        member_growth: [
+          { month: 'Oct', altas: 15, bajas: 5 },
+          { month: 'Nov', altas: 20, bajas: 8 },
+          { month: 'Dic', altas: 45, bajas: 12 },
+          { month: 'Ene', altas: 80, bajas: 10 },
+          { month: 'Feb', altas: 65, bajas: 15 },
+          { month: 'Mar', altas: 95, bajas: 18 },
+        ],
+        critical_risk_list: [
+          { name: "Sarah Connor", dni: "10101010", days_absent: 14, risk: 89, reason: "Baja Asistencia" },
+          { name: "Bruce Wayne", dni: "55555555", days_absent: 21, risk: 95, reason: "Deuda Pendiente" },
+          { name: "Peter Parker", dni: "44444444", days_absent: 8, risk: 65, reason: "No usa beneficios Elite" },
         ]
       });
     }
@@ -244,7 +279,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans overflow-x-hidden flex">
       {/* Modal for Adding Member */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
@@ -299,13 +334,14 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Decorative Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="relative z-10 flex h-screen overflow-hidden">
-        <aside className="w-64 border-r border-white/5 bg-black/20 backdrop-blur-2xl flex flex-col p-6">
+      <div className="relative z-10 flex w-full h-screen overflow-hidden">
+        <aside className="w-64 border-r border-white/5 bg-black/20 backdrop-blur-2xl flex flex-col p-6 z-20">
           <div className="flex items-center gap-3 mb-12">
             <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
               <Brain size={24} className="text-white" />
@@ -328,7 +364,7 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-10 bg-black/10">
+        <main className="flex-1 overflow-y-auto p-10 bg-black/10 z-10 relative">
           <header className="flex items-center justify-between mb-12">
             <div>
               <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
@@ -428,55 +464,126 @@ function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayCli
 
 function FinanceModule({ data }: any) {
   if (!data) return <p className="text-white/50 animate-pulse">Cargando datos financieros...</p>;
+  
+  const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899'];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
+      {/* Finance Top Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center gap-4">
+          <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400"><DollarSign /></div>
+          <div>
+            <p className="text-white/40 text-xs uppercase tracking-widest font-bold">Ingreso Total Mes</p>
+            <h4 className="text-2xl font-bold text-white">${data.total_revenue}</h4>
+          </div>
+        </div>
+        <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400"><UsersRound /></div>
+          <div>
+            <p className="text-white/40 text-xs uppercase tracking-widest font-bold">ARPU (Promedio x Usuario)</p>
+            <h4 className="text-2xl font-bold text-white">${data.arpu}</h4>
+          </div>
+        </div>
+        <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center gap-4">
+          <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-400"><Wallet /></div>
+          <div>
+            <p className="text-white/40 text-xs uppercase tracking-widest font-bold">Margen Operativo</p>
+            <h4 className="text-2xl font-bold text-white">{data.operating_margin}%</h4>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Cash Flow Chart */}
+        <div className="xl:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-bold">Línea de Tiempo de Ingresos</h3>
-            <div className="px-4 py-2 bg-white/5 rounded-full text-xs font-bold text-white/50 tracking-widest uppercase">Últimos 6 Meses</div>
+            <h3 className="text-xl font-bold">Flujo de Caja Anual</h3>
+            <div className="px-4 py-2 bg-white/5 rounded-full text-xs font-bold text-white/50 tracking-widest uppercase">Ingresos vs Gastos</div>
           </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.chart_data}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+              <BarChart data={data.cashflow_data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="month" stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#171717', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px' }}
                   itemStyle={{ color: '#fff' }}
+                  cursor={{fill: 'rgba(255,255,255,0.05)'}}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-              </AreaChart>
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', opacity: 0.8 }} />
+                <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="gastos" name="Gastos Operativos" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
+        {/* Revenue Distribution */}
         <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl flex flex-col">
-          <h3 className="text-xl font-bold mb-8">Transacciones Recientes</h3>
-          <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-            {data.recent_payments.map((tx: any) => (
-              <div key={tx.id} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-                    <DollarSign size={16} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm">Socio #{tx.member_id}</p>
-                    <p className="text-xs text-white/40">{tx.date}</p>
-                  </div>
-                </div>
-                <p className="font-bold text-green-400">+${tx.amount.toFixed(2)}</p>
-              </div>
-            ))}
+          <h3 className="text-xl font-bold mb-8">Distribución por Membresía</h3>
+          <div className="flex-1 min-h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.revenue_distribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {data.revenue_distribution.map((_: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#171717', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px' }}
+                  itemStyle={{ color: '#fff' }}
+                  formatter={(value: any) => `$${value}`}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', opacity: 0.8 }} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Advanced Transactions Table */}
+      <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
+        <h3 className="text-xl font-bold mb-6">Registro de Movimientos Financieros</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
+                <th className="p-4 font-semibold">ID Transacción</th>
+                <th className="p-4 font-semibold">Fecha</th>
+                <th className="p-4 font-semibold">Socio</th>
+                <th className="p-4 font-semibold">Método</th>
+                <th className="p-4 font-semibold">Estado</th>
+                <th className="p-4 font-semibold text-right">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.recent_transactions.map((tx: any, i: number) => (
+                <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <td className="p-4 font-mono text-sm text-white/50">{tx.id}</td>
+                  <td className="p-4 text-sm text-white/70">{tx.date}</td>
+                  <td className="p-4 font-medium">{tx.socio}</td>
+                  <td className="p-4 text-sm text-white/70">{tx.method}</td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${tx.status === 'Completado' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                      {tx.status}
+                    </span>
+                  </td>
+                  <td className="p-4 font-bold text-right text-green-400">${tx.amount.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -488,12 +595,65 @@ function AIAnalyticsModule({ data }: any) {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Attendance Prediction */}
+        {/* Performance Radar */}
+        <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
+          <div className="flex items-center gap-3 mb-8">
+            <Target className="text-blue-500" />
+            <h3 className="text-xl font-bold">Rendimiento Global del Gimnasio</h3>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data.performance_radar}>
+                <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar name="Mes Actual" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.5} />
+                <Radar name="Mes Anterior" dataKey="B" stroke="#ec4899" fill="#ec4899" fillOpacity={0.2} />
+                <Legend wrapperStyle={{ fontSize: '12px', marginTop: '10px' }} />
+                <Tooltip contentStyle={{ backgroundColor: '#171717', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px' }} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Member Growth Area */}
+        <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
+          <div className="flex items-center gap-3 mb-8">
+            <TrendingUp className="text-green-500" />
+            <h3 className="text-xl font-bold">Crecimiento de Socios</h3>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.member_growth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorAltas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="month" stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#171717', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px' }}
+                />
+                <Area type="monotone" dataKey="altas" name="Nuevos Socios" stroke="#10b981" fillOpacity={1} fill="url(#colorAltas)" />
+                <Area type="monotone" dataKey="bajas" name="Bajas" stroke="#f43f5e" fillOpacity={0.1} fill="#f43f5e" />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Attendance Prediction (Existing) */}
         <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-8">
             <Brain className="text-purple-500" />
-            <h3 className="text-xl font-bold">Asistencia Prevista</h3>
+            <h3 className="text-xl font-bold">Asistencia Prevista por Día</h3>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -508,32 +668,35 @@ function AIAnalyticsModule({ data }: any) {
                 <Bar dataKey="morning" name="Mañana" stackId="a" fill="#8b5cf6" radius={[0, 0, 4, 4]} />
                 <Bar dataKey="afternoon" name="Tarde" stackId="a" fill="#ec4899" />
                 <Bar dataKey="evening" name="Noche" stackId="a" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Churn Analysis */}
-        <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl">
+        {/* Critical Risk List */}
+        <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 backdrop-blur-xl flex flex-col">
           <div className="flex items-center gap-3 mb-8">
-            <AlertTriangle className="text-yellow-500" />
-            <h3 className="text-xl font-bold">Factores de Abandono</h3>
+            <AlertTriangle className="text-red-500" />
+            <h3 className="text-xl font-bold">Alerta: Riesgo Crítico de Abandono</h3>
           </div>
-          <div className="space-y-6">
-            {data.churn_factors.map((factor: any, i: number) => (
-              <div key={i}>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-white/70">{factor.factor}</span>
-                  <span className="font-bold">{factor.impact}% de Impacto</span>
+          <div className="flex-1 space-y-4">
+            {data.critical_risk_list.map((risk: any, i: number) => (
+              <div key={i} className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-center justify-between hover:bg-red-500/10 transition-colors">
+                <div>
+                  <p className="font-bold text-white text-lg">{risk.name}</p>
+                  <p className="text-xs text-white/50">{risk.reason} • {risk.days_absent} días ausente</p>
                 </div>
-                <div className="w-full bg-white/5 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-yellow-500 to-red-500 h-2 rounded-full" style={{ width: `${factor.impact}%` }}></div>
+                <div className="text-right">
+                  <p className="text-xs text-red-400 font-bold uppercase tracking-wider mb-1">Probabilidad</p>
+                  <p className="text-2xl font-black text-red-500">{risk.risk}%</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
+
     </div>
   );
 }
