@@ -1,8 +1,8 @@
-import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, DollarSign, Activity, Wallet, Target, UsersRound, Search, Filter, Download, Lock, ShieldCheck, Briefcase, Flame } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Brain, TrendingUp, AlertTriangle, Activity, Search, Download, Lock, ShieldCheck, Briefcase, Flame } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  BarChart, Bar, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  BarChart, Bar
 } from 'recharts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -29,10 +29,8 @@ export default function AdminDashboard() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [isExporting, setIsExporting] = useState(false);
 
-  // Refs for charts to capture for PDF
+  // Ref for chart to capture for PDF
   const chartRef1 = useRef(null);
-  const chartRef2 = useRef(null);
-  const chartRef3 = useRef(null);
 
   useEffect(() => {
     if (isAuthenticated) refreshData();
@@ -281,7 +279,7 @@ export default function AdminDashboard() {
         ['Alertas Críticas', stats?.alerts?.length || '2'],
       ],
       theme: 'striped',
-      headStyles: { fillStyle: [37, 99, 235] }
+      headStyles: { fillColor: [37, 99, 235] }
     });
 
     currentY = (pdf as any).lastAutoTable.finalY + 15;
@@ -313,6 +311,7 @@ export default function AdminDashboard() {
       const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: '#050505' });
       const imgData = canvas.toDataURL('image/png');
       pdf.addPage();
+      pdf.setTextColor(0, 0, 0);
       pdf.text('Visualización de Datos', 15, 20);
       const imgWidth = 180;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -355,7 +354,7 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Socios': return <MembersModule members={members} onDelete={handleDeleteMember} onAddClick={() => setIsModalOpen(true)} onChangeStatus={handleStatusChange} onPayClick={(m: any) => { setSelectedMember(m); setIsPaymentModalOpen(true); }} />;
+      case 'Socios': return <MembersModule members={members} onDelete={handleDeleteMember} onAddClick={() => setIsModalOpen(true)} onPayClick={(m: any) => { setSelectedMember(m); setIsPaymentModalOpen(true); }} />;
       case 'Staff': return <StaffModule staff={staff} />;
       case 'Finanzas': return <FinanceModule data={financeData} chartRef={chartRef1} />;
       case 'Analítica IA': return <AIAnalyticsModule data={aiData} chartRef={chartRef1} />;
@@ -367,6 +366,12 @@ export default function AdminDashboard() {
             <StatCard title="Riesgo de Abandono" value={stats?.churn_risk_count || '0'} trend="-2.1%" caution delay="0.2s" />
             <StatCard title="Próximos a Vencer" value={stats?.por_vencer_count || '0'} trend="Alerta" caution delay="0.3s" />
           </div>
+          
+          <div className="bg-white/5 p-6 rounded-2xl mb-12 border border-white/5">
+             <h4 className="font-bold mb-2">Motor de Precios Dinámicos</h4>
+             <p className="text-3xl font-black text-green-400">${pricingData?.calculated_price || '0.00'}</p>
+          </div>
+
           <section className="bg-black/40 border border-white/5 rounded-3xl p-8 backdrop-blur-xl mb-12 relative group">
             <div className="flex items-center gap-3 mb-6"><TrendingUp className="text-blue-500" /><h3 className="text-xl font-semibold text-white">Predicciones Inteligentes</h3></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -386,6 +391,8 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans overflow-x-hidden flex">
       {isModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6"><div className="bg-neutral-900 border border-white/10 p-10 rounded-[40px] w-full max-w-md"><h2 className="text-2xl font-bold mb-8">Nuevo Socio</h2><div className="space-y-6"><input type="text" placeholder="Nombre" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} /><input type="text" placeholder="DNI" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none" value={newMember.dni} onChange={e => setNewMember({...newMember, dni: e.target.value})} /></div><div className="flex gap-4 mt-12"><button className="flex-1 py-4 text-white/40" onClick={() => setIsModalOpen(false)}>Cancelar</button><button className="flex-1 py-4 bg-blue-600 rounded-2xl font-bold text-white" onClick={handleAddMember}>Crear</button></div></div></div>}
+      {isPaymentModalOpen && selectedMember && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6"><div className="bg-neutral-900 border border-white/10 p-10 rounded-[40px] w-full max-w-md"><h2 className="text-2xl font-bold mb-8">Pagar</h2><p className="mb-4">Socio: {selectedMember.name}</p><input type="number" placeholder="Monto" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} /><div className="flex gap-4 mt-12"><button className="flex-1 py-4 text-white/40" onClick={() => setIsPaymentModalOpen(false)}>Cancelar</button><button className="flex-1 py-4 bg-green-600 rounded-2xl font-bold text-white" onClick={handlePayment}>Pagar</button></div></div></div>}
+      
       <aside className="w-64 border-r border-white/5 bg-black/20 backdrop-blur-2xl flex flex-col p-6 z-20">
         <div className="flex items-center gap-3 mb-12"><div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><Brain size={24} className="text-white" /></div><h1 className="text-xl font-bold tracking-tighter">GYM-ATLAS</h1></div>
         <nav className="space-y-2 flex-1">
@@ -417,7 +424,7 @@ function SidebarItem({ icon, label, active = false, onClick }: any) {
   return <div onClick={onClick} className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all cursor-pointer group ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-white/40 hover:text-white hover:bg-white/5'}`}>{icon}<span className="font-medium">{label}</span></div>;
 }
 
-function MembersModule({ members, onDelete, onAddClick, onChangeStatus, onPayClick }: any) {
+function MembersModule({ members, onDelete, onAddClick, onPayClick }: any) {
   const [searchTerm, setSearchTerm] = useState('');
   const filteredMembers = members.filter((m: any) => m.name.toLowerCase().includes(searchTerm.toLowerCase()) || String(m.dni).includes(searchTerm));
   return (
