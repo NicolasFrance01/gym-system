@@ -242,78 +242,93 @@ export default function AdminDashboard() {
 
   const handleExportPDF = async () => {
     setIsExporting(true);
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    
-    // Header
-    pdf.setFillColor(5, 5, 5);
-    pdf.rect(0, 0, pageWidth, 40, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(22);
-    pdf.text('GYM-ATLAS: REPORTE OFICIAL', 15, 25);
-    pdf.setFontSize(10);
-    pdf.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 15, 33);
-    pdf.text(`Modulo: ${activeTab.toUpperCase()}`, pageWidth - 60, 33);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      
+      // Header
+      pdf.setFillColor(5, 5, 5);
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(22);
+      pdf.text('GYM-ATLAS: REPORTE OFICIAL', 15, 25);
+      pdf.setFontSize(10);
+      pdf.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 15, 33);
+      pdf.text(`Modulo: ${activeTab.toUpperCase()}`, pageWidth - 60, 33);
 
-    let currentY = 50;
+      let currentY = 50;
 
-    // Resumen Ejecutivo
-    pdf.setTextColor(0, 0, 0);
-    pdf.setFontSize(14);
-    pdf.text('Resumen Ejecutivo', 15, currentY);
-    currentY += 10;
-
-    autoTable(pdf, {
-      startY: currentY,
-      head: [['Métrica', 'Valor']],
-      body: [
-        ['Socios Activos', stats?.active_members || '142'],
-        ['Ingresos Totales', `$${stats?.total_revenue?.toFixed(2) || '18450.50'}`],
-        ['Riesgo de Abandono', stats?.churn_risk_count || '8'],
-        ['Alertas Críticas', stats?.alerts?.length || '2'],
-      ],
-      theme: 'striped',
-      headStyles: { fillColor: [37, 99, 235] }
-    });
-
-    currentY = (pdf as any).lastAutoTable.finalY + 15;
-
-    // Specific Content based on active tab
-    if (activeTab === 'Finanzas') {
-      pdf.text('Detalle de Transacciones Recientes', 15, currentY);
-      currentY += 10;
-      autoTable(pdf, {
-        startY: currentY,
-        head: [['Socio', 'Monto', 'Fecha', 'Método', 'Estado']],
-        body: financeData.recent_transactions.map((tx: any) => [tx.socio, `$${tx.amount}`, tx.date, tx.method, tx.status]),
-        theme: 'grid'
-      });
-    } else if (activeTab === 'Analítica IA') {
-      pdf.text('Analítica de Rachas y Riesgo', 15, currentY);
-      currentY += 10;
-      autoTable(pdf, {
-        startY: currentY,
-        head: [['Socio', 'Racha', 'Estado', 'Riesgo de Abandono']],
-        body: aiData.streaks.map((s: any) => [s.name, `${s.racha} días`, s.status, `${Math.floor(Math.random() * 100)}%`]),
-        theme: 'grid'
-      });
-    }
-
-    // Capture Chart if available
-    const chartElement = chartRef1.current;
-    if (chartElement) {
-      const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: '#050505' });
-      const imgData = canvas.toDataURL('image/png');
-      pdf.addPage();
+      // Resumen Ejecutivo
       pdf.setTextColor(0, 0, 0);
-      pdf.text('Visualización de Datos', 15, 20);
-      const imgWidth = 180;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 15, 30, imgWidth, imgHeight);
-    }
+      pdf.setFontSize(14);
+      pdf.text('Resumen Ejecutivo', 15, currentY);
+      currentY += 10;
 
-    pdf.save(`GymAtlas_Reporte_${activeTab}.pdf`);
-    setIsExporting(false);
+      autoTable(pdf, {
+        startY: currentY,
+        head: [['Métrica', 'Valor']],
+        body: [
+          ['Socios Activos', stats?.active_members || '142'],
+          ['Ingresos Totales', `$${stats?.total_revenue?.toFixed(2) || '18450.50'}`],
+          ['Riesgo de Abandono', stats?.churn_risk_count || '8'],
+          ['Alertas Críticas', stats?.alerts?.length || '2'],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [37, 99, 235] }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 15;
+
+      // Specific Content based on active tab
+      if (activeTab === 'Finanzas' && financeData) {
+        pdf.text('Detalle de Transacciones Recientes', 15, currentY);
+        currentY += 10;
+        autoTable(pdf, {
+          startY: currentY,
+          head: [['Socio', 'Monto', 'Fecha', 'Método', 'Estado']],
+          body: financeData.recent_transactions.map((tx: any) => [tx.socio, `$${tx.amount}`, tx.date, tx.method, tx.status]),
+          theme: 'grid'
+        });
+      } else if (activeTab === 'Analítica IA' && aiData) {
+        pdf.text('Analítica de Rachas y Riesgo', 15, currentY);
+        currentY += 10;
+        autoTable(pdf, {
+          startY: currentY,
+          head: [['Socio', 'Racha', 'Estado', 'Riesgo de Abandono']],
+          body: aiData.streaks.map((s: any) => [s.name, `${s.racha} días`, s.status, `${Math.floor(Math.random() * 100)}%`]),
+          theme: 'grid'
+        });
+      }
+
+      // Capture Chart if available
+      const chartElement = chartRef1.current;
+      if (chartElement) {
+        try {
+          const canvas = await html2canvas(chartElement, { 
+            scale: 1.5, 
+            backgroundColor: '#050505',
+            useCORS: true,
+            logging: false
+          });
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addPage();
+          pdf.setTextColor(0, 0, 0);
+          pdf.text('Visualización de Datos Gráficos', 15, 20);
+          const imgWidth = 180;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          pdf.addImage(imgData, 'PNG', 15, 30, imgWidth, imgHeight);
+        } catch (canvasErr) {
+          console.error('Error capturando gráfico:', canvasErr);
+        }
+      }
+
+      pdf.save(`GymAtlas_Reporte_${activeTab}.pdf`);
+    } catch (err) {
+      console.error('Error generando PDF:', err);
+      alert('Hubo un error al generar el PDF. Por favor intenta de nuevo.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (!isAuthenticated) {
