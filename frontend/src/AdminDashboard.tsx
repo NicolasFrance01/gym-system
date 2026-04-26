@@ -1,8 +1,8 @@
-import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, Dumbbell, Calendar as CalendarIcon, Flame, Plus, X, Settings, Activity, PieChart as PieIcon, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, Calendar as CalendarIcon, Flame, Plus, X, Settings, Activity, PieChart as PieIcon, BarChart3, Receipt, CreditCard, Smartphone, Banknote } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, LineChart, Line, PieChart, Pie, Cell, Legend
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,29 +15,26 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState('Resumen');
   
-  // Date Filters
   const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0]; });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
 
-  // Unified State
   const [members, setMembers] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([
-    { id: 1, name: "Básico", price: 5000, daysPerWeek: 3, classes: [] },
-    { id: 2, name: "Premium", price: 8500, daysPerWeek: 5, classes: ["Yoga"] },
-    { id: 3, name: "Elite", price: 12000, daysPerWeek: 7, classes: ["Yoga", "CrossFit", "Spinning"] },
+    { id: 1, name: "Básico (3 Días)", price: 5000, daysPerWeek: 3, classes: [] },
+    { id: 2, name: "Premium (Clases)", price: 8500, daysPerWeek: 5, classes: ["Yoga", "Zumba"] },
+    { id: 3, name: "Elite (Libre)", price: 12000, daysPerWeek: 7, classes: ["Yoga", "CrossFit", "Spinning"] },
+    { id: 4, name: "Boxeo", price: 7000, daysPerWeek: 3, classes: ["Boxeo"] },
   ]);
   const [financeData, setFinanceData] = useState<any>(null);
   const [aiData, setAiData] = useState<any>(null);
   const [classes, setClasses] = useState<any[]>([
     { id: 1, name: "Yoga", day: "Lunes", startTime: "09:00", endTime: "10:30", instructor: "Ana" },
     { id: 2, name: "CrossFit", day: "Martes", startTime: "18:00", endTime: "19:30", instructor: "Marcos" },
-    { id: 3, name: "Spinning", day: "Miércoles", startTime: "19:00", endTime: "20:30", instructor: "Elena" },
   ]);
 
-  // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'member' | 'staff' | 'workout' | 'plan' | 'evolution' | 'class'>('member');
+  const [modalType, setModalType] = useState<'member' | 'staff' | 'workout' | 'plan' | 'evolution' | 'class' | 'history'>('member');
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -54,9 +51,18 @@ export default function AdminDashboard() {
   const refreshData = async () => {
     if (members.length === 0) {
       setMembers([
-        { id: 1, name: "Neon Matrix", dni: "1111", password: "123", status: "ACTIVO", membership_type: "Elite", expiry_date: "2026-05-20", custom_routine: [{name: "Press de Banca", sets: "4", reps: "10"}, {name: "Sentadillas", sets: "3", reps: "12"}], assigned_classes: ["Yoga"], evolution: [{ date: "2026-01-01", exercise: "Press de Banca", weight: 50 }, { date: "2026-02-01", exercise: "Press de Banca", weight: 60 }, { date: "2026-03-01", exercise: "Press de Banca", weight: 75 }] },
-        { id: 2, name: "Sarah Connor", dni: "2222", password: "123", status: "DEUDA", membership_type: "Premium", expiry_date: "2026-04-10", custom_routine: [], assigned_classes: [], evolution: [] },
-        { id: 3, name: "John Wick", dni: "3333", password: "123", status: "ACTIVO", membership_type: "Elite", expiry_date: "2026-05-15", custom_routine: [], assigned_classes: [], evolution: [] },
+        { 
+          id: 1, name: "Neon Matrix", dni: "1111", phone: "1122334455", email: "neon@atlas.com", status: "ACTIVO", 
+          membership_type: "Elite (Libre)", expiry_date: "2026-05-20", custom_routine: [], assigned_classes: [], 
+          evolution: [], billing_history: [
+            { date: "2026-04-20", plan: "Elite (Libre)", amount: 12000, method: "Transferencia", status: "PAGADO" }
+          ] 
+        },
+        { 
+          id: 2, name: "Sarah Connor", dni: "2222", phone: "5544332211", email: "sarah@sky.net", status: "DEUDA", 
+          membership_type: "Premium (Clases)", expiry_date: "2026-04-10", custom_routine: [], assigned_classes: [], 
+          evolution: [], billing_history: [] 
+        },
       ]);
     }
     if (staff.length === 0) {
@@ -71,47 +77,62 @@ export default function AdminDashboard() {
     setAiData({
       performance_radar: [{ subject: 'Retención', A: 85, B: 65 }, { subject: 'Asistencia', A: 78, B: 70 }, { subject: 'Satisfacción', A: 95, B: 80 }, { subject: 'Ingresos', A: 88, B: 60 }],
       member_growth: [{ month: 'Ene', altas: 80, bajas: 10 }, { month: 'Feb', altas: 65, bajas: 15 }, { month: 'Mar', altas: 95, bajas: 18 }],
-      streaks: [{ name: "Neon Matrix", racha: 18, risk: 5, status: "Buena Racha" }, { name: "John Wick", racha: 12, risk: 12, status: "Constante" }, { name: "Sarah Connor", racha: 0, risk: 89, status: "En Riesgo" }],
-      predictions: [{ month: 'May', proy: 15000, socios: 160 }, { month: 'Jun', proy: 17500, socios: 185 }, { month: 'Jul', proy: 21000, socios: 220 }]
+      streaks: [{ name: "Neon Matrix", racha: 18, risk: 5, status: "Buena Racha" }],
+      predictions: [{ month: 'May', proy: 15000, socios: 160 }]
     });
   };
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18); doc.text('GYM ATLAS: REPORTE OFICIAL', 14, 22);
-    doc.setFontSize(11); doc.text(`Filtro: ${startDate} al ${endDate}`, 14, 30);
     doc.text('RESUMEN EJECUTIVO', 14, 45);
-    autoTable(doc, { startY: 50, head: [['Métrica', 'Valor']], body: [['Ingresos', `$${financeData.total_revenue}`], ['Egresos', `$${financeData.total_expenses}`], ['Socios', members.length], ['Churn', `${financeData.churn_rate}%`]] });
-    doc.save(`Reporte_Atlas_${startDate}_${endDate}.pdf`);
+    autoTable(doc, { startY: 50, head: [['Métrica', 'Valor']], body: [['Ingresos', `$${financeData.total_revenue}`], ['Socios', members.length]] });
+    doc.save(`Reporte_Atlas.pdf`);
   };
 
   const handleSavePlan = () => { if (isEditMode) setPlans(prev => prev.map(p => p.id === selectedItem.id ? { ...selectedItem } : p)); else setPlans(prev => [...prev, { id: Date.now(), ...selectedItem }]); setIsModalOpen(false); };
-  const handleSaveMember = () => { if (isEditMode) setMembers(prev => prev.map(m => m.id === selectedItem.id ? { ...selectedItem } : m)); else setMembers(prev => [...prev, { id: Date.now(), ...selectedItem, custom_routine: [], assigned_classes: [], evolution: [], password: '123' }]); setIsModalOpen(false); };
+  const handleSaveMember = () => { if (isEditMode) setMembers(prev => prev.map(m => m.id === selectedItem.id ? { ...selectedItem } : m)); else setMembers(prev => [...prev, { id: Date.now(), ...selectedItem, billing_history: [], custom_routine: [], assigned_classes: [], evolution: [], password: '123' }]); setIsModalOpen(false); };
   const handleSaveStaff = () => { if (isEditMode) setStaff(prev => prev.map(s => s.id === selectedItem.id ? { ...selectedItem } : s)); else setStaff(prev => [...prev, { id: Date.now(), ...selectedItem, status: 'ACTIVO' }]); setIsModalOpen(false); };
   const handleSaveClass = () => { if (isEditMode) setClasses(prev => prev.map(c => c.id === selectedItem.id ? { ...selectedItem } : c)); else setClasses(prev => [...prev, { id: Date.now(), ...selectedItem }]); setIsModalOpen(false); };
 
-  const handlePayment = (amount: string) => { console.log('Paid:', amount); setMembers(prev => prev.map(m => m.id === selectedItem.id ? { ...m, status: 'ACTIVO', expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] } : m)); setIsPaymentModalOpen(false); refreshData(); };
+  const handlePayment = (amount: number, method: string) => { 
+    setMembers(prev => prev.map(m => {
+      if (m.id === selectedItem.id) {
+        const newHistory = [...(m.billing_history || []), {
+          date: new Date().toISOString().split('T')[0],
+          plan: m.membership_type,
+          amount: amount,
+          method: method,
+          status: "PAGADO"
+        }];
+        return { ...m, status: 'ACTIVO', expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], billing_history: newHistory };
+      }
+      return m;
+    }));
+    setIsPaymentModalOpen(false);
+    refreshData();
+  };
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Socios': return <MembersModule members={members} onEvolution={(m:any)=>{setSelectedItem(m); setModalType('evolution'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={(id: any) => setMembers(m => m.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', dni:'', status:'ACTIVO', membership_type:'Premium'}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
+      case 'Socios': return <MembersModule members={members} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEvolution={(m:any)=>{setSelectedItem(m); setModalType('evolution'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={(id: any) => setMembers(m => m.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Staff': return <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => setStaff(st => st.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} />;
-      case 'Entrenamientos': return <WorkoutsModule members={members} onAssign={(m: any) => { setSelectedItem({...m, custom_routine: m.custom_routine || [], assigned_classes: m.assigned_classes || []}); setModalType('workout'); setIsModalOpen(true); }} />;
       case 'Calendario': return <CalendarModule classes={classes} onAdd={(d:string, h:number)=>{setSelectedItem({name:'Yoga', day:d, startTime:`${h.toString().padStart(2,'0')}:00`, endTime:`${(h+1).toString().padStart(2,'0')}:00`, instructor:'Staff'}); setIsEditMode(false); setModalType('class'); setIsModalOpen(true);}} onEdit={(c:any)=>{setSelectedItem(c); setIsEditMode(true); setModalType('class'); setIsModalOpen(true);}} />;
       case 'Finanzas': return userRole === 'admin' ? <FinanceModule data={financeData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} /> : <NoAccess />;
       case 'Analítica IA': return userRole === 'admin' ? <AIAnalyticsModule data={aiData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} /> : <NoAccess />;
+      case 'Facturación': return <BillingModule members={members} />;
       default: return (
         <div className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <SummaryCard title="Socios Activos" value={members.length} icon={<Users size={16}/>} onClick={() => setActiveTab('Socios')} color="blue" />
-            <SummaryCard title="Facturación" value={`$${financeData?.total_revenue?.toLocaleString()}`} icon={<DollarSign size={16}/>} onClick={() => setActiveTab('Finanzas')} color="green" />
+            <SummaryCard title="Caja Total" value={`$${financeData?.total_revenue?.toLocaleString()}`} icon={<DollarSign size={16}/>} onClick={() => setActiveTab('Finanzas')} color="green" />
             <SummaryCard title="Rachas" value={aiData?.streaks?.filter((s:any)=>s.racha>10).length || 0} icon={<Flame size={16}/>} onClick={() => setActiveTab('Analítica IA')} color="orange" />
             <SummaryCard title="Proyección" value={`$${aiData?.predictions?.[0]?.proy?.toLocaleString()}`} icon={<BarChart3 size={16}/>} onClick={() => setActiveTab('Analítica IA')} color="purple" />
           </div>
           <div className="grid lg:grid-cols-2 gap-4">
-             <div className="bg-white/5 border border-white/5 p-4 rounded-xl"><h3 className="text-[10px] font-black uppercase text-white/40 mb-3 tracking-widest">Balance Mensual</h3><div className="h-40"><ResponsiveContainer width="100%" height="100%"><AreaChart data={financeData?.cashflow_data}><CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false}/><XAxis dataKey="month" stroke="#444" fontSize={9}/><Tooltip contentStyle={{backgroundColor:'#111', border:'none', fontSize:'10px'}}/><Area type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={3} fill="#3b82f6" fillOpacity={0.1}/><Area type="monotone" dataKey="egresos" stroke="#ef4444" strokeWidth={3} fill="#ef4444" fillOpacity={0.05}/></AreaChart></ResponsiveContainer></div></div>
-             <div className="bg-white/5 border border-white/5 p-4 rounded-xl"><h3 className="text-[10px] font-black uppercase text-white/40 mb-3 tracking-widest">Predicción IA Socios</h3><div className="h-40"><ResponsiveContainer width="100%" height="100%"><BarChart data={aiData?.predictions}><XAxis dataKey="month" stroke="#444" fontSize={9}/><Tooltip contentStyle={{backgroundColor:'#111', border:'none', fontSize:'10px'}}/><Bar dataKey="socios" fill="#8b5cf6" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div></div>
+             <div className="bg-white/5 border border-white/5 p-4 rounded-xl"><h3 className="text-[10px] font-black uppercase text-white/40 mb-3 tracking-widest">Balance de Caja</h3><div className="h-40"><ResponsiveContainer width="100%" height="100%"><AreaChart data={financeData?.cashflow_data}><CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false}/><XAxis dataKey="month" stroke="#444" fontSize={9}/><Tooltip contentStyle={{backgroundColor:'#111', border:'none', fontSize:'10px'}}/><Area type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={3} fill="#3b82f6" fillOpacity={0.1}/></AreaChart></ResponsiveContainer></div></div>
+             <div className="bg-white/5 border border-white/5 p-4 rounded-xl"><h3 className="text-[10px] font-black uppercase text-white/40 mb-3 tracking-widest">Actividad Facturación</h3><div className="flex flex-col justify-center h-40 space-y-2">{members.slice(0,3).map(m=>(<div key={m.id} className="flex justify-between items-center bg-black/20 p-2 rounded-lg border border-white/5"><span className="text-[10px] font-black uppercase">{m.name}</span><span className="text-green-500 font-black">$12,000</span></div>))}</div></div>
           </div>
         </div>
       );
@@ -123,7 +144,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
         <div className="w-full max-w-[380px] bg-white/5 border border-white/10 p-10 rounded-[40px] backdrop-blur-3xl shadow-2xl">
           <div className="flex justify-center mb-8"><div className="p-4 bg-blue-600 rounded-2xl shadow-xl shadow-blue-600/30"><ShieldCheck size={32} className="text-white" /></div></div>
-          <h2 className="text-2xl font-black text-center text-white mb-8 tracking-tighter uppercase">Atlas Admin</h2>
+          <h2 className="text-2xl font-black text-center text-white mb-8 tracking-tighter uppercase font-sans">Atlas Admin</h2>
           <form onSubmit={handleLogin} className="space-y-4">
             <input type="text" placeholder="Usuario" className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none focus:border-blue-500 transition-all text-center text-xs" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
             <input type="password" placeholder="Contraseña" className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none focus:border-blue-500 transition-all text-center text-xs" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
@@ -138,60 +159,65 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans flex overflow-hidden text-[11px] scale-[0.85] origin-top-left w-[125%] h-[125%]">
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className={`bg-neutral-900 border border-white/10 p-8 rounded-[40px] w-full ${modalType === 'evolution' || modalType === 'workout' ? 'max-w-4xl' : 'max-w-md'} shadow-2xl my-auto`}>
+          <div className={`bg-neutral-900 border border-white/10 p-8 rounded-[40px] w-full ${modalType === 'evolution' || modalType === 'workout' || modalType === 'history' ? 'max-w-4xl' : 'max-w-md'} shadow-2xl my-auto`}>
             <div className="flex justify-between items-center mb-6"><h2 className="text-lg font-black uppercase tracking-widest text-blue-500">{modalType}</h2><button onClick={() => setIsModalOpen(false)}><X size={20} className="text-white/20 hover:text-white transition-colors"/></button></div>
             <div className="space-y-3">
-              {modalType === 'class' && (
+              {modalType === 'history' && (
                 <div className="space-y-4">
-                   <select className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.name} onChange={e=>setSelectedItem({...selectedItem, name:e.target.value})}>
-                      <option value="Spinning">Spinning</option><option value="Yoga">Yoga</option><option value="CrossFit">CrossFit</option><option value="Zumba">Zumba</option><option value="Musculación">Musculación</option>
-                   </select>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1"><label className="text-[9px] text-white/20 uppercase font-black">Desde</label><input type="time" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.startTime} onChange={e=>setSelectedItem({...selectedItem, startTime:e.target.value})}/></div>
-                      <div className="space-y-1"><label className="text-[9px] text-white/20 uppercase font-black">Hasta</label><input type="time" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.endTime} onChange={e=>setSelectedItem({...selectedItem, endTime:e.target.value})}/></div>
+                   <h3 className="text-xs font-black uppercase text-white/40 mb-4">Historial de Pagos y Planes: {selectedItem.name}</h3>
+                   <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                      {selectedItem.billing_history?.length > 0 ? selectedItem.billing_history.map((h:any, i:number)=>(
+                        <div key={i} className="bg-black/40 border border-white/5 p-4 rounded-2xl flex justify-between items-center">
+                           <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500"><Receipt size={18}/></div>
+                              <div><p className="font-black text-white uppercase text-[10px]">{h.plan}</p><p className="text-[8px] text-white/20 uppercase font-black">{h.date} • {h.method}</p></div>
+                           </div>
+                           <div className="text-right">
+                              <p className="text-sm font-black text-green-500">${h.amount.toLocaleString()}</p>
+                              <p className="text-[8px] font-black uppercase text-white/20">{h.status}</p>
+                           </div>
+                        </div>
+                      )) : <p className="text-center text-white/10 uppercase font-black py-10">Sin historial registrado</p>}
                    </div>
-                   <input type="text" placeholder="Instructor" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.instructor} onChange={e=>setSelectedItem({...selectedItem, instructor:e.target.value})}/>
-                </div>
-              )}
-              {modalType === 'staff' && (
-                <div className="space-y-3">
-                  <input type="text" placeholder="Nombre" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
-                  <input type="text" placeholder="Rol" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.role} onChange={e => setSelectedItem({...selectedItem, role: e.target.value})} />
-                  <select className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.shift} onChange={e => setSelectedItem({...selectedItem, shift: e.target.value})}>
-                    <option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option>
-                  </select>
-                </div>
-              )}
-              {modalType === 'evolution' && (
-                <div className="space-y-6">
-                   <div className="h-64"><ResponsiveContainer width="100%" height="100%"><LineChart data={selectedItem.evolution}><CartesianGrid strokeDasharray="3 3" stroke="#222" /><XAxis dataKey="date" stroke="#444" fontSize={9}/><YAxis stroke="#444" fontSize={9}/><Tooltip contentStyle={{backgroundColor:'#111', border:'none'}}/><Line type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={3} /></LineChart></ResponsiveContainer></div>
-                   <div className="grid grid-cols-4 gap-3">
-                      {selectedItem.evolution.map((ev:any, i:number)=>(<div key={i} className="bg-white/5 p-3 rounded-xl border border-white/5 text-center"><p className="text-[8px] text-white/20 uppercase font-black">{ev.date}</p><p className="text-base font-black">{ev.weight}kg</p></div>))}
-                   </div>
-                </div>
-              )}
-              {modalType === 'plan' && (
-                <div className="space-y-3">
-                  <input type="text" placeholder="Plan" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
-                  <input type="number" placeholder="Precio" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.price} onChange={e => setSelectedItem({...selectedItem, price: e.target.value})} />
-                  <input type="number" placeholder="Días" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.daysPerWeek} onChange={e => setSelectedItem({...selectedItem, daysPerWeek: e.target.value})} />
                 </div>
               )}
               {modalType === 'member' && (
                 <div className="space-y-3">
-                  <input type="text" placeholder="Nombre" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
-                  <input type="text" placeholder="DNI" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.dni} onChange={e => setSelectedItem({...selectedItem, dni: e.target.value})} />
-                  <select className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.membership_type} onChange={e => setSelectedItem({...selectedItem, membership_type: e.target.value})}>{plans.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select>
+                  <div className="grid grid-cols-2 gap-3">
+                     <input type="text" placeholder="Nombre Completo" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                     <input type="text" placeholder="DNI" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.dni} onChange={e => setSelectedItem({...selectedItem, dni: e.target.value})} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                     <input type="text" placeholder="WhatsApp / Número" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.phone} onChange={e => setSelectedItem({...selectedItem, phone: e.target.value})} />
+                     <input type="email" placeholder="Correo Electrónico" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.email} onChange={e => setSelectedItem({...selectedItem, email: e.target.value})} />
+                  </div>
+                  <select className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.membership_type} onChange={e => setSelectedItem({...selectedItem, membership_type: e.target.value})}>
+                     {plans.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {modalType === 'class' && (
+                <div className="space-y-3">
+                   <select className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.name} onChange={e=>setSelectedItem({...selectedItem, name:e.target.value})}>
+                      {plans.flatMap(p=>p.classes).length > 0 ? plans.flatMap(p=>p.classes).map(c=><option key={c} value={c}>{c}</option>) : <option value="Musculación">Musculación</option>}
+                   </select>
+                   <div className="grid grid-cols-2 gap-4">
+                      <input type="time" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.startTime} onChange={e=>setSelectedItem({...selectedItem, startTime:e.target.value})}/>
+                      <input type="time" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.endTime} onChange={e=>setSelectedItem({...selectedItem, endTime:e.target.value})}/>
+                   </div>
+                   <input type="text" placeholder="Instructor" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.instructor} onChange={e=>setSelectedItem({...selectedItem, instructor:e.target.value})}/>
                 </div>
               )}
             </div>
-            <div className="flex gap-4 mt-8 border-t border-white/5 pt-6"><button className="flex-1 py-3 text-white/40 font-black uppercase text-[10px]" onClick={() => setIsModalOpen(false)}>Cancelar</button><button className="flex-1 py-3 bg-blue-600 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-600/20" onClick={() => { if(modalType==='plan') handleSavePlan(); else if(modalType==='member') handleSaveMember(); else if(modalType==='staff') handleSaveStaff(); else if(modalType==='class') handleSaveClass(); }}>Guardar</button></div>
+            {modalType !== 'history' && (
+              <div className="flex gap-4 mt-8 border-t border-white/5 pt-6"><button className="flex-1 py-3 text-white/40 font-black uppercase text-[10px]" onClick={() => setIsModalOpen(false)}>Cancelar</button><button className="flex-1 py-3 bg-blue-600 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-600/20" onClick={() => { if(modalType==='plan') handleSavePlan(); else if(modalType==='member') handleSaveMember(); else if(modalType==='staff') handleSaveStaff(); else if(modalType==='class') handleSaveClass(); }}>Guardar</button></div>
+            )}
           </div>
         </div>
       )}
 
       {isPaymentModalOpen && (
-        <PaymentModal onPay={handlePayment} onClose={()=>setIsPaymentModalOpen(false)} />
+        <PaymentModal plans={plans} member={selectedItem} onPay={handlePayment} onClose={()=>setIsPaymentModalOpen(false)} />
       )}
 
       <aside className="w-48 border-r border-white/5 bg-black/40 backdrop-blur-3xl flex flex-col p-4 shrink-0">
@@ -199,8 +225,8 @@ export default function AdminDashboard() {
         <nav className="space-y-1 flex-1 overflow-y-auto custom-scrollbar pr-1">
           <SidebarItem icon={<LayoutDashboard size={14} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => setActiveTab('Resumen')} />
           <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
+          <SidebarItem icon={<Receipt size={14} />} label="Facturación" active={activeTab === 'Facturación'} onClick={() => setActiveTab('Facturación')} />
           <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => setActiveTab('Planes')} />
-          <SidebarItem icon={<Dumbbell size={14} />} label="Rutinas" active={activeTab === 'Entrenamientos'} onClick={() => setActiveTab('Entrenamientos')} />
           <SidebarItem icon={<CalendarIcon size={14} />} label="Agenda" active={activeTab === 'Calendario'} onClick={() => setActiveTab('Calendario')} />
           <SidebarItem icon={<Briefcase size={14} />} label="Personal" active={activeTab === 'Staff'} onClick={() => setActiveTab('Staff')} />
           <div className="h-px bg-white/5 my-4" />
@@ -213,7 +239,7 @@ export default function AdminDashboard() {
       <main className="flex-1 overflow-y-auto p-6 relative">
         <header className="flex items-center justify-between mb-8">
           <div><h2 className="text-2xl font-black text-white tracking-tighter uppercase">{activeTab}</h2><p className="text-[8px] text-white/20 uppercase font-black tracking-[0.3em]">Management OS v2.0</p></div>
-          <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20 font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all"><Download size={14}/> Exportar Reporte</button>
+          <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20 font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all"><Download size={14}/> Reporte Global</button>
         </header>
         {renderContent()}
       </main>
@@ -221,15 +247,75 @@ export default function AdminDashboard() {
   );
 }
 
-function PaymentModal({ onPay, onClose }: any) {
-  const [amt, setAmt] = useState('');
+function PaymentModal({ plans, member, onPay, onClose }: any) {
+  const [method, setMethod] = useState('Efectivo');
+  const planObj = plans.find((p:any)=>p.name === member.membership_type);
+  const [amount, setAmount] = useState(planObj?.price || 0);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-      <div className="bg-neutral-900 border border-white/10 p-10 rounded-[40px] w-full max-w-sm">
-        <h2 className="text-xl font-black mb-6 uppercase tracking-widest text-green-500 text-center">Cobrar Cuota</h2>
-        <input type="number" placeholder="Monto" className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-3xl font-black text-white text-center mb-8 outline-none focus:border-green-500" value={amt} onChange={e => setAmt(e.target.value)} />
-        <div className="flex gap-4"><button className="flex-1 py-4 text-white/40 font-black uppercase text-[10px]" onClick={onClose}>Cerrar</button><button className="flex-1 py-4 bg-green-600 rounded-2xl font-black uppercase text-[10px] shadow-xl shadow-green-600/20" onClick={()=>onPay(amt)}>Confirmar</button></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+      <div className="bg-neutral-900 border border-white/10 p-10 rounded-[40px] w-full max-w-md shadow-3xl">
+        <h2 className="text-xl font-black mb-2 uppercase tracking-widest text-green-500 text-center">Facturación en Recepción</h2>
+        <p className="text-[10px] text-white/20 text-center uppercase font-black mb-8">Socio: {member.name}</p>
+        
+        <div className="space-y-6">
+           <div className="space-y-2">
+              <label className="text-[9px] text-white/20 uppercase font-black ml-4">Monto a Cobrar</label>
+              <input type="number" className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-3xl font-black text-white text-center outline-none focus:border-green-500" value={amount} onChange={e => setAmount(parseInt(e.target.value) || 0)} />
+           </div>
+
+           <div className="space-y-2">
+              <label className="text-[9px] text-white/20 uppercase font-black ml-4">Método de Pago</label>
+              <div className="grid grid-cols-2 gap-2">
+                 <PaymentBtn active={method === 'Efectivo'} onClick={()=>setMethod('Efectivo')} label="Efectivo" icon={<Banknote size={16}/>} />
+                 <PaymentBtn active={method === 'Tarjeta'} onClick={()=>setMethod('Tarjeta')} label="Tarjeta" icon={<CreditCard size={16}/>} />
+                 <PaymentBtn active={method === 'Transferencia'} onClick={()=>setMethod('Transferencia')} label="Transferencia" icon={<Smartphone size={16}/>} />
+                 <PaymentBtn active={method === 'QR'} onClick={()=>setMethod('QR')} label="QR" icon={<Smartphone size={16}/>} />
+              </div>
+           </div>
+
+           <div className="flex gap-4 pt-4 border-t border-white/5"><button className="flex-1 py-4 text-white/40 font-black uppercase text-[10px]" onClick={onClose}>Cancelar</button><button className="flex-1 py-4 bg-green-600 rounded-2xl font-black uppercase text-[10px] shadow-xl shadow-green-600/20" onClick={()=>onPay(amount, method)}>Generar Pago</button></div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function PaymentBtn({ active, onClick, label, icon }: any) {
+  return (
+    <button onClick={onClick} className={`flex items-center justify-center gap-3 p-4 rounded-xl border transition-all ${active ? 'bg-green-600 border-green-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/20 hover:text-white'}`}>
+       {icon}<span className="text-[10px] font-black uppercase">{label}</span>
+    </button>
+  );
+}
+
+function BillingModule({ members }: any) {
+  const allHistory = members.flatMap((m:any) => (m.billing_history || []).map((h:any) => ({...h, userName: m.name})));
+  const sorted = allHistory.sort((a:any, b:any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  return (
+    <div className="space-y-6">
+       <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Cobros Registrados</p><p className="text-2xl font-black text-white">${sorted.reduce((acc:number, curr:any)=>acc+curr.amount, 0).toLocaleString()}</p></div>
+          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Más Usado</p><p className="text-2xl font-black text-blue-500">Mixto</p></div>
+          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Facturas</p><p className="text-2xl font-black text-white">{allHistory.length}</p></div>
+       </div>
+       <div className="bg-white/5 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+          <table className="w-full text-left">
+             <thead className="bg-white/5 border-b border-white/5 text-[9px] text-white/20 font-black uppercase tracking-widest"><tr ><th className="p-4">Socio</th><th className="p-4">Fecha</th><th className="p-4">Plan</th><th className="p-4">Método</th><th className="p-4 text-right">Monto</th></tr></thead>
+             <tbody className="divide-y divide-white/5">
+                {sorted.map((h:any, i:number)=>(
+                  <tr key={i} className="hover:bg-white/5 transition-colors">
+                     <td className="p-4 font-black uppercase text-white">{h.userName}</td>
+                     <td className="p-4 text-white/40">{h.date}</td>
+                     <td className="p-4 text-white/40">{h.plan}</td>
+                     <td className="p-4"><span className="px-3 py-1 bg-white/5 rounded-lg text-[8px] font-black uppercase">{h.method}</span></td>
+                     <td className="p-4 text-right font-black text-green-500">${h.amount.toLocaleString()}</td>
+                  </tr>
+                ))}
+             </tbody>
+          </table>
+       </div>
     </div>
   );
 }
@@ -243,19 +329,20 @@ function SummaryCard({ title, value, icon, onClick, color }: any) {
   return <div onClick={onClick} className="bg-white/5 border border-white/5 p-4 rounded-xl cursor-pointer hover:border-blue-500/20 transition-all flex justify-between items-center"><div className="space-y-1"><p className="text-[8px] font-black text-white/20 uppercase tracking-widest">{title}</p><p className="text-xl font-black text-white">{value}</p></div><div className={`${colors[color]} bg-white/5 p-2 rounded-lg`}>{icon}</div></div>;
 }
 
-function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onEvolution }: any) {
+function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onEvolution, onHistory }: any) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Socios</h3><button onClick={onAddClick} className="bg-blue-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">+ Nuevo</button></div>
+      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Gestión de Socios</h3><button onClick={onAddClick} className="bg-blue-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20">+ Nuevo Socio</button></div>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
          {members.map((m: any) => (
-           <div key={m.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-blue-500/10 transition-all">
-             <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3"><div className="w-8 h-8 bg-neutral-800 rounded-lg flex items-center justify-center font-black text-blue-500">{m.name[0]}</div><div><p className="font-black text-white text-[10px] uppercase">{m.name}</p><p className="text-[8px] text-white/20 uppercase font-black">{m.membership_type}</p></div></div>{m.status === 'ACTIVO' ? <CheckCircle className="text-green-500" size={12} /> : <XCircle className="text-red-500" size={12} />}</div>
+           <div key={m.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-blue-500/10 transition-all group">
+             <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3"><div className="w-10 h-10 bg-neutral-800 rounded-xl flex items-center justify-center font-black text-blue-500 text-sm">{m.name[0]}</div><div><p className="font-black text-white text-[10px] uppercase truncate w-24">{m.name}</p><p className="text-[8px] text-white/20 uppercase font-black truncate">{m.membership_type}</p></div></div>{m.status === 'ACTIVO' ? <CheckCircle className="text-green-500" size={12} /> : <XCircle className="text-red-500" size={12} />}</div>
              <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => onPayClick(m)} className="py-2 bg-green-500/10 text-green-500 rounded-lg text-[8px] font-black uppercase hover:bg-green-500 hover:text-white transition-all">Cobrar</button>
+               <button onClick={() => onPayClick(m)} className="py-2 bg-green-500/10 text-green-500 rounded-lg text-[8px] font-black uppercase hover:bg-green-500 transition-all">Cobrar</button>
                <button onClick={() => onEdit(m)} className="py-2 bg-white/5 text-white/40 rounded-lg text-[8px] font-black uppercase">Editar</button>
+               <button onClick={() => onHistory(m)} className="py-2 bg-white/5 text-blue-400 rounded-lg text-[8px] font-black uppercase">Historial</button>
                <button onClick={() => onEvolution(m)} className="py-2 bg-blue-500/10 text-blue-500 rounded-lg text-[8px] font-black uppercase flex items-center justify-center gap-1"><Activity size={10}/> Evol.</button>
-               <button onClick={() => onDelete(m.id)} className="py-2 bg-red-500/10 text-red-500 rounded-lg text-[8px] font-black uppercase">Baja</button>
+               <button onClick={() => onDelete(m.id)} className="col-span-2 py-2 bg-red-500/10 text-red-500 rounded-lg text-[8px] font-black uppercase opacity-0 group-hover:opacity-100 transition-all">Dar de Baja</button>
              </div>
            </div>
          ))}
@@ -268,40 +355,18 @@ function PlansModule({ plans, onEdit, onDelete, onAddClick }: any) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Planes</h3><button onClick={onAddClick} className="bg-blue-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">+ Nuevo</button></div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
          {plans.map((p: any) => (
            <div key={p.id} className="p-6 bg-white/5 rounded-3xl border border-white/5 relative group">
               <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-2">{p.name}</p>
-              <p className="text-3xl font-black mb-4">${p.price}<span className="text-[10px] text-white/20 font-black">/mes</span></p>
+              <p className="text-2xl font-black mb-4">${p.price}<span className="text-[10px] text-white/20 font-black">/mes</span></p>
               <div className="space-y-1 mb-6">
                  <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold"><CheckCircle size={10} className="text-green-500"/> {p.daysPerWeek} días</div>
-                 <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold"><CheckCircle size={10} className="text-green-500"/> {p.classes.join(', ') || 'Musculación'}</div>
+                 <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold truncate"><CheckCircle size={10} className="text-green-500"/> {p.classes.join(', ') || 'Musculación'}</div>
               </div>
               <div className="flex gap-2"><button onClick={()=>onEdit(p)} className="flex-1 py-2 bg-white/5 rounded-xl text-[9px] font-black uppercase">Editar</button><button onClick={()=>onDelete(p.id)} className="p-2 text-red-500/30 hover:text-red-500"><Trash2 size={14}/></button></div>
            </div>
          ))}
-      </div>
-    </div>
-  );
-}
-
-function WorkoutsModule({ members, onAssign }: any) {
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase tracking-tight">Asignación de Rutinas</h3></div>
-      <div className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden shadow-xl">
-        <table className="w-full text-left">
-          <thead className="bg-white/5 text-white/20 uppercase text-[9px] font-black tracking-widest border-b border-white/5"><tr ><th className="p-4">Socio</th><th className="p-4">Ejercicios</th><th className="p-4">Acción</th></tr></thead>
-          <tbody className="divide-y divide-white/5">
-            {members.map((m:any) => (
-              <tr key={m.id} className="hover:bg-white/5 transition-colors">
-                <td className="p-4 font-black text-white text-[10px] uppercase">{m.name}</td>
-                <td className="p-4 text-white/30 text-[9px] uppercase font-black">{m.custom_routine?.length || 0} Ejercicios</td>
-                <td className="p-4"><button onClick={() => onAssign(m)} className="px-3 py-1.5 bg-blue-600 rounded-lg font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all">Gestionar</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );
@@ -344,7 +409,7 @@ function CalendarModule({ classes, onAdd, onEdit }: any) {
                                 className="absolute left-1 right-1 bg-blue-600/90 border border-blue-400 rounded-lg p-2 text-[8px] font-black z-10 shadow-lg"
                                 style={{ height: `${duration * 40}px`, top: '4px' }}>
                                  <p className="uppercase text-white">{c.name}</p>
-                                 <p className="text-white/60 font-bold">{c.startTime} - {c.endTime}</p>
+                                 <p className="text-white/60 font-bold">{c.startTime} - {hEnd}:{parseInt(c.endTime.split(':')[1]) > 0 ? '30' : '00'}</p>
                               </div>
                             );
                          })}
