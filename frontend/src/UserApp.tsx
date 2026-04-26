@@ -1,6 +1,6 @@
-import { Activity, Zap, Brain, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Zap, Brain, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X } from 'lucide-react';
 import { useState } from 'react';
-import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts';
+import { Tooltip, ResponsiveContainer, CartesianGrid, XAxis, YAxis, LineChart, Line, Legend } from 'recharts';
 
 export default function UserApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -9,77 +9,72 @@ export default function UserApp() {
   const [activeTab, setActiveTab] = useState('Home');
 
   // Simulated User Data
-  const [userData] = useState({
-    name: "Nicolas France",
-    dni: "1111",
-    plan: "Elite Member",
-    maxDaysPerWeek: 7,
-    streak: 14,
+  const [userData, setUserData] = useState({
+    name: "Nicolas France", dni: "1111", plan: "Elite Member", maxDaysPerWeek: 7, streak: 14,
     currentRoutine: [
       { id: 1, name: "Press de Banca", sets: "4", reps: "10", weight: 75, completed: false },
       { id: 2, name: "Sentadillas", sets: "3", reps: "12", weight: 100, completed: true },
       { id: 3, name: "Jalón al Pecho", sets: "4", reps: "10", weight: 65, completed: false }
     ],
     evolution: [
-      { date: "Ene", weight: 50 },
-      { date: "Feb", weight: 60 },
-      { date: "Mar", weight: 68 },
-      { date: "Abr", weight: 75 }
+      { date: "Ene", "Press de Banca": 50, "Sentadillas": 80, "Jalón al Pecho": 45 },
+      { date: "Feb", "Press de Banca": 60, "Sentadillas": 90, "Jalón al Pecho": 55 },
+      { date: "Mar", "Press de Banca": 68, "Sentadillas": 95, "Jalón al Pecho": 60 },
+      { date: "Abr", "Press de Banca": 75, "Sentadillas": 100, "Jalón al Pecho": 65 }
     ],
     attendanceHistory: ["2026-04-20", "2026-04-22", "2026-04-24"]
   });
 
-  const [bookings, setBookings] = useState<string[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState('08:00');
+  const [selectedExs, setSelectedExs] = useState<string[]>([]);
 
   const handleLogin = (e: any) => {
     e.preventDefault();
-    if (dni === '1111' && password === '123') {
-      setIsAuthenticated(true);
-    } else {
-      alert("Credenciales inválidas (DNI: 1111, Pass: 123)");
-    }
+    if (dni === '1111' && password === '123') setIsAuthenticated(true);
+    else alert("Credenciales inválidas (DNI: 1111, Pass: 123)");
   };
 
   const toggleExercise = (id: number) => {
-    console.log(`Exercice ${id} toggled`);
-    alert("¡Ejercicio completado! Buen trabajo.");
+    setUserData(prev => ({
+      ...prev,
+      currentRoutine: prev.currentRoutine.map(ex => ex.id === id ? { ...ex, completed: !ex.completed } : ex)
+    }));
   };
 
-  const handleBooking = (day: string, time: string) => {
-    const slot = `${day} ${time}`;
-    if (bookings.includes(slot)) {
-      setBookings(bookings.filter(b => b !== slot));
-    } else {
-      if (bookings.length >= userData.maxDaysPerWeek) {
-        alert(`Has alcanzado el límite de tu plan (${userData.maxDaysPerWeek} días)`);
-        return;
-      }
-      setBookings([...bookings, slot]);
-      alert(`Reserva confirmada para ${slot}`);
+  const updateWeight = (id: number, newWeight: number) => {
+    setUserData(prev => ({
+      ...prev,
+      currentRoutine: prev.currentRoutine.map(ex => ex.id === id ? { ...ex, weight: newWeight } : ex)
+    }));
+  };
+
+  const handleConfirmBooking = () => {
+    const booking = { day: selectedDay, time: selectedTime, exercises: selectedExs };
+    if (bookings.length >= userData.maxDaysPerWeek) {
+      alert(`Límite alcanzado (${userData.maxDaysPerWeek} días)`);
+      return;
     }
+    setBookings([...bookings, booking]);
+    setIsBookingModalOpen(false);
+    setSelectedExs([]);
   };
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-8 font-sans">
-        <div className="w-full max-w-sm space-y-8 animate-in fade-in zoom-in duration-500">
+        <div className="w-full max-w-sm bg-neutral-900/50 border border-white/10 p-10 rounded-[40px] backdrop-blur-2xl shadow-3xl space-y-10">
           <div className="text-center">
-            <div className="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center shadow-2xl shadow-blue-600/20 mb-6">
-               <Brain size={40} className="text-white" />
-            </div>
-            <h1 className="text-4xl font-black text-white tracking-tighter mb-2">ATLAS APP</h1>
-            <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Inicia sesión para entrenar</p>
+            <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] mx-auto flex items-center justify-center shadow-3xl shadow-blue-600/40 mb-8 animate-pulse"><Brain size={48} className="text-white" /></div>
+            <h1 className="text-5xl font-black text-white tracking-tighter mb-2">ATLAS APP</h1>
+            <p className="text-white/20 text-xs font-black uppercase tracking-[0.4em]">Personal Fitness OS</p>
           </div>
-          <form onSubmit={handleLogin} className="space-y-4">
-             <div className="space-y-1">
-                <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">DNI</label>
-                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-3xl py-4 px-6 text-white outline-none focus:border-blue-500 transition-all" value={dni} onChange={e=>setDni(e.target.value)} required />
-             </div>
-             <div className="space-y-1">
-                <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Contraseña</label>
-                <input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-3xl py-4 px-6 text-white outline-none focus:border-blue-500 transition-all" value={password} onChange={e=>setPassword(e.target.value)} required />
-             </div>
-             <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all">Ingresar</button>
+          <form onSubmit={handleLogin} className="space-y-6">
+             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Documento</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-blue-500 transition-all text-center font-black" value={dni} onChange={e=>setDni(e.target.value)} required /></div>
+             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Password</label><input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-blue-500 transition-all text-center font-black" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
+             <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all text-sm">Entrar</button>
           </form>
         </div>
       </div>
@@ -90,27 +85,30 @@ export default function UserApp() {
     switch (activeTab) {
       case 'Training':
         return (
-          <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
-             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-10"><Dumbbell size={80}/></div>
-                <h3 className="text-2xl font-black mb-2 tracking-tight">Mi Rutina Hoy</h3>
-                <p className="text-blue-100/60 text-xs font-bold uppercase tracking-widest">Enfoque: Hipertrofia Fuerza</p>
+          <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-500">
+             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-10 rounded-[50px] text-white shadow-3xl relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 p-10 opacity-10 rotate-12"><Dumbbell size={160}/></div>
+                <h3 className="text-3xl font-black mb-2 tracking-tighter">Plan del Día</h3>
+                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Sigue tu progreso y sube cargas</p>
              </div>
-             <div className="space-y-3">
+             <div className="space-y-4">
                 {userData.currentRoutine.map(ex => (
-                  <div key={ex.id} className={`p-6 rounded-[32px] border ${ex.completed ? 'bg-green-500/10 border-green-500/20' : 'bg-neutral-900 border-white/5'} flex items-center justify-between group transition-all`}>
-                     <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${ex.completed ? 'bg-green-500 text-white' : 'bg-white/5 text-white/20'}`}>
-                           {ex.completed ? <Check size={20}/> : <Play size={20}/>}
+                  <div key={ex.id} className={`p-8 rounded-[40px] border transition-all ${ex.completed ? 'bg-green-500/10 border-green-500/20 shadow-lg shadow-green-500/5' : 'bg-neutral-900 border-white/5'}`}>
+                     <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-5">
+                           <div onClick={()=>toggleExercise(ex.id)} className={`w-14 h-14 rounded-2xl flex items-center justify-center cursor-pointer transition-all ${ex.completed ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-white/5 text-white/20 hover:text-white hover:bg-white/10'}`}>
+                              {ex.completed ? <Check size={24} strokeWidth={4}/> : <Play size={24}/>}
+                           </div>
+                           <div><p className="font-black text-lg text-white uppercase leading-none mb-1">{ex.name}</p><p className="text-[10px] text-white/30 font-black uppercase tracking-widest">{ex.sets} Sets × {ex.reps} Reps</p></div>
                         </div>
-                        <div>
-                           <p className="font-bold text-white text-base">{ex.name}</p>
-                           <p className="text-xs text-white/30 font-bold uppercase">{ex.sets} Sets × {ex.reps} Reps • {ex.weight}kg</p>
-                        </div>
+                        <button onClick={()=>toggleExercise(ex.id)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase ${ex.completed ? 'bg-green-500 text-white' : 'bg-white/5 text-white/40'}`}>{ex.completed ? 'Hecho' : 'Completar'}</button>
                      </div>
-                     <button onClick={()=>toggleExercise(ex.id)} className={`w-10 h-10 rounded-full flex items-center justify-center ${ex.completed ? 'bg-green-500/20 text-green-500' : 'bg-white/5 text-white/40'} hover:scale-110 transition-transform`}>
-                        <Check size={18}/>
-                     </button>
+                     <div className="flex items-center gap-4 bg-black/40 rounded-3xl p-4 border border-white/5">
+                        <TrendingUp size={16} className="text-blue-500" />
+                        <span className="text-[10px] font-black text-white/20 uppercase mr-auto">Carga Actual:</span>
+                        <input type="number" className="bg-transparent text-white font-black text-xl w-16 outline-none text-right" value={ex.weight} onChange={e=>updateWeight(ex.id, parseInt(e.target.value) || 0)} />
+                        <span className="text-sm font-black text-white/40">KG</span>
+                     </div>
                   </div>
                 ))}
              </div>
@@ -118,56 +116,53 @@ export default function UserApp() {
         );
       case 'Evolution':
         return (
-          <div className="space-y-6 animate-in slide-in-from-bottom-8">
-             <div className="bg-neutral-900 border border-white/5 p-8 rounded-[40px]">
-                <h3 className="text-xl font-black mb-6 flex items-center gap-3"><TrendingUp className="text-blue-500"/> Mi Evolución</h3>
-                <div className="h-60 mb-8">
+          <div className="space-y-8 animate-in slide-in-from-bottom-8">
+             <div className="bg-neutral-900 border border-white/5 p-10 rounded-[50px] shadow-3xl">
+                <h3 className="text-2xl font-black mb-8 flex items-center gap-4 uppercase tracking-tighter"><TrendingUp className="text-blue-500" size={28}/> Mi Progreso</h3>
+                <div className="h-80 mb-10">
                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={userData.evolution}>
-                         <defs>
-                            <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                               <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                            </linearGradient>
-                         </defs>
-                         <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'16px'}} />
-                         <Area type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#colorWeight)" />
-                      </AreaChart>
+                      <LineChart data={userData.evolution}>
+                         <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                         <XAxis dataKey="date" stroke="#444" fontSize={10} fontStyle="italic" />
+                         <YAxis stroke="#444" fontSize={10} />
+                         <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'20px', padding:'15px'}} />
+                         <Legend wrapperStyle={{fontSize:'10px', textTransform:'uppercase', fontWeight:'900', marginTop:'20px'}} />
+                         <Line type="monotone" dataKey="Press de Banca" stroke="#3b82f6" strokeWidth={4} dot={{r:6, fill:'#3b82f6'}} activeDot={{r:10}} />
+                         <Line type="monotone" dataKey="Sentadillas" stroke="#10b981" strokeWidth={4} dot={{r:6, fill:'#10b981'}} />
+                         <Line type="monotone" dataKey="Jalón al Pecho" stroke="#f59e0b" strokeWidth={4} dot={{r:6, fill:'#f59e0b'}} />
+                      </LineChart>
                    </ResponsiveContainer>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                   <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
-                      <p className="text-[10px] text-white/20 font-black uppercase mb-1">Carga Máxima</p>
-                      <p className="text-2xl font-black text-white">100kg</p>
-                      <div className="flex items-center gap-1 text-green-500 text-[10px] font-bold mt-1"><ArrowUpRight size={10}/> +15% vs mes ant.</div>
-                   </div>
-                   <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
-                      <p className="text-[10px] text-white/20 font-black uppercase mb-1">Consistencia</p>
-                      <p className="text-2xl font-black text-white">92%</p>
-                      <div className="flex items-center gap-1 text-blue-400 text-[10px] font-bold mt-1">Nivel: Atleta Pro</div>
-                   </div>
+                   <div className="bg-white/5 p-6 rounded-[32px] border border-white/5"><p className="text-[9px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-3xl font-black text-white">+25kg</p><p className="text-[10px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
+                   <div className="bg-white/5 p-6 rounded-[32px] border border-white/5"><p className="text-[9px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-3xl font-black text-white">48</p><p className="text-[10px] text-blue-500 font-black mt-1 uppercase">Consistencia</p></div>
                 </div>
              </div>
           </div>
         );
       case 'Calendar':
         return (
-          <div className="space-y-6 animate-in slide-in-from-bottom-8">
-             <div className="bg-neutral-900 border border-white/5 p-8 rounded-[40px]">
-                <div className="flex justify-between items-center mb-6">
-                   <h3 className="text-xl font-black flex items-center gap-3"><Clock className="text-blue-500"/> Mis Reservas</h3>
-                   <div className="px-3 py-1 bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-full uppercase">{bookings.length}/{userData.maxDaysPerWeek} Días</div>
+          <div className="space-y-8 animate-in slide-in-from-bottom-8">
+             <div className="bg-neutral-900 border border-white/5 p-10 rounded-[50px] shadow-3xl">
+                <div className="flex justify-between items-center mb-10">
+                   <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4"><Clock className="text-blue-500" size={28}/> Agenda</h3>
+                   <div className="px-5 py-2 bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-2xl uppercase shadow-lg">{bookings.length}/{userData.maxDaysPerWeek} Días</div>
                 </div>
-                <div className="grid grid-cols-7 gap-1 mb-8 text-center font-bold text-xs">
-                   {["L","M","M","J","V","S","D"].map((d,i)=>(<div key={i} className="text-white/20">{d}</div>))}
-                   {Array.from({length:31}).map((_,i)=>(<div key={i} className={`h-10 flex items-center justify-center rounded-xl ${bookings.some(b=>b.includes((i+1).toString())) ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-white/5 text-white/20'}`}>{i+1}</div>))}
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                   {["08:00", "10:00", "15:00", "18:00", "20:00", "21:00"].map(t => (
-                     <button key={t} onClick={()=>handleBooking("Mañana", t)} className={`py-4 rounded-2xl text-[10px] font-black border transition-all ${bookings.includes(`Mañana ${t}`) ? 'bg-blue-600 border-blue-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}`}>
-                        {t} HS
-                     </button>
+                <div className="grid grid-cols-7 gap-2 mb-10 text-center font-black text-[10px] uppercase">
+                   {["L","M","M","J","V","S","D"].map((d,i)=>(<div key={i} className="text-white/10">{d}</div>))}
+                   {Array.from({length:31}).map((_,i)=>(
+                     <div key={i} onClick={()=>{setSelectedDay(i+1); setIsBookingModalOpen(true);}} className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${bookings.some(b=>b.day === i+1) ? 'bg-blue-600 border-blue-400 text-white shadow-xl shadow-blue-600/30' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>{i+1}</div>
                    ))}
+                </div>
+                <div className="space-y-4">
+                   <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Próximas Sesiones</p>
+                   {bookings.map((b,i)=>(
+                     <div key={i} className="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between group">
+                        <div><p className="font-black text-white uppercase">Día {b.day} • {b.time} HS</p><p className="text-[10px] text-white/20 font-black uppercase mt-1">{b.exercises.length} Ejercicios Planificados</p></div>
+                        <button onClick={()=>setBookings(bookings.filter((_,idx)=>idx!==i))} className="text-red-500/20 group-hover:text-red-500 transition-colors"><X size={20}/></button>
+                     </div>
+                   ))}
+                   {bookings.length === 0 && <p className="text-center text-white/10 italic text-[10px] font-black uppercase py-10">No tienes reservas aún</p>}
                 </div>
              </div>
           </div>
@@ -185,25 +180,25 @@ export default function UserApp() {
         );
       default:
         return (
-          <div className="space-y-8 animate-in fade-in duration-700">
+          <div className="space-y-10 animate-in fade-in duration-1000">
              <header className="flex items-center justify-between">
-                <div><h2 className="text-3xl font-black text-white tracking-tighter">¡Hola, Nico!</h2><p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Prepárate para reventarla</p></div>
-                <div onClick={()=>setActiveTab('Profile')} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden cursor-pointer active:scale-90 transition-transform"><User size={20} className="text-blue-500" /></div>
+                <div><h2 className="text-4xl font-black text-white tracking-tighter">¡Hey, Nico! 👋</h2><p className="text-white/30 text-xs font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
+                <div onClick={()=>setActiveTab('Profile')} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all shadow-xl"><User size={24} className="text-blue-500" /></div>
              </header>
-             <section className="bg-gradient-to-br from-neutral-900 to-black p-10 rounded-[50px] border border-white/10 shadow-3xl text-center relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.15),transparent_70%)]" />
-                <p className="text-xs uppercase tracking-[0.4em] font-black text-blue-500 mb-8 relative z-10">Días de Racha</p>
-                <div className="relative z-10 flex items-center justify-center gap-4 mb-8"><div className="p-4 bg-orange-500/10 rounded-full text-orange-500 animate-bounce"><Zap size={32} /></div><span className="text-8xl font-black tracking-tighter text-white drop-shadow-2xl">{userData.streak}</span></div>
-                <div onClick={()=>setActiveTab('Evolution')} className="bg-white/5 py-4 px-6 rounded-3xl border border-white/5 text-[10px] uppercase font-black tracking-widest text-white/40 hover:text-white transition-all cursor-pointer relative z-10 flex items-center justify-center gap-2">Ver Evolución <Activity size={14}/></div>
+             <section className="bg-gradient-to-br from-neutral-900 to-black p-12 rounded-[60px] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] text-center relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.25),transparent_70%)]" />
+                <p className="text-xs uppercase tracking-[0.5em] font-black text-blue-500 mb-10 relative z-10 animate-pulse">Racha de Fuego</p>
+                <div className="relative z-10 flex items-center justify-center gap-6 mb-10"><div className="p-5 bg-orange-500/10 rounded-full text-orange-500 shadow-2xl animate-bounce"><Zap size={40} strokeWidth={3} /></div><span className="text-9xl font-black tracking-tighter text-white drop-shadow-[0_20px_50px_rgba(255,255,255,0.2)]">{userData.streak}</span></div>
+                <div onClick={()=>setActiveTab('Evolution')} className="bg-blue-600/10 py-5 px-10 rounded-3xl border border-blue-600/20 text-[10px] uppercase font-black tracking-widest text-blue-400 hover:bg-blue-600 hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-3">Explorar Evolución <ArrowUpRight size={16}/></div>
              </section>
-             <div className="grid grid-cols-2 gap-4">
-                <button onClick={()=>setActiveTab('Training')} className="p-6 bg-neutral-900 border border-white/5 rounded-[40px] flex flex-col gap-4 group hover:border-blue-500/30 transition-all text-left">
-                   <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform"><Dumbbell size={24}/></div>
-                   <div><p className="font-bold text-lg leading-tight">Entrenar</p><p className="text-[9px] text-white/20 font-black uppercase">Rutina de Hoy</p></div>
+             <div className="grid grid-cols-2 gap-6 pb-10">
+                <button onClick={()=>setActiveTab('Training')} className="p-8 bg-neutral-900 border border-white/5 rounded-[50px] flex flex-col gap-6 group hover:border-blue-500/30 transition-all text-left shadow-2xl">
+                   <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-lg"><Dumbbell size={28}/></div>
+                   <div><p className="font-black text-2xl leading-none mb-1 uppercase">Entrenar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">3 Ejercicios hoy</p></div>
                 </button>
-                <button onClick={()=>setActiveTab('Calendar')} className="p-6 bg-neutral-900 border border-white/5 rounded-[40px] flex flex-col gap-4 group hover:border-indigo-500/30 transition-all text-left">
-                   <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform"><Clock size={24}/></div>
-                   <div><p className="font-bold text-lg leading-tight">Agendar</p><p className="text-[9px] text-white/20 font-black uppercase">{bookings.length} Reservas</p></div>
+                <button onClick={()=>setActiveTab('Calendar')} className="p-8 bg-neutral-900 border border-white/5 rounded-[50px] flex flex-col gap-6 group hover:border-indigo-500/30 transition-all text-left shadow-2xl">
+                   <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-500 group-hover:scale-110 group-hover:bg-indigo-500 group-hover:text-white transition-all shadow-lg"><Clock size={28}/></div>
+                   <div><p className="font-black text-2xl leading-none mb-1 uppercase">Agendar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">{bookings.length} Sesiones</p></div>
                 </button>
              </div>
           </div>
@@ -213,12 +208,36 @@ export default function UserApp() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans p-6 pb-32 overflow-x-hidden">
+      {isBookingModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-8 animate-in fade-in duration-300">
+           <div className="bg-neutral-900 border border-white/10 p-10 rounded-[50px] w-full max-w-sm shadow-3xl">
+              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl font-black uppercase tracking-tighter">Día {selectedDay}</h3><button onClick={()=>setIsBookingModalOpen(false)}><X size={24} className="text-white/20 hover:text-white"/></button></div>
+              <div className="space-y-8">
+                 <div className="space-y-3"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest">¿A qué hora vas?</label><input type="time" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xl font-black outline-none focus:border-blue-500" value={selectedTime} onChange={e=>setSelectedTime(e.target.value)} /></div>
+                 <div className="space-y-3">
+                    <label className="text-[10px] font-black text-white/20 uppercase tracking-widest">¿Qué vas a entrenar?</label>
+                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                       {userData.currentRoutine.map(ex => (
+                         <button key={ex.id} onClick={()=>{
+                           if(selectedExs.includes(ex.name)) setSelectedExs(selectedExs.filter(e=>e!==ex.name));
+                           else setSelectedExs([...selectedExs, ex.name]);
+                         }} className={`p-4 rounded-2xl text-[10px] font-black uppercase text-left border transition-all ${selectedExs.includes(ex.name) ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 border-white/10 text-white/30'}`}>
+                            {ex.name}
+                         </button>
+                       ))}
+                    </div>
+                 </div>
+                 <button onClick={handleConfirmBooking} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-widest shadow-2xl shadow-blue-600/30">Confirmar Reserva</button>
+              </div>
+           </div>
+        </div>
+      )}
       <main className="max-w-lg mx-auto">{renderTabContent()}</main>
-      <nav className="fixed bottom-6 left-6 right-6 h-20 bg-black/80 backdrop-blur-3xl border border-white/10 rounded-[40px] z-50 flex items-center justify-around px-6 shadow-2xl">
-         <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={24}/>} />
-         <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={24}/>} />
-         <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={24}/>} />
-         <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={24}/>} />
+      <nav className="fixed bottom-8 left-8 right-8 h-24 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-[50px] z-50 flex items-center justify-around px-8 shadow-3xl animate-in slide-in-from-bottom-10 duration-1000">
+         <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={28}/>} />
+         <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={28}/>} />
+         <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={28}/>} />
+         <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={28}/>} />
       </nav>
     </div>
   );
@@ -226,9 +245,9 @@ export default function UserApp() {
 
 function NavBtn({ active, onClick, icon }: any) {
   return (
-    <button onClick={onClick} className={`p-4 rounded-2xl transition-all relative ${active ? 'text-blue-500' : 'text-white/20'}`}>
+    <button onClick={onClick} className={`p-5 rounded-3xl transition-all relative ${active ? 'text-blue-500' : 'text-white/10 hover:text-white/30'}`}>
        {icon}
-       {active && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full" />}
+       {active && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_#3b82f6]" />}
     </button>
   );
 }
