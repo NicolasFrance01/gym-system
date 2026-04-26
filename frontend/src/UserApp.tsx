@@ -1,5 +1,5 @@
 import { Calendar, Activity, Zap, Brain, Dumbbell, Clock, CheckCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function UserApp() {
   const [activeTab, setActiveTab] = useState('Home');
@@ -9,20 +9,17 @@ export default function UserApp() {
     dni: "1111",
     expiry: "25 Mayo 2026",
     streak: 14,
-    assigned_routine: "Hipertrofia Avanzada (Empuje)",
-    assigned_classes: ["Yoga Flow", "CrossFit HIIT"],
-    exercises: [
-      { name: "Press de Banca", sets: "4x10", weight: "80kg" },
-      { name: "Sentadilla Libre", sets: "3x12", weight: "100kg" },
-      { name: "Peso Muerto", sets: "4x8", weight: "120kg" }
-    ]
+    assigned_routine: "Rutina Personalizada IA",
+    custom_exercises: [
+      { name: "Press de Banca", sets: "4", reps: "10" },
+      { name: "Sentadillas", sets: "3", reps: "12" },
+      { name: "Jalón al Pecho", sets: "4", reps: "10" },
+      { name: "Curls de Bíceps", sets: "3", reps: "15" }
+    ],
+    assigned_classes: ["Yoga Flow", "CrossFit HIIT"]
   });
 
   const [bookings, setBookings] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Sync logic
-  }, []);
 
   const handleBooking = (className: string, time: string) => {
     if (bookings.find(b => b.time === time)) {
@@ -39,14 +36,14 @@ export default function UserApp() {
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-gradient-to-br from-blue-600/20 to-transparent p-6 rounded-[40px] border border-blue-500/20">
-               <h3 className="text-xl font-bold flex items-center gap-3 mb-2"><Dumbbell className="text-blue-500" /> Mi Plan Actual</h3>
-               <p className="text-sm text-blue-400 font-bold uppercase tracking-widest">{profile.assigned_routine}</p>
+               <h3 className="text-xl font-bold flex items-center gap-3 mb-2"><Dumbbell className="text-blue-500" /> Mi Rutina Asignada</h3>
+               <p className="text-xs text-blue-400 font-black uppercase tracking-widest">{profile.assigned_routine}</p>
             </div>
             <div className="space-y-3">
-               {profile.exercises.map((ex, i) => (
+               {profile.custom_exercises.map((ex, i) => (
                  <div key={i} className="bg-neutral-900 border border-white/5 p-5 rounded-3xl flex justify-between items-center group hover:border-blue-500/30 transition-all">
-                    <div><p className="font-bold text-white">{ex.name}</p><p className="text-xs text-white/30">{ex.sets} • {ex.weight}</p></div>
-                    <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition-colors"><CheckCircle size={14} /></div>
+                    <div><p className="font-bold text-white">{ex.name}</p><p className="text-[10px] text-white/30 uppercase font-bold">{ex.sets} Series × {ex.reps} Reps</p></div>
+                    <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/10"><CheckCircle size={16} /></div>
                  </div>
                ))}
             </div>
@@ -56,24 +53,25 @@ export default function UserApp() {
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
              <div className="bg-neutral-900 border border-white/10 rounded-[40px] p-8">
-                <h3 className="text-lg font-bold mb-6 flex items-center gap-3"><Clock className="text-blue-500" /> Reservar Turno</h3>
-                <div className="grid grid-cols-2 gap-3 mb-8">
-                   {["08:00", "10:00", "12:00", "15:00", "18:00", "19:00"].map(time => (
+                <h3 className="text-lg font-bold mb-6 flex items-center gap-3"><Clock className="text-blue-500" /> Mi Agenda de Gimnasio</h3>
+                <p className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-4">Turnos Disponibles (06:00 - 00:00)</p>
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                   {["07:00", "09:00", "11:00", "14:00", "16:00", "18:00", "20:00", "21:00", "23:00"].map(time => (
                      <button 
                        key={time}
                        onClick={() => handleBooking("Musculación", time)}
-                       className={`p-4 rounded-2xl text-xs font-bold transition-all border ${bookings.find(b=>b.time===time) ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 border-white/5 text-white/40 hover:border-blue-500'}`}
+                       className={`p-4 rounded-2xl text-[10px] font-black transition-all border ${bookings.find(b=>b.time===time) ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 border-white/5 text-white/40 hover:border-blue-500'}`}
                      >
                        {time} hs
                      </button>
                    ))}
                 </div>
-                <h3 className="text-lg font-bold mb-4">Mis Clases Asignadas</h3>
+                <h3 className="text-lg font-bold mb-4">Clases del Día</h3>
                 <div className="space-y-3">
                    {profile.assigned_classes.map((c, i) => (
-                     <div key={i} className="p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between">
-                        <p className="font-bold text-xs">{c}</p>
-                        <button onClick={() => handleBooking(c, "Hoy")} className="text-[10px] font-black uppercase text-blue-400">Reservar</button>
+                     <div key={i} className="p-4 bg-blue-600/10 border border-blue-500/20 rounded-3xl flex items-center justify-between">
+                        <div><p className="font-bold text-xs text-white">{c}</p><p className="text-[9px] text-blue-400 font-black">Asignada por Entrenador</p></div>
+                        <button onClick={() => handleBooking(c, "Hoy")} className="px-4 py-2 bg-blue-600 rounded-xl text-[9px] font-black uppercase text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Reservar</button>
                      </div>
                    ))}
                 </div>
@@ -85,16 +83,15 @@ export default function UserApp() {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
             <div className="bg-white/5 border border-white/10 rounded-[40px] p-8">
                <div className="flex flex-col items-center mb-8">
-                 <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-bold mb-4 shadow-xl">NF</div>
+                 <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-4xl font-bold mb-4 shadow-2xl">NF</div>
                  <h3 className="text-2xl font-bold text-white">{profile.name}</h3>
-                 <p className="text-blue-400 font-mono text-xs tracking-widest uppercase">{profile.plan}</p>
+                 <p className="text-blue-400 font-mono text-[10px] tracking-widest uppercase font-black">{profile.plan}</p>
                </div>
                <div className="space-y-4 border-t border-white/10 pt-6">
-                 <div className="flex justify-between text-sm"><span className="text-white/40">DNI</span> <span>{profile.dni}</span></div>
-                 <div className="flex justify-between text-sm"><span className="text-white/40">Vencimiento</span> <span>{profile.expiry}</span></div>
+                 <div className="flex justify-between text-xs"><span className="text-white/20 uppercase font-black">DNI</span> <span>{profile.dni}</span></div>
+                 <div className="flex justify-between text-xs"><span className="text-white/20 uppercase font-black">Vencimiento</span> <span>{profile.expiry}</span></div>
                </div>
             </div>
-            <button className="w-full py-4 bg-red-500/10 border border-red-500/20 rounded-3xl text-red-500 font-bold text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">Cerrar Sesión</button>
           </div>
         );
       default:
@@ -108,20 +105,20 @@ export default function UserApp() {
                   <span className="text-8xl font-black tracking-tighter text-white drop-shadow-2xl">{profile.streak}</span>
                   <div className="p-4 bg-orange-500/10 rounded-full text-orange-500 animate-bounce" style={{animationDelay: '0.2s'}}><Zap size={32} /></div>
               </div>
-              <div className="bg-white/5 p-6 rounded-3xl border border-white/5 text-sm text-white/60 leading-relaxed font-medium relative z-10 mx-4">
-                 ¡Increíble progreso! Estás en el top 5% de atletas este mes. Mantén el ritmo. 🚀
+              <div className="bg-white/5 p-6 rounded-3xl border border-white/5 text-[10px] uppercase font-black tracking-widest text-white/40 leading-relaxed relative z-10 mx-4">
+                 Top 5% Atletas Globales 🚀
               </div>
             </section>
             <div className="grid grid-cols-2 gap-4">
                <div onClick={() => setActiveTab('Training')} className="p-6 bg-neutral-900 border border-white/5 rounded-[35px] flex flex-col gap-4 group cursor-pointer hover:border-blue-500/30 transition-all">
                   <Dumbbell className="text-blue-500" />
-                  <p className="font-bold text-lg">Mi Rutina</p>
-                  <p className="text-xs text-white/30">{profile.assigned_routine}</p>
+                  <p className="font-bold text-lg">Entrenamiento</p>
+                  <p className="text-[10px] text-white/20 uppercase font-bold">Ver Rutina IA</p>
                </div>
                <div onClick={() => setActiveTab('Calendar')} className="p-6 bg-neutral-900 border border-white/5 rounded-[35px] flex flex-col gap-4 group cursor-pointer hover:border-indigo-500/30 transition-all">
                   <Brain className="text-indigo-500" />
                   <p className="font-bold text-lg">IA Advice</p>
-                  <p className="text-xs text-white/30">Prioriza descanso hoy</p>
+                  <p className="text-[10px] text-white/20 uppercase font-bold">Prioriza descanso</p>
                </div>
             </div>
           </div>

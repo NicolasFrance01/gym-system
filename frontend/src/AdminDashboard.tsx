@@ -1,9 +1,18 @@
-import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, Target, CheckCircle, XCircle, Trash2, Dumbbell, Calendar as CalendarIcon, Flame, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, Target, CheckCircle, XCircle, Trash2, Dumbbell, Calendar as CalendarIcon, Flame, Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   BarChart, Bar, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, Legend
 } from 'recharts';
+
+const EXERCISE_DB = {
+  Pecho: ["Press de Banca", "Press Inclinado", "Aperturas con Mancuernas", "Flexiones de Brazos", "Cruce de Poleas"],
+  Espalda: ["Jalón al Pecho", "Remo con Barra", "Dominadas", "Peso Muerto", "Remo en Polea Baja"],
+  Brazos: ["Curls de Bíceps", "Extensiones de Tríceps", "Curl Martillo", "Press Francés", "Fondos en Paralelas"],
+  Abdomen: ["Crunches", "Plancha", "Elevación de Piernas", "Russian Twist", "Rueda Abdominal"],
+  Glúteos: ["Hip Thrust", "Puente de Glúteo", "Patada de Glúteo", "Abducción de Cadera"],
+  Piernas: ["Sentadillas", "Prensa de Piernas", "Estocadas", "Extensión de Cuádriceps", "Curl Femoral", "Elevación de Gemelos"]
+};
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -13,13 +22,6 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState('Resumen');
   
-  const [startDate] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    return d.toISOString().split('T')[0];
-  });
-  const [endDate] = useState(() => new Date().toISOString().split('T')[0]);
-
   // Unified State
   const [members, setMembers] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -41,7 +43,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (isAuthenticated) refreshData();
-  }, [isAuthenticated, startDate, endDate]);
+  }, [isAuthenticated]);
 
   const handleLogin = (e: any) => {
     e.preventDefault();
@@ -60,44 +62,28 @@ export default function AdminDashboard() {
   const refreshData = async () => {
     if (members.length === 0) {
       setMembers([
-        { id: 1, name: "Neon Matrix", dni: "00110011", status: "ACTIVO", membership_type: "Elite", expiry_date: "2026-05-20", assigned_plan: "Hipertrofia Avanzada", assigned_classes: ["Yoga", "CrossFit"] },
-        { id: 2, name: "Sarah Connor", dni: "10101010", status: "DEUDA", membership_type: "Premium", expiry_date: "2026-04-10", assigned_plan: "Cardio Intenso", assigned_classes: ["Spinning"] },
-        { id: 3, name: "John Wick", dni: "99999999", status: "ACTIVO", membership_type: "Básico", expiry_date: "2026-05-15", assigned_plan: "Fuerza Bruta", assigned_classes: [] },
+        { id: 1, name: "Neon Matrix", dni: "00110011", status: "ACTIVO", membership_type: "Elite", expiry_date: "2026-05-20", custom_routine: [{name: "Press de Banca", sets: "4", reps: "10"}, {name: "Sentadillas", sets: "3", reps: "12"}], assigned_classes: ["Yoga"] },
+        { id: 2, name: "Sarah Connor", dni: "10101010", status: "DEUDA", membership_type: "Premium", expiry_date: "2026-04-10", custom_routine: [], assigned_classes: [] },
       ]);
     }
-
     if (staff.length === 0) {
-      setStaff([
-        { id: 101, name: "Marcus Rossi", role: "Entrenador", status: "ACTIVO", shift: "Mañana" },
-        { id: 102, name: "Elena Rojas", role: "Recepcionista", status: "ACTIVO", shift: "Tarde" },
-      ]);
+      setStaff([{ id: 101, name: "Marcus Rossi", role: "Entrenador", status: "ACTIVO", shift: "Mañana" }]);
     }
-
     setFinanceData({
       cashflow_data: [{ month: "Ene", ingresos: 4800 }, { month: "Feb", ingresos: 6500 }, { month: "Mar", ingresos: 8900 }, { month: "Abr", ingresos: 12450 }],
       revenue_distribution: [{ name: "Básico", value: 3000 }, { name: "Premium", value: 5500 }, { name: "Elite", value: 3950 }],
       total_revenue: 12450
     });
-
     setAiData({
-      performance_radar: [
-        { subject: 'Retención', A: 85, B: 65 },
-        { subject: 'Asistencia', A: 78, B: 70 },
-        { subject: 'Satisfacción', A: 95, B: 80 },
-        { subject: 'Ingresos', A: 88, B: 60 },
-      ],
+      performance_radar: [{ subject: 'Retención', A: 85, B: 65 }, { subject: 'Asistencia', A: 78, B: 70 }, { subject: 'Satisfacción', A: 95, B: 80 }, { subject: 'Ingresos', A: 88, B: 60 }],
       member_growth: [{ month: 'Ene', altas: 80, bajas: 10 }, { month: 'Feb', altas: 65, bajas: 15 }, { month: 'Mar', altas: 95, bajas: 18 }],
-      streaks: [
-        { name: "Neon Matrix", racha: 18, status: "Buena Racha", risk: 5 },
-        { name: "John Wick", racha: 12, status: "Buena Racha", risk: 12 },
-        { name: "Sarah Connor", racha: 0, status: "Perdida", risk: 89 },
-      ]
+      streaks: [{ name: "Neon Matrix", racha: 18, risk: 5 }, { name: "John Wick", racha: 12, risk: 12 }, { name: "Sarah Connor", racha: 0, risk: 89 }]
     });
   };
 
   const handleSaveMember = () => {
     if (isEditMode) setMembers(prev => prev.map(m => m.id === selectedItem.id ? { ...selectedItem } : m));
-    else setMembers(prev => [...prev, { id: Date.now(), ...selectedItem, assigned_plan: 'General', assigned_classes: [] }]);
+    else setMembers(prev => [...prev, { id: Date.now(), ...selectedItem, custom_routine: [], assigned_classes: [] }]);
     setIsModalOpen(false);
   };
 
@@ -108,7 +94,7 @@ export default function AdminDashboard() {
   };
 
   const handleSaveWorkout = () => {
-    setMembers(prev => prev.map(m => m.id === selectedItem.id ? { ...m, assigned_plan: selectedItem.assigned_plan, assigned_classes: selectedItem.assigned_classes } : m));
+    setMembers(prev => prev.map(m => m.id === selectedItem.id ? { ...m, custom_routine: selectedItem.custom_routine, assigned_classes: selectedItem.assigned_classes } : m));
     setIsModalOpen(false);
   };
 
@@ -123,7 +109,7 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case 'Socios': return <MembersModule members={members} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={(id: any) => setMembers(m => m.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', dni:'', status:'ACTIVO', membership_type:'Premium'}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Staff': return <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem(s); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => setStaff(st => st.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} />;
-      case 'Entrenamientos': return <WorkoutsModule members={members} classes={classes} onAssign={(m: any) => { setSelectedItem({...m}); setModalType('workout'); setIsModalOpen(true); }} />;
+      case 'Entrenamientos': return <WorkoutsModule members={members} onAssign={(m: any) => { setSelectedItem({...m, custom_routine: m.custom_routine || [], assigned_classes: m.assigned_classes || []}); setModalType('workout'); setIsModalOpen(true); }} />;
       case 'Calendario': return <CalendarModule classes={classes} />;
       case 'Finanzas': return userRole === 'admin' ? <FinanceModule data={financeData} /> : <NoAccess />;
       case 'Analítica IA': return userRole === 'admin' ? <AIAnalyticsModule data={aiData} /> : <NoAccess />;
@@ -141,12 +127,11 @@ export default function AdminDashboard() {
               <div className="h-48"><ResponsiveContainer width="100%" height="100%"><BarChart data={financeData?.cashflow_data}><Bar dataKey="ingresos" fill="#3b82f6" radius={[4, 4, 0, 0]}/></BarChart></ResponsiveContainer></div>
             </div>
             <div className="bg-white/5 border border-white/5 p-6 rounded-2xl">
-              <h3 className="text-sm font-bold mb-4">Riesgo de Abandono (IA)</h3>
+              <h3 className="text-sm font-bold mb-4">Riesgo IA</h3>
               <div className="space-y-3">
                  {aiData?.streaks?.filter((s:any) => s.risk > 50).map((s:any, i:number) => (
                    <div key={i} className="flex items-center justify-between p-3 bg-red-500/5 rounded-xl border border-red-500/10">
-                      <p className="font-bold text-xs">{s.name}</p>
-                      <p className="text-red-500 font-black">{s.risk}%</p>
+                      <p className="font-bold text-xs">{s.name}</p><p className="text-red-500 font-black">{s.risk}%</p>
                    </div>
                  ))}
               </div>
@@ -159,14 +144,14 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4 font-sans">
-        <div className="w-full max-w-sm bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-2xl z-10 shadow-2xl">
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-2xl">
           <div className="flex justify-center mb-6"><ShieldCheck size={48} className="text-blue-500" /></div>
-          <h2 className="text-2xl font-bold text-center text-white mb-6">Acceso Atlas</h2>
+          <h2 className="text-2xl font-bold text-center text-white mb-6 tracking-tight">Acceso Atlas</h2>
           <form onSubmit={handleLogin} className="space-y-4">
             <input type="text" placeholder="Usuario" className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white outline-none" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
             <input type="password" placeholder="Contraseña" className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white outline-none" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
-            <button type="submit" className="w-full py-3 bg-blue-600 rounded-xl font-bold text-white transition-all hover:bg-blue-500">Ingresar</button>
+            <button type="submit" className="w-full py-3 bg-blue-600 rounded-xl font-bold text-white transition-all hover:bg-blue-500 shadow-lg shadow-blue-600/20">Ingresar</button>
           </form>
         </div>
       </div>
@@ -176,43 +161,65 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans flex overflow-hidden text-[13px]">
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-neutral-900 border border-white/10 p-8 rounded-3xl w-full max-w-sm shadow-2xl">
-            <h2 className="text-lg font-bold mb-6 uppercase tracking-widest text-blue-500">{isEditMode ? 'Editar' : 'Crear'} {modalType}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-neutral-900 border border-white/10 p-8 rounded-3xl w-full max-w-2xl shadow-2xl my-auto">
+            <div className="flex justify-between items-center mb-6"><h2 className="text-lg font-bold uppercase tracking-widest text-blue-500">{isEditMode ? 'Editar' : 'Crear'} {modalType}</h2><button onClick={() => setIsModalOpen(false)}><X size={20} className="text-white/20"/></button></div>
             <div className="space-y-4">
+              {modalType === 'workout' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-xs font-black uppercase text-white/40 mb-4 tracking-widest">Base de Ejercicios</h3>
+                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                      {Object.entries(EXERCISE_DB).map(([cat, exs]) => (
+                        <div key={cat} className="space-y-2">
+                           <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{cat}</p>
+                           <div className="flex flex-wrap gap-2">
+                              {exs.map(ex => (
+                                <button key={ex} onClick={() => setSelectedItem({...selectedItem, custom_routine: [...selectedItem.custom_routine, {name: ex, sets: "3", reps: "10"}]})} className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-lg text-[10px] hover:bg-blue-600 hover:border-blue-500 transition-all">+ {ex}</button>
+                              ))}
+                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase text-white/40 mb-4 tracking-widest">Rutina de {selectedItem.name}</h3>
+                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                       {selectedItem.custom_routine.map((ex:any, i:number) => (
+                         <div key={i} className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between group">
+                            <div className="flex-1">
+                               <p className="font-bold text-xs">{ex.name}</p>
+                               <div className="flex gap-2 mt-2">
+                                  <input type="text" className="w-12 bg-black/40 border border-white/5 rounded p-1 text-[10px] text-center" value={ex.sets} onChange={e => {
+                                    const nr = [...selectedItem.custom_routine]; nr[i].sets = e.target.value; setSelectedItem({...selectedItem, custom_routine: nr});
+                                  }} placeholder="Sets" />
+                                  <input type="text" className="w-12 bg-black/40 border border-white/5 rounded p-1 text-[10px] text-center" value={ex.reps} onChange={e => {
+                                    const nr = [...selectedItem.custom_routine]; nr[i].reps = e.target.value; setSelectedItem({...selectedItem, custom_routine: nr});
+                                  }} placeholder="Reps" />
+                               </div>
+                            </div>
+                            <button onClick={() => setSelectedItem({...selectedItem, custom_routine: selectedItem.custom_routine.filter((_:any,idx:number)=>idx!==i)})} className="text-red-500/20 group-hover:text-red-500"><Trash2 size={14}/></button>
+                         </div>
+                       ))}
+                       {selectedItem.custom_routine.length === 0 && <p className="text-[10px] text-white/10 text-center py-10 italic">No hay ejercicios asignados.</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
               {modalType === 'member' && (
-                <>
+                <div className="space-y-4">
                   <input type="text" placeholder="Nombre" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
                   <input type="text" placeholder="DNI" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={selectedItem?.dni} onChange={e => setSelectedItem({...selectedItem, dni: e.target.value})} />
-                </>
+                </div>
               )}
               {modalType === 'staff' && (
-                <>
+                <div className="space-y-4">
                   <input type="text" placeholder="Nombre" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
                   <input type="text" placeholder="Rol" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={selectedItem?.role} onChange={e => setSelectedItem({...selectedItem, role: e.target.value})} />
-                </>
-              )}
-              {modalType === 'workout' && (
-                <>
-                  <p className="text-[10px] text-white/40 mb-2 uppercase font-bold tracking-widest">Asignar Plan a {selectedItem.name}</p>
-                  <select className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={selectedItem.assigned_plan} onChange={e => setSelectedItem({...selectedItem, assigned_plan: e.target.value})}>
-                    <option value="Hipertrofia">Hipertrofia</option><option value="Cardio">Cardio</option><option value="Fuerza">Fuerza</option>
-                  </select>
-                  <p className="text-[10px] text-white/40 mt-4 mb-2 uppercase font-bold tracking-widest">Clases Habilitadas</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {classes.map(c => (
-                      <label key={c.id} className="flex items-center gap-2 text-[10px] p-2 bg-white/5 rounded-lg cursor-pointer border border-white/5 hover:border-blue-500/30">
-                        <input type="checkbox" checked={selectedItem.assigned_classes.includes(c.name)} onChange={() => {
-                          const list = selectedItem.assigned_classes.includes(c.name) ? selectedItem.assigned_classes.filter((x:any)=>x!==c.name) : [...selectedItem.assigned_classes, c.name];
-                          setSelectedItem({...selectedItem, assigned_classes: list});
-                        }} /> {c.name}
-                      </label>
-                    ))}
-                  </div>
-                </>
+                </div>
               )}
             </div>
-            <div className="flex gap-3 mt-8"><button className="flex-1 py-3 text-white/40" onClick={() => setIsModalOpen(false)}>Cerrar</button><button className="flex-1 py-3 bg-blue-600 rounded-xl font-bold" onClick={modalType === 'workout' ? handleSaveWorkout : modalType === 'member' ? handleSaveMember : handleSaveStaff}>Guardar</button></div>
+            <div className="flex gap-3 mt-8 border-t border-white/5 pt-6"><button className="flex-1 py-3 text-white/40 font-bold" onClick={() => setIsModalOpen(false)}>Cancelar</button><button className="flex-1 py-3 bg-blue-600 rounded-xl font-bold" onClick={modalType === 'workout' ? handleSaveWorkout : modalType === 'member' ? handleSaveMember : handleSaveStaff}>Guardar Cambios</button></div>
           </div>
         </div>
       )}
@@ -244,7 +251,7 @@ export default function AdminDashboard() {
 
       <main className="flex-1 overflow-y-auto p-6 relative">
         <header className="flex items-center justify-between mb-8">
-          <div><h2 className="text-2xl font-bold text-white mb-1">{activeTab}</h2><p className="text-[10px] text-white/20 uppercase tracking-widest">Gym Management Core</p></div>
+          <div><h2 className="text-2xl font-bold text-white mb-1">{activeTab}</h2><p className="text-[10px] text-white/20 uppercase tracking-widest">Management Core</p></div>
           <button className="p-2 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all"><Download size={16}/></button>
         </header>
         {renderContent()}
@@ -285,19 +292,18 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick }: an
 function WorkoutsModule({ members, onAssign }: any) {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center"><h3 className="font-bold text-base">Asignación de Rutinas</h3></div>
-      <div className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden">
+      <div className="flex justify-between items-center"><h3 className="font-bold text-base">Planificación de Rutinas</h3></div>
+      <div className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
         <table className="w-full text-left text-xs">
           <thead className="bg-white/5 text-white/40 uppercase text-[9px] font-bold tracking-widest">
-            <tr><th className="p-4">Socio</th><th className="p-4">Plan Actual</th><th className="p-4">Clases</th><th className="p-4">Acción</th></tr>
+            <tr><th className="p-4">Socio</th><th className="p-4">Ejercicios</th><th className="p-4">Acción</th></tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {members.map((m:any) => (
               <tr key={m.id} className="hover:bg-white/5 transition-colors">
                 <td className="p-4 font-bold text-white">{m.name}</td>
-                <td className="p-4 text-blue-400 font-bold">{m.assigned_plan}</td>
-                <td className="p-4 text-white/30 text-[10px]">{m.assigned_classes.join(', ') || 'Sin clases'}</td>
-                <td className="p-4"><button onClick={() => onAssign(m)} className="px-3 py-2 bg-blue-600 rounded-lg font-bold text-[9px] uppercase tracking-widest hover:bg-blue-500 transition-all">Asignar</button></td>
+                <td className="p-4 text-white/30 text-[10px]">{m.custom_routine?.length || 0} Ejercicios Asignados</td>
+                <td className="p-4"><button onClick={() => onAssign(m)} className="px-4 py-2 bg-blue-600 rounded-lg font-bold text-[9px] uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center gap-2"><Plus size={12}/> Armar Rutina</button></td>
               </tr>
             ))}
           </tbody>
@@ -309,29 +315,37 @@ function WorkoutsModule({ members, onAssign }: any) {
 
 function CalendarModule({ classes }: any) {
   const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const hours = Array.from({length: 19}, (_, i) => i + 6); // 6 AM to 00:00
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center"><h3 className="font-bold text-base">Agenda de Clases</h3></div>
-      <div className="grid grid-cols-7 gap-2">
-        {days.map(d => (
-          <div key={d} className="space-y-2 bg-white/5 p-2 rounded-xl border border-white/5">
-            <p className="text-[9px] font-black text-blue-400 uppercase text-center mb-2">{d}</p>
-            {classes.filter((c:any) => c.day === d).map((c:any, i:number) => (
-              <div key={i} className="p-2 bg-blue-600/10 rounded-lg border border-blue-500/20">
-                <p className="font-bold text-[9px] text-white">{c.name}</p>
-                <p className="text-[8px] text-white/30">{c.time} hs</p>
-              </div>
-            ))}
+      <div className="flex justify-between items-center"><h3 className="font-bold text-base">Agenda de Gimnasio (6:00 - 00:00)</h3></div>
+      <div className="bg-white/5 border border-white/5 rounded-3xl p-6 overflow-x-auto">
+        <div className="min-w-[1000px]">
+          <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-white/10 pb-4 mb-4">
+             <div />
+             {days.map(d => <p key={d} className="text-center text-[10px] font-black text-blue-500 uppercase tracking-widest">{d}</p>)}
           </div>
-        ))}
-      </div>
-      <div className="bg-white/5 p-5 rounded-2xl border border-white/5 flex items-center justify-between">
-         <div className="flex items-center gap-8">
-            <div className="flex flex-col"><span className="text-[8px] text-white/30 uppercase font-bold tracking-widest">Lunes a Viernes</span><span className="text-xs font-bold text-white">08:00 - 20:00</span></div>
-            <div className="flex flex-col"><span className="text-[8px] text-white/30 uppercase font-bold tracking-widest">Sábado</span><span className="text-xs font-bold text-white">10:00 - 18:00</span></div>
-            <div className="flex flex-col"><span className="text-[8px] text-white/30 uppercase font-bold tracking-widest">Domingo</span><span className="text-xs font-bold text-white">12:00 - 18:00</span></div>
-         </div>
-         <AlertTriangle size={20} className="text-orange-400 opacity-20" />
+          <div className="space-y-1">
+             {hours.map(h => (
+               <div key={h} className="grid grid-cols-[80px_repeat(7,1fr)] group hover:bg-white/5 transition-all py-1">
+                  <div className="text-[10px] text-white/20 font-bold pr-4 text-right flex items-center justify-end">{h}:00</div>
+                  {days.map(d => {
+                    const cls = classes.filter((c:any) => c.day === d && parseInt(c.time.split(':')[0]) === h);
+                    return (
+                      <div key={d} className="min-h-[40px] border-l border-white/5 px-2 flex flex-col gap-1 justify-center">
+                         {cls.map((c:any, i:number) => (
+                           <div key={i} className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-400 text-[8px] font-black leading-tight animate-in zoom-in">
+                              {c.name}<br/><span className="text-white/40">{c.instructor}</span>
+                           </div>
+                         ))}
+                      </div>
+                    );
+                  })}
+               </div>
+             ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -385,14 +399,14 @@ function AIAnalyticsModule({ data }: any) {
         </div>
       </div>
       <div className="bg-white/5 border border-white/5 rounded-2xl p-6">
-         <h3 className="font-bold mb-6 text-[10px] text-white/30 uppercase tracking-widest flex items-center gap-2"><Flame size={14} /> Monitor de Rachas y Riesgo de Abandono</h3>
+         <h3 className="font-bold mb-6 text-[10px] text-white/30 uppercase tracking-widest flex items-center gap-2"><Flame size={14} /> Monitor de Rachas</h3>
          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {data.streaks.map((s:any, i:number) => (
               <div key={i} className="p-4 bg-black/20 rounded-2xl border border-white/5 flex flex-col items-center hover:border-blue-500/30 transition-all group">
                  <p className="text-[9px] font-black text-white/20 uppercase mb-2 tracking-[0.2em]">{s.name}</p>
                  <div className="text-3xl font-black text-orange-500 group-hover:scale-110 transition-transform">{s.racha} <span className="text-xl">🔥</span></div>
                  <div className="mt-3 w-full bg-white/5 h-1 rounded-full overflow-hidden"><div className={`h-full ${s.risk > 50 ? 'bg-red-500' : 'bg-green-500'}`} style={{width: `${s.risk}%`}} /></div>
-                 <p className={`text-[8px] font-black mt-2 uppercase tracking-widest ${s.risk > 50 ? 'text-red-500' : 'text-green-500'}`}>{s.risk > 50 ? `Alerta: ${s.risk}% Riesgo` : 'Nivel de Fidelidad: Óptimo'}</p>
+                 <p className={`text-[8px] font-black mt-2 uppercase tracking-widest ${s.risk > 50 ? 'text-red-500' : 'text-green-500'}`}>{s.risk > 50 ? `Alerta: ${s.risk}% Riesgo` : 'Fidelidad: Óptima'}</p>
               </div>
             ))}
          </div>
