@@ -484,7 +484,7 @@ function AIAnalyticsModule({ data, radarRef, growthRef }: any) {
           <h3 className="text-2xl font-bold mb-10 flex items-center gap-3 tracking-tight"><Target className="text-blue-500" /> Matriz de Rendimiento</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data.performance_radar} isAnimationActive={false}><PolarGrid stroke="rgba(255,255,255,0.1)" /><PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} /><PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} /><Radar name="Actual" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} /><Radar name="Proyectado" dataKey="B" stroke="#ec4899" fill="#ec4899" fillOpacity={0.2} /><Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} /></RadarChart>
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data.performance_radar}><PolarGrid stroke="rgba(255,255,255,0.1)" /><PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} /><PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} /><Radar name="Actual" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} isAnimationActive={false} /><Radar name="Proyectado" dataKey="B" stroke="#ec4899" fill="#ec4899" fillOpacity={0.2} isAnimationActive={false} /><Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} /></RadarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -492,7 +492,7 @@ function AIAnalyticsModule({ data, radarRef, growthRef }: any) {
           <h3 className="text-2xl font-bold mb-10 flex items-center gap-3 tracking-tight"><TrendingUp className="text-green-500" /> Tasa de Retención vs Bajas</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.member_growth} isAnimationActive={false}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} /><XAxis dataKey="month" stroke="rgba(255,255,255,0.2)" fontSize={12} /><YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} /><Tooltip contentStyle={{ backgroundColor: '#111', borderRadius: '20px' }} /><Area type="monotone" dataKey="altas" name="Altas" stroke="#10b981" fill="#10b981" fillOpacity={0.15} /><Area type="monotone" dataKey="bajas" name="Bajas" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.15} /><Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} /></AreaChart>
+              <AreaChart data={data.member_growth}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} /><XAxis dataKey="month" stroke="rgba(255,255,255,0.2)" fontSize={12} /><YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} /><Tooltip contentStyle={{ backgroundColor: '#111', borderRadius: '20px' }} /><Area type="monotone" dataKey="altas" name="Altas" stroke="#10b981" fill="#10b981" fillOpacity={0.15} isAnimationActive={false} /><Area type="monotone" dataKey="bajas" name="Bajas" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.15} isAnimationActive={false} /><Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} /></AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
