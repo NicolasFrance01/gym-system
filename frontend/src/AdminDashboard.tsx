@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, Target, CheckCircle, XCircle, Trash2, Dumbbell, Calendar as CalendarIcon, Flame, Plus, X } from 'lucide-react';
+import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, Target, CheckCircle, XCircle, Trash2, Dumbbell, Calendar as CalendarIcon, Flame, Plus, X, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [exerciseSearch, setExerciseSearch] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) refreshData();
@@ -168,18 +169,28 @@ export default function AdminDashboard() {
               {modalType === 'workout' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <h3 className="text-xs font-black uppercase text-white/40 mb-4 tracking-widest">Base de Ejercicios</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xs font-black uppercase text-white/40 tracking-widest">Base de Ejercicios</h3>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" size={12} />
+                        <input type="text" placeholder="Buscar..." className="bg-black/20 border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-[10px] text-white outline-none focus:border-blue-500/50 w-32" value={exerciseSearch} onChange={e => setExerciseSearch(e.target.value)} />
+                      </div>
+                    </div>
                     <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                      {Object.entries(EXERCISE_DB).map(([cat, exs]) => (
-                        <div key={cat} className="space-y-2">
-                           <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{cat}</p>
-                           <div className="flex flex-wrap gap-2">
-                              {exs.map(ex => (
-                                <button key={ex} onClick={() => setSelectedItem({...selectedItem, custom_routine: [...selectedItem.custom_routine, {name: ex, sets: "3", reps: "10"}]})} className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-lg text-[10px] hover:bg-blue-600 hover:border-blue-500 transition-all">+ {ex}</button>
-                              ))}
-                           </div>
-                        </div>
-                      ))}
+                      {Object.entries(EXERCISE_DB).map(([cat, exs]) => {
+                        const filteredExs = exs.filter(ex => ex.toLowerCase().includes(exerciseSearch.toLowerCase()));
+                        if (filteredExs.length === 0) return null;
+                        return (
+                          <div key={cat} className="space-y-2">
+                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{cat}</p>
+                             <div className="flex flex-wrap gap-2">
+                                {filteredExs.map(ex => (
+                                  <button key={ex} onClick={() => setSelectedItem({...selectedItem, custom_routine: [...selectedItem.custom_routine, {name: ex, sets: "3", reps: "10"}]})} className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-lg text-[10px] hover:bg-blue-600 hover:border-blue-500 transition-all">+ {ex}</button>
+                                ))}
+                             </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   <div>
