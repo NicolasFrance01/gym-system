@@ -202,11 +202,35 @@ export default function UserApp() {
                    <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4"><Clock className="text-blue-500" size={28}/> Agenda</h3>
                    <div className="px-5 py-2 bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-2xl uppercase shadow-lg">{bookings.length}/{userData.maxDaysPerWeek} Días</div>
                 </div>
+                <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">
+                       {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+                    </p>
+                </div>
                 <div className="grid grid-cols-7 gap-2 mb-10 text-center font-black text-[10px] uppercase">
-                   {["L","M","M","J","V","S","D"].map((d,i)=>(<div key={i} className="text-white/10">{d}</div>))}
-                   {Array.from({length:31}).map((_,i)=>(
-                     <div key={i} onClick={()=>{setSelectedDay(i+1); setIsBookingModalOpen(true);}} className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${bookings.some(b=>b.day === i+1) ? 'bg-blue-600 border-blue-400 text-white shadow-xl shadow-blue-600/30' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>{i+1}</div>
-                   ))}
+                    {["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map((d,i)=>(<div key={i} className="text-white/10">{d}</div>))}
+                    {(() => {
+                      const now = new Date();
+                      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+                      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                      const padding = firstDay === 0 ? 6 : firstDay - 1;
+                      
+                      const days = [];
+                      for (let i = 0; i < padding; i++) {
+                        days.push(<div key={`pad-${i}`} />);
+                      }
+                      for (let i = 1; i <= daysInMonth; i++) {
+                        const isBooked = bookings.some(b => b.day === i);
+                        days.push(
+                          <div key={i} 
+                            onClick={() => { setSelectedDay(i); setIsBookingModalOpen(true); }} 
+                            className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isBooked ? 'bg-blue-600 border-blue-400 text-white shadow-xl shadow-blue-600/30' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
+                            {i}
+                          </div>
+                        );
+                      }
+                      return days;
+                    })()}
                 </div>
                 <div className="space-y-4">
                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Próximas Sesiones</p>
