@@ -48,38 +48,49 @@ export default function AdminDashboard() {
     else { alert("Credenciales incorrectas"); }
   };
 
+  const API_URL = "http://localhost:8000";
+
   const refreshData = async () => {
-    if (members.length === 0) {
-      setMembers([
-        { 
-          id: 1, name: "Neon Matrix", dni: "1111", phone: "1122334455", email: "neon@atlas.com", status: "ACTIVO", 
-          membership_type: "Elite (Libre)", expiry_date: "2026-05-20", custom_routine: [], assigned_classes: [], 
-          evolution: [], billing_history: [
-            { date: "2026-04-20", plan: "Elite (Libre)", amount: 12000, method: "Transferencia", status: "PAGADO" }
-          ] 
-        },
-        { 
-          id: 2, name: "Sarah Connor", dni: "2222", phone: "5544332211", email: "sarah@sky.net", status: "DEUDA", 
-          membership_type: "Premium (Clases)", expiry_date: "2026-04-10", custom_routine: [], assigned_classes: [], 
-          evolution: [], billing_history: [] 
-        },
-      ]);
+    try {
+      // 1. Fetch Members
+      const membersRes = await fetch(`${API_URL}/admin/members`);
+      if (membersRes.ok) {
+        const membersData = await membersRes.json();
+        setMembers(membersData);
+      }
+
+      // 2. Fetch Stats
+      const statsRes = await fetch(`${API_URL}/admin/stats`);
+      if (statsRes.ok) {
+        const stats = await statsRes.json();
+        setFinanceData((prev: any) => ({
+          ...prev,
+          total_revenue: stats.total_revenue,
+          active_members: stats.active_members,
+          churn_risk: stats.churn_risk_count,
+          por_vencer: stats.por_vencer_count,
+          cashflow_data: [{ month: "Ene", ingresos: 4800, egresos: 3000 }, { month: "Feb", ingresos: 6500, egresos: 3200 }, { month: "Mar", ingresos: 8900, egresos: 3500 }, { month: "Abr", ingresos: 12450, egresos: 4000 }],
+          revenue_breakdown: [{ name: "Musculación", value: 8500 }, { name: "Clases", value: 3000 }, { name: "Suplementos", value: 950 }],
+          monthly_growth: [{ month: "Ene", v: 12 }, { month: "Feb", v: 18 }, { month: "Mar", v: 22 }, { month: "Abr", v: 28 }],
+          arpu: 87.5, churn_rate: 2.4
+        }));
+      }
+
+      // 3. AI Analytics
+      setAiData({
+        performance_radar: [{ subject: 'Retención', A: 85, B: 65 }, { subject: 'Asistencia', A: 78, B: 70 }, { subject: 'Satisfacción', A: 95, B: 80 }, { subject: 'Ingresos', A: 88, B: 60 }],
+        member_growth: [{ month: 'Ene', altas: 80, bajas: 10 }, { month: 'Feb', altas: 65, bajas: 15 }, { month: 'Mar', altas: 95, bajas: 18 }],
+        streaks: [{ name: "Nicolas Pagado", racha: 18, risk: 5, status: "Buena Racha" }],
+        predictions: [{ month: 'May', proy: 15000, socios: 160 }]
+      });
+
+      // Staff (Mock for now or add endpoint if available)
+      if (staff.length === 0) {
+        setStaff([{ id: 101, name: "Marcus Rossi", role: "Entrenador", status: "ACTIVO", shift: "Mañana" }]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
     }
-    if (staff.length === 0) {
-      setStaff([{ id: 101, name: "Marcus Rossi", role: "Entrenador", status: "ACTIVO", shift: "Mañana" }]);
-    }
-    setFinanceData({
-      cashflow_data: [{ month: "Ene", ingresos: 4800, egresos: 3000 }, { month: "Feb", ingresos: 6500, egresos: 3200 }, { month: "Mar", ingresos: 8900, egresos: 3500 }, { month: "Abr", ingresos: 12450, egresos: 4000 }],
-      revenue_breakdown: [{ name: "Musculación", value: 8500 }, { name: "Clases", value: 3000 }, { name: "Suplementos", value: 950 }],
-      monthly_growth: [{ month: "Ene", v: 12 }, { month: "Feb", v: 18 }, { month: "Mar", v: 22 }, { month: "Abr", v: 28 }],
-      total_revenue: 12450, total_expenses: 4000, arpu: 87.5, churn_rate: 2.4
-    });
-    setAiData({
-      performance_radar: [{ subject: 'Retención', A: 85, B: 65 }, { subject: 'Asistencia', A: 78, B: 70 }, { subject: 'Satisfacción', A: 95, B: 80 }, { subject: 'Ingresos', A: 88, B: 60 }],
-      member_growth: [{ month: 'Ene', altas: 80, bajas: 10 }, { month: 'Feb', altas: 65, bajas: 15 }, { month: 'Mar', altas: 95, bajas: 18 }],
-      streaks: [{ name: "Neon Matrix", racha: 18, risk: 5, status: "Buena Racha" }],
-      predictions: [{ month: 'May', proy: 15000, socios: 160 }]
-    });
   };
 
   const handleExportPDF = () => {
@@ -91,31 +102,54 @@ export default function AdminDashboard() {
   };
 
   const handleSavePlan = () => { if (isEditMode) setPlans(prev => prev.map(p => p.id === selectedItem.id ? { ...selectedItem } : p)); else setPlans(prev => [...prev, { id: Date.now(), ...selectedItem }]); setIsModalOpen(false); };
-  const handleSaveMember = () => { if (isEditMode) setMembers(prev => prev.map(m => m.id === selectedItem.id ? { ...selectedItem } : m)); else setMembers(prev => [...prev, { id: Date.now(), ...selectedItem, billing_history: [], custom_routine: [], assigned_classes: [], evolution: [], password: '123' }]); setIsModalOpen(false); };
+  const handleSaveMember = async () => {
+    try {
+      if (isEditMode) {
+        const res = await fetch(`${API_URL}/admin/members/${selectedItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...selectedItem,
+            password: selectedItem.password || '123'
+          })
+        });
+        if (res.ok) refreshData();
+        else alert("Error al actualizar socio");
+      } else {
+        const res = await fetch(`${API_URL}/admin/members`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...selectedItem,
+            password: '123',
+            photo_url: `https://i.pravatar.cc/300?u=${selectedItem.dni}`
+          })
+        });
+        if (res.ok) refreshData();
+        else alert("Error al crear socio. Verifique si el DNI ya existe.");
+      }
+      setIsModalOpen(false);
+    } catch (e) { console.error(e); }
+  };
+
   const handleSaveStaff = () => { if (isEditMode) setStaff(prev => prev.map(s => s.id === selectedItem.id ? { ...selectedItem } : s)); else setStaff(prev => [...prev, { id: Date.now(), ...selectedItem, status: 'ACTIVO' }]); setIsModalOpen(false); };
   const handleSaveClass = () => { if (isEditMode) setClasses(prev => prev.map(c => c.id === selectedItem.id ? { ...selectedItem } : c)); else setClasses(prev => [...prev, { id: Date.now(), ...selectedItem }]); setIsModalOpen(false); };
 
-  const handlePayment = (amount: number, method: string) => { 
-    setMembers(prev => prev.map(m => {
-      if (m.id === selectedItem.id) {
-        const newHistory = [...(m.billing_history || []), {
-          date: new Date().toISOString().split('T')[0],
-          plan: m.membership_type,
-          amount: amount,
-          method: method,
-          status: "PAGADO"
-        }];
-        return { ...m, status: 'ACTIVO', expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], billing_history: newHistory };
+  const handlePayment = async (amount: number, method: string) => { 
+    try {
+      const res = await fetch(`${API_URL}/admin/payments?member_id=${selectedItem.id}&amount=${amount}`, {
+        method: 'POST'
+      });
+      if (res.ok) {
+        setIsPaymentModalOpen(false);
+        refreshData();
       }
-      return m;
-    }));
-    setIsPaymentModalOpen(false);
-    refreshData();
+    } catch (e) { console.error(e); }
   };
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Socios': return <MembersModule members={members} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEvolution={(m:any)=>{setSelectedItem(m); setModalType('evolution'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={(id: any) => setMembers(m => m.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
+      case 'Socios': return <MembersModule members={members} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEvolution={(m:any)=>{setSelectedItem(m); setModalType('evolution'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Staff': return <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => setStaff(st => st.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} />;
       case 'Calendario': return <CalendarModule classes={classes} onAdd={(d:string, h:number)=>{setSelectedItem({name:'Yoga', day:d, startTime:`${h.toString().padStart(2,'0')}:00`, endTime:`${(h+1).toString().padStart(2,'0')}:00`, instructor:'Staff'}); setIsEditMode(false); setModalType('class'); setIsModalOpen(true);}} onEdit={(c:any)=>{setSelectedItem(c); setIsEditMode(true); setModalType('class'); setIsModalOpen(true);}} />;

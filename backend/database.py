@@ -3,7 +3,9 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Use absolute path for .env to ensure consistency
+base_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(base_dir, ".env"))
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./gym.db")
 

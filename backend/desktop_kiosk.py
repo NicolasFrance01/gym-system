@@ -119,37 +119,73 @@ class GymDesktopKiosk:
         ctk.CTkLabel(self.sidebar, text="GYM-ATLAS", font=ctk.CTkFont(size=36, weight="bold")).pack(pady=(80, 20))
         ctk.CTkLabel(self.sidebar, text="CONTROL DE ACCESO", font=ctk.CTkFont(size=14, weight="bold"), text_color="#333").pack(pady=(0, 40))
 
+        # INPUT CONTAINER (To easily hide/show)
+        self.input_container = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        self.input_container.pack(fill="x")
+
         # DNI INPUT (GLASS STYLE)
-        self.input_card = ctk.CTkFrame(self.sidebar, fg_color="#1a1a1a", corner_radius=20, border_width=1, border_color="#333")
-        self.input_card.pack(pady=20, padx=40, fill="x")
+        self.input_card = ctk.CTkFrame(self.input_container, fg_color="#1a1a1a", corner_radius=20, border_width=1, border_color="#333")
+        self.input_card.pack(pady=(20, 10), padx=40, fill="x")
         
-        ctk.CTkLabel(self.input_card, text="INGRESE DNI", font=ctk.CTkFont(size=10, weight="bold"), text_color="#555").pack(pady=(15, 0))
+        ctk.CTkLabel(self.input_card, text="INGRESE DNI", font=ctk.CTkFont(size=10, weight="bold"), text_color="#555").pack(pady=(10, 0))
         self.dni_entry = ctk.CTkEntry(self.input_card, placeholder_text="12345678", 
-                                      height=70, font=ctk.CTkFont(size=34, weight="bold"),
+                                      height=50, font=ctk.CTkFont(size=30, weight="bold"),
                                       fg_color="transparent", border_width=0, justify="center")
         self.dni_entry.pack(pady=(5, 15), padx=20, fill="x")
         self.dni_entry.bind("<Return>", self.on_check_in)
         self.dni_entry.focus_set()
 
+        # NUMERIC KEYPAD
+        self.numpad_frame = ctk.CTkFrame(self.input_container, fg_color="transparent")
+        self.numpad_frame.pack(pady=10, padx=40, fill="x")
+        
+        for i in range(3): self.numpad_frame.columnconfigure(i, weight=1)
+        
+        keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'CLR', '0', 'DEL']
+        row, col = 0, 0
+        for key in keys:
+            if key == 'CLR': cmd = lambda: self.dni_entry.delete(0, 'end')
+            elif key == 'DEL': cmd = self.handle_backspace
+            else: cmd = lambda k=key: self.dni_entry.insert('end', k)
+            
+            ctk.CTkButton(self.numpad_frame, text=key, height=45, width=80,
+                          fg_color="#1a1a1a" if key.isdigit() else "#444",
+                          hover_color="#333", font=ctk.CTkFont(size=18, weight="bold"),
+                          corner_radius=12, command=cmd).grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+            col += 1
+            if col > 2: col, row = 0, row + 1
+        
+        # Action Button
+        self.action_btn = ctk.CTkButton(self.input_container, text="REGISTRAR ACCESO", height=50,
+                                        fg_color="#3b82f6", hover_color="#2563eb",
+                                        font=ctk.CTkFont(size=16, weight="bold"),
+                                        corner_radius=15, command=self.on_check_in)
+        self.action_btn.pack(pady=10, padx=40, fill="x")
+
         # STATUS DISPLAY
-        self.status_box = ctk.CTkFrame(self.sidebar, fg_color="#111", height=400, corner_radius=24, border_width=2, border_color="#1a1a1a")
-        self.status_box.pack(pady=40, padx=40, fill="x")
+        self.status_box = ctk.CTkFrame(self.sidebar, fg_color="#111", height=250, corner_radius=24, border_width=2, border_color="#1a1a1a")
+        self.status_box.pack(pady=20, padx=40, fill="x")
         self.status_box.pack_propagate(False)
 
-        self.indicator = ctk.CTkLabel(self.status_box, text="●", font=ctk.CTkFont(size=50), text_color="#222")
-        self.indicator.pack(pady=(30, 0))
+        self.indicator = ctk.CTkLabel(self.status_box, text="●", font=ctk.CTkFont(size=40), text_color="#222")
+        self.indicator.pack(pady=(15, 0))
 
-        self.name_label = ctk.CTkLabel(self.status_box, text="BIENVENIDO", font=ctk.CTkFont(size=24, weight="bold"), text_color="#111")
-        self.name_label.pack(pady=(0, 5))
+        self.name_label = ctk.CTkLabel(self.status_box, text="BIENVENIDO", font=ctk.CTkFont(size=20, weight="bold"), text_color="#111")
+        self.name_label.pack(pady=(0, 2))
 
-        self.dni_label = ctk.CTkLabel(self.status_box, text="DNI: ---", font=ctk.CTkFont(size=14, family="Courier"), text_color="#222")
-        self.dni_label.pack(pady=(0, 20))
+        self.dni_label = ctk.CTkLabel(self.status_box, text="DNI: ---", font=ctk.CTkFont(size=12, family="Courier"), text_color="#222")
+        self.dni_label.pack(pady=(0, 10))
 
-        self.status_label = ctk.CTkLabel(self.status_box, text="ESPERANDO", font=ctk.CTkFont(size=36, weight="bold"), text_color="#444")
-        self.status_label.pack(expand=True, pady=(0, 40))
+        self.status_label = ctk.CTkLabel(self.status_box, text="ESPERANDO", font=ctk.CTkFont(size=28, weight="bold"), text_color="#444")
+        self.status_label.pack(expand=True, pady=(0, 20))
 
         # Versioning
         ctk.CTkLabel(self.sidebar, text="ATLAS ENGINE v2.6 | SYNC: ONLINE", font=ctk.CTkFont(size=9), text_color="#1a1a1a").pack(side="bottom", pady=20)
+
+    def handle_backspace(self):
+        curr = self.dni_entry.get()
+        if curr:
+            self.dni_entry.delete(len(curr)-1, 'end')
 
     def on_check_in(self, event=None):
         dni = self.dni_entry.get().strip()
@@ -175,13 +211,16 @@ class GymDesktopKiosk:
             db.close()
 
     def render_status_result(self, name, status, dni):
+        # Hide Keypad for 7s
+        self.input_container.pack_forget()
+
         color = "#ff3333" # Default error
         bg = "#1a0000"
         
         if status == "ACTIVO" or status == "AL DIA":
             color = "#00ff99"
             bg = "#001a0f"
-            winsound.Beep(1000, 250)
+            threading.Thread(target=lambda: winsound.Beep(1000, 500)).start()
         elif status == "DEUDA":
             color = "#ff4444"
             bg = "#260000"
@@ -189,7 +228,7 @@ class GymDesktopKiosk:
         elif status == "POR VENCER":
             color = "#ffcc00"
             bg = "#262200"
-            winsound.Beep(700, 400)
+            threading.Thread(target=lambda: winsound.Beep(600, 800)).start()
 
         self.status_box.configure(fg_color=bg, border_color=color)
         self.status_label.configure(text=status, text_color=color)
@@ -197,8 +236,8 @@ class GymDesktopKiosk:
         self.name_label.configure(text=name, text_color=color)
         self.dni_label.configure(text=f"DNI: {dni}", text_color=color)
         
-        # Reset after 8s
-        self.root.after(8000, self.return_to_idle)
+        # Reset after 7s
+        self.root.after(7000, self.return_to_idle)
 
     def trigger_alarm_sound(self):
         for _ in range(3):
@@ -206,7 +245,11 @@ class GymDesktopKiosk:
             time.sleep(0.1)
 
     def return_to_idle(self):
-        # Only reset if we are not currently verifying someone else
+        # Restore Keypad
+        self.input_container.pack(fill="x", before=self.status_box)
+        self.dni_entry.focus_set()
+
+        # Reset UI
         self.status_box.configure(fg_color="#111", border_color="#1a1a1a")
         self.status_label.configure(text="ESPERANDO", text_color="#444")
         self.indicator.configure(text_color="#222")
@@ -215,6 +258,16 @@ class GymDesktopKiosk:
         self.cv_engine.set_member_status("", "IDLE")
 
     def update_video_loop(self):
+        # 1. Update UI from AI Engine
+        current_ai_status = self.cv_engine.current_status
+        current_ai_name = self.cv_engine.current_name
+        
+        # If the AI engine has a non-idle status that isn't currently displayed
+        if current_ai_status != "IDLE" and self.status_label.cget("text") == "ESPERANDO":
+            # Trigger the same logic as a manual DNI check
+            self.root.after(0, lambda: self.render_status_result(current_ai_name, current_ai_status, "IA-CAM"))
+
+        # 2. Update Video Frame
         frame = self.cv_engine.output_frame
         if frame is not None:
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

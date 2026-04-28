@@ -35,8 +35,28 @@ def get_all_members(db: Session = Depends(get_db)):
 
 @router.post("/members", response_model=schemas.MemberSchema)
 def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
+    print(f"Creating member: {member.name} with DNI {member.dni}")
     db_member = models.Member(**member.dict())
     db.add(db_member)
+    try:
+        db.commit()
+        db.refresh(db_member)
+        print(f"Member created successfully with ID {db_member.id}")
+        return db_member
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating member: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/members/{member_id}", response_model=schemas.MemberSchema)
+def update_member(member_id: int, member_data: schemas.MemberCreate, db: Session = Depends(get_db)):
+    db_member = db.query(models.Member).filter(models.Member.id == member_id).first()
+    if not db_member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    for key, value in member_data.dict().items():
+        setattr(db_member, key, value)
+    
     db.commit()
     db.refresh(db_member)
     return db_member

@@ -8,6 +8,8 @@ class MemberBase(BaseModel):
     email: Optional[str] = None
     status: str = "ACTIVO"
     photo_url: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = "123"
     membership_type: Optional[str] = None
     wellness_data: Optional[Dict] = None
 
