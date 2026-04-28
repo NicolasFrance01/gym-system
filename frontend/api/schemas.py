@@ -24,6 +24,13 @@ class MemberSchema(MemberBase):
     class Config:
         from_attributes = True
 
+class UserLogin(BaseModel):
+    dni: str
+    password: str
+
+class PasswordChange(BaseModel):
+    new_password: str
+
 class PaymentSchema(BaseModel):
     id: int
     amount: float

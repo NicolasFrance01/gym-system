@@ -1,4 +1,4 @@
-import { Zap, Brain, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X } from 'lucide-react';
+import { Zap, Brain, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { Tooltip, ResponsiveContainer, CartesianGrid, XAxis, YAxis, LineChart, Line, Legend } from 'recharts';
 
@@ -6,23 +6,29 @@ export default function UserApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [activeTab, setActiveTab] = useState('Home');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Simulated User Data
+  const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? "http://localhost:8000" 
+    : "/api";
+
+  // User Data State
   const [userData, setUserData] = useState({
-    name: "Nicolas France", dni: "1111", plan: "Elite Member", maxDaysPerWeek: 7, streak: 14,
+    name: "", dni: "", plan: "Miembro", maxDaysPerWeek: 7, streak: 0,
     currentRoutine: [
-      { id: 1, name: "Press de Banca", sets: "4", reps: "10", weight: 75, completed: false },
-      { id: 2, name: "Sentadillas", sets: "3", reps: "12", weight: 100, completed: true },
-      { id: 3, name: "Jalón al Pecho", sets: "4", reps: "10", weight: 65, completed: false }
+      { id: 1, name: "Press de Banca", sets: "4", reps: "10", weight: 0, completed: false },
+      { id: 2, name: "Sentadillas", sets: "3", reps: "12", weight: 0, completed: false },
+      { id: 3, name: "Jalón al Pecho", sets: "4", reps: "10", weight: 0, completed: false }
     ],
     evolution: [
-      { date: "Ene", "Press de Banca": 50, "Sentadillas": 80, "Jalón al Pecho": 45 },
-      { date: "Feb", "Press de Banca": 60, "Sentadillas": 90, "Jalón al Pecho": 55 },
-      { date: "Mar", "Press de Banca": 68, "Sentadillas": 95, "Jalón al Pecho": 60 },
-      { date: "Abr", "Press de Banca": 75, "Sentadillas": 100, "Jalón al Pecho": 65 }
+      { date: "Ene", "Press de Banca": 40, "Sentadillas": 60, "Jalón al Pecho": 35 },
+      { date: "Feb", "Press de Banca": 45, "Sentadillas": 70, "Jalón al Pecho": 45 },
+      { date: "Mar", "Press de Banca": 55, "Sentadillas": 85, "Jalón al Pecho": 50 },
+      { date: "Abr", "Press de Banca": 60, "Sentadillas": 95, "Jalón al Pecho": 55 }
     ],
-    attendanceHistory: ["2026-04-20", "2026-04-22", "2026-04-24"]
+    attendanceHistory: []
   });
 
   const [bookings, setBookings] = useState<any[]>([]);
@@ -31,10 +37,56 @@ export default function UserApp() {
   const [selectedTime, setSelectedTime] = useState('08:00');
   const [selectedExs, setSelectedExs] = useState<string[]>([]);
 
-  const handleLogin = (e: any) => {
+  const handleLogin = async (e: any) => {
     e.preventDefault();
-    if (dni === '1111' && password === '123') setIsAuthenticated(true);
-    else alert("Credenciales inválidas (DNI: 1111, Pass: 123)");
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dni, password })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setUserData(prev => ({
+          ...prev,
+          name: data.member.name,
+          dni: data.member.dni,
+          plan: data.member.membership_type,
+          streak: 5 // Mock streak for now
+        }));
+        setIsAuthenticated(true);
+      } else {
+        alert(data.detail || "Error al ingresar");
+      }
+    } catch (err) {
+      alert("Error de conexión con el servidor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/user/${userData.dni}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_password: newPassword })
+      });
+      if (res.ok) {
+        alert("Contraseña actualizada con éxito");
+        setNewPassword('');
+      } else {
+        alert("Error al actualizar contraseña");
+      }
+    } catch (err) {
+      alert("Error de conexión");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleExercise = (id: number) => {
@@ -74,7 +126,9 @@ export default function UserApp() {
           <form onSubmit={handleLogin} className="space-y-6">
              <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Documento</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-blue-500 transition-all text-center font-black" value={dni} onChange={e=>setDni(e.target.value)} required /></div>
              <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Password</label><input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-blue-500 transition-all text-center font-black" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
-             <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all text-sm">Entrar</button>
+             <button type="submit" disabled={isLoading} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all text-sm disabled:opacity-50">
+               {isLoading ? "Ingresando..." : "Entrar"}
+             </button>
           </form>
         </div>
       </div>
@@ -171,9 +225,18 @@ export default function UserApp() {
         return (
           <div className="space-y-6 animate-in slide-in-from-bottom-8">
              <div className="bg-neutral-900 border border-white/5 p-10 rounded-[50px] flex flex-col items-center">
-                <div className="w-32 h-32 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-5xl font-black shadow-2xl mb-6 ring-4 ring-white/5">NF</div>
+                <div className="w-32 h-32 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-5xl font-black shadow-2xl mb-6 ring-4 ring-white/5">{userData.name[0]}</div>
                 <h2 className="text-3xl font-black text-white mb-2">{userData.name}</h2>
-                <span className="px-4 py-1.5 bg-blue-600/10 text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em]">{userData.plan}</span>
+                <span className="px-4 py-1.5 bg-blue-600/10 text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-10">{userData.plan}</span>
+                
+                <div className="w-full space-y-4 pt-10 border-t border-white/5">
+                   <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
+                   <div className="space-y-3">
+                      <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xs outline-none focus:border-blue-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
+                      <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-600/20 disabled:opacity-50">Actualizar Contraseña</button>
+                   </div>
+                </div>
+
                 <button onClick={()=>setIsAuthenticated(false)} className="w-full mt-10 py-4 bg-red-500/10 text-red-500 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">Cerrar Sesión</button>
              </div>
           </div>
@@ -182,7 +245,7 @@ export default function UserApp() {
         return (
           <div className="space-y-10 animate-in fade-in duration-1000">
              <header className="flex items-center justify-between">
-                <div><h2 className="text-4xl font-black text-white tracking-tighter">¡Hey, Nico! 👋</h2><p className="text-white/30 text-xs font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
+                <div><h2 className="text-4xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2><p className="text-white/30 text-xs font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
                 <div onClick={()=>setActiveTab('Profile')} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all shadow-xl"><User size={24} className="text-blue-500" /></div>
              </header>
              <section className="bg-gradient-to-br from-neutral-900 to-black p-12 rounded-[60px] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] text-center relative overflow-hidden group">
