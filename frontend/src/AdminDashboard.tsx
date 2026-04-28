@@ -58,7 +58,7 @@ export default function AdminDashboard() {
       setError(null);
       // 1. Fetch Members
       const membersRes = await fetch(`${API_URL}/admin/members`);
-      if (!membersRes.ok) throw new Error("No se pudo conectar con el servidor (Socios)");
+      if (!membersRes.ok) throw new Error(`Error ${membersRes.status}: No se pudo obtener la lista de socios`);
       const membersData = await membersRes.json();
       setMembers(membersData);
 
