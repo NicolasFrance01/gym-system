@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
+from sqlalchemy import text
 import os
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -40,6 +41,15 @@ app.include_router(user_routes.router)
 @app.get("/")
 def read_root():
     return {"status": "Gym-Atlas Backend is running", "version": "2.0.0"}
+
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        # Try a simple query
+        db.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e), "database_url_env": os.getenv("DATABASE_URL") is not None}
 
 @app.get("/members/{dni}")
 def get_member(dni: str, db: Session = Depends(get_db)):
