@@ -13,7 +13,8 @@ export default function AdminDashboard() {
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
 
-  const [activeTab, setActiveTab] = useState('Resumen');
+  const [activeTab, setActiveTab] = useState('Socios');
+  const [error, setError] = useState<string | null>(null);
   
   const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0]; });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -54,29 +55,28 @@ export default function AdminDashboard() {
 
   const refreshData = async () => {
     try {
+      setError(null);
       // 1. Fetch Members
       const membersRes = await fetch(`${API_URL}/admin/members`);
-      if (membersRes.ok) {
-        const membersData = await membersRes.json();
-        setMembers(membersData);
-      }
+      if (!membersRes.ok) throw new Error("No se pudo conectar con el servidor (Socios)");
+      const membersData = await membersRes.json();
+      setMembers(membersData);
 
       // 2. Fetch Stats
       const statsRes = await fetch(`${API_URL}/admin/stats`);
-      if (statsRes.ok) {
-        const stats = await statsRes.json();
-        setFinanceData((prev: any) => ({
-          ...prev,
-          total_revenue: stats.total_revenue,
-          active_members: stats.active_members,
-          churn_risk: stats.churn_risk_count,
-          por_vencer: stats.por_vencer_count,
-          cashflow_data: [{ month: "Ene", ingresos: 4800, egresos: 3000 }, { month: "Feb", ingresos: 6500, egresos: 3200 }, { month: "Mar", ingresos: 8900, egresos: 3500 }, { month: "Abr", ingresos: 12450, egresos: 4000 }],
-          revenue_breakdown: [{ name: "Musculación", value: 8500 }, { name: "Clases", value: 3000 }, { name: "Suplementos", value: 950 }],
-          monthly_growth: [{ month: "Ene", v: 12 }, { month: "Feb", v: 18 }, { month: "Mar", v: 22 }, { month: "Abr", v: 28 }],
-          arpu: 87.5, churn_rate: 2.4
-        }));
-      }
+      if (!statsRes.ok) throw new Error("No se pudo conectar con el servidor (Estadísticas)");
+      const stats = await statsRes.json();
+      setFinanceData((prev: any) => ({
+        ...prev,
+        total_revenue: stats.total_revenue,
+        active_members: stats.active_members,
+        churn_risk: stats.churn_risk_count,
+        por_vencer: stats.por_vencer_count,
+        cashflow_data: [{ month: "Ene", ingresos: 4800, egresos: 3000 }, { month: "Feb", ingresos: 6500, egresos: 3200 }, { month: "Mar", ingresos: 8900, egresos: 3500 }, { month: "Abr", ingresos: 12450, egresos: 4000 }],
+        revenue_breakdown: [{ name: "Musculación", value: 8500 }, { name: "Clases", value: 3000 }, { name: "Suplementos", value: 950 }],
+        monthly_growth: [{ month: "Ene", v: 12 }, { month: "Feb", v: 18 }, { month: "Mar", v: 22 }, { month: "Abr", v: 28 }],
+        arpu: 87.5, churn_rate: 2.4
+      }));
 
       // 3. AI Analytics
       setAiData({
@@ -90,8 +90,9 @@ export default function AdminDashboard() {
       if (staff.length === 0) {
         setStaff([{ id: 101, name: "Marcus Rossi", role: "Entrenador", status: "ACTIVO", shift: "Mañana" }]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching data:", error);
+      setError(error.message || "Error de conexión con la base de datos");
     }
   };
 
@@ -296,6 +297,11 @@ export default function AdminDashboard() {
           <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20 font-black text-[8px] uppercase tracking-widest hover:scale-105 transition-all whitespace-nowrap"><Download size={14}/> Reporte Global</button>
         </header>
         <div className="max-w-full overflow-x-hidden">
+        {error && (
+          <div style={{ background: '#fee2e2', color: '#dc2626', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', border: '1px solid #fca5a5' }}>
+            <strong>Error de Conexión:</strong> {error}. Verifique que la base de datos esté configurada correctamente en Vercel.
+          </div>
+        )}
           {renderContent()}
         </div>
       </main>
