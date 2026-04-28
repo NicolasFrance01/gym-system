@@ -137,7 +137,7 @@ export default function AdminDashboard() {
 
   const handlePayment = async (amount: number, method: string) => { 
     try {
-      const res = await fetch(`${API_URL}/admin/payments?member_id=${selectedItem.id}&amount=${amount}`, {
+      const res = await fetch(`${API_URL}/admin/payments?member_id=${selectedItem.id}&amount=${amount}&method=${method}`, {
         method: 'POST'
       });
       if (res.ok) {
