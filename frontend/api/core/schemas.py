@@ -6,10 +6,15 @@ class MemberBase(BaseModel):
     dni: str
     name: str
     email: Optional[str] = None
-    status: str
+    status: str = "ACTIVO"
     photo_url: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = "123"
     membership_type: Optional[str] = None
     wellness_data: Optional[Dict] = None
+
+class MemberCreate(MemberBase):
+    pass
 
 class MemberSchema(MemberBase):
     id: int

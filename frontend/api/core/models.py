@@ -12,6 +12,8 @@ class Member(Base):
     email = Column(String, unique=True, index=True)
     status = Column(String, default="ACTIVO") # ACTIVO, DEUDA, POR VENCER, INACTIVO
     photo_url = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    password = Column(String, default="123")
     membership_type = Column(String) # Basic, Premium, Elite
     joined_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_checkin = Column(DateTime, nullable=True)
