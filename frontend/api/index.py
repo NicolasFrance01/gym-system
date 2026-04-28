@@ -38,6 +38,17 @@ app.add_middleware(
 app.include_router(admin_routes.router)
 app.include_router(user_routes.router)
 
+# Middleware to handle /api prefix on Vercel
+@app.middleware("http")
+async def strip_api_prefix(request, call_next):
+    path = request.url.path
+    if path.startswith("/api"):
+        request.scope["path"] = path[4:]
+        if not request.scope["path"]:
+            request.scope["path"] = "/"
+    response = await call_next(request)
+    return response
+
 @app.get("/")
 def read_root():
     return {"status": "Gym-Atlas Backend is running", "version": "2.0.0"}
