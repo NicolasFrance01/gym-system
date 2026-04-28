@@ -1,4 +1,4 @@
-try:
+﻿try:
     import cv2
     from ultralytics import YOLO
     HAS_CV = True
