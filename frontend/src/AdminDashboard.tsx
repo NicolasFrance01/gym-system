@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, Calendar as CalendarIcon, Flame, Plus, X, Settings, Activity, BarChart3, Receipt, CreditCard, Smartphone, Banknote } from 'lucide-react';
+import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, Calendar as CalendarIcon, Flame, Plus, X, Settings, Activity, BarChart3, Receipt, CreditCard, Smartphone, Banknote, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -15,6 +15,7 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState('Socios');
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0]; });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -152,7 +153,7 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Socios': return <MembersModule members={members} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEvolution={(m:any)=>{setSelectedItem(m); setModalType('evolution'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
+      case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEvolution={(m:any)=>{setSelectedItem(m); setModalType('evolution'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Staff': return <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => setStaff(st => st.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} />;
       case 'Calendario': return <CalendarModule classes={classes} onAdd={(d:string, h:number)=>{setSelectedItem({name:'Yoga', day:d, startTime:`${h.toString().padStart(2,'0')}:00`, endTime:`${(h+1).toString().padStart(2,'0')}:00`, instructor:'Staff'}); setIsEditMode(false); setModalType('class'); setIsModalOpen(true);}} onEdit={(c:any)=>{setSelectedItem(c); setIsEditMode(true); setModalType('class'); setIsModalOpen(true);}} />;
@@ -201,6 +202,40 @@ export default function AdminDashboard() {
             <div className={`bg-neutral-900 border border-white/10 p-8 rounded-[40px] w-full ${modalType === 'evolution' || modalType === 'workout' || modalType === 'history' ? 'max-w-4xl' : 'max-w-md'} shadow-2xl animate-in zoom-in duration-300`}>
               <div className="flex justify-between items-center mb-6"><h2 className="text-lg font-black uppercase tracking-widest text-blue-500">{modalType}</h2><button onClick={() => setIsModalOpen(false)}><X size={20} className="text-white/20 hover:text-white transition-colors"/></button></div>
               <div className="space-y-3">
+                {modalType === 'evolution' && (
+                  <div className="space-y-6">
+                     <div className="flex justify-between items-center">
+                        <h3 className="text-xs font-black uppercase text-white/40">Evolución de Cargas: {selectedItem.name}</h3>
+                        <div className="flex gap-4">
+                           <div className="text-right"><p className="text-[7px] text-white/20 font-black uppercase">Peso Actual</p><p className="text-sm font-black text-blue-500">75kg</p></div>
+                           <div className="text-right"><p className="text-[7px] text-white/20 font-black uppercase">Mejoría</p><p className="text-sm font-black text-green-500">+12kg</p></div>
+                        </div>
+                     </div>
+                     <div className="h-64 bg-black/20 p-6 rounded-[32px] border border-white/5">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <LineChart data={selectedItem.evolution || [
+                             { date: "Ene", "Press": 40, "Sentadilla": 60 },
+                             { date: "Feb", "Press": 45, "Sentadilla": 70 },
+                             { date: "Mar", "Press": 52, "Sentadilla": 85 },
+                             { date: "Abr", "Press": 60, "Sentadilla": 95 }
+                           ]}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                              <XAxis dataKey="date" stroke="#444" fontSize={8} />
+                              <YAxis stroke="#444" fontSize={8} />
+                              <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'10px', fontSize:'9px'}} />
+                              <Legend wrapperStyle={{fontSize:'8px', textTransform:'uppercase', fontWeight:'900'}} />
+                              <Line type="monotone" dataKey="Press" stroke="#3b82f6" strokeWidth={3} dot={{r:4}} />
+                              <Line type="monotone" dataKey="Sentadilla" stroke="#10b981" strokeWidth={3} dot={{r:4}} />
+                           </LineChart>
+                        </ResponsiveContainer>
+                     </div>
+                     <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center"><p className="text-[7px] font-black text-white/20 uppercase mb-1">Asistencia</p><p className="text-lg font-black text-white">92%</p></div>
+                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center"><p className="text-[7px] font-black text-white/20 uppercase mb-1">Racha</p><p className="text-lg font-black text-orange-500">12</p></div>
+                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center"><p className="text-[7px] font-black text-white/20 uppercase mb-1">Status IA</p><p className="text-lg font-black text-green-500">Elite</p></div>
+                     </div>
+                  </div>
+                )}
                 {modalType === 'history' && (
                   <div className="space-y-4">
                      <h3 className="text-xs font-black uppercase text-white/40 mb-4">Historial de Pagos y Planes: {selectedItem.name}</h3>
@@ -389,12 +424,32 @@ function SummaryCard({ title, value, icon, onClick, color }: any) {
   return <div onClick={onClick} className="bg-white/5 border border-white/5 p-4 rounded-xl cursor-pointer hover:border-blue-500/20 transition-all flex justify-between items-center"><div className="space-y-1"><p className="text-[7px] font-black text-white/20 uppercase tracking-widest">{title}</p><p className="text-lg font-black text-white">{value}</p></div><div className={`${colors[color]} bg-white/5 p-2 rounded-lg`}>{icon}</div></div>;
 }
 
-function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onEvolution, onHistory }: any) {
+function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onEvolution, onHistory, searchQuery, setSearchQuery }: any) {
+  const filteredMembers = members.filter((m: any) => 
+    m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    m.dni.includes(searchQuery)
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Gestión de Socios</h3><button onClick={onAddClick} className="bg-blue-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20">+ Nuevo Socio</button></div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="font-black text-lg uppercase">Gestión de Socios</h3>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+            <input 
+              type="text" 
+              placeholder="Buscar por DNI o Nombre..." 
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-white text-[10px] outline-none focus:border-blue-500/50 transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button onClick={onAddClick} className="bg-blue-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 whitespace-nowrap">+ Nuevo Socio</button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-         {members.map((m: any) => (
+         {filteredMembers.map((m: any) => (
            <div key={m.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-blue-500/10 transition-all group overflow-hidden">
              <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3 min-w-0"><div className="w-10 h-10 bg-neutral-800 rounded-xl flex items-center justify-center font-black text-blue-500 text-sm shrink-0">{m.name[0]}</div><div className="min-w-0"><p className="font-black text-white text-[10px] uppercase truncate">{m.name}</p><p className="text-[8px] text-white/20 uppercase font-black truncate">{m.membership_type}</p></div></div>{m.status === 'ACTIVO' ? <CheckCircle className="text-green-500 shrink-0" size={12} /> : <XCircle className="text-red-500 shrink-0" size={12} />}</div>
              <div className="grid grid-cols-2 gap-2">
