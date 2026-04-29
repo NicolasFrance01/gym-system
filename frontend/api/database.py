@@ -7,11 +7,14 @@ from dotenv import load_dotenv
 base_dir = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(base_dir, ".env"))
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./gym.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Robust fallback for empty, None, or string "None"/"undefined"
+if not DATABASE_URL or DATABASE_URL.strip() in ("", "None", "undefined", "null"):
+    DATABASE_URL = "sqlite:///./gym.db"
 
 # Clean up URL (remove quotes, whitespace)
-if DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.strip().strip("'").strip('"')
+DATABASE_URL = DATABASE_URL.strip().strip("'").strip('"')
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
