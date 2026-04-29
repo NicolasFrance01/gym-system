@@ -31,7 +31,6 @@ class Payment(Base):
     amount = Column(Float)
     currency = Column(String, default="USD")
     status = Column(String) # paid, pending, failed
-    method = Column(String, default="Efectivo")
     stripe_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -52,11 +51,8 @@ class Staff(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     role = Column(String) # Trainer, Reception, Manager
-    shift = Column(String) # Mañana, Tarde, Noche
-    dni = Column(String, nullable=True)
-    phone = Column(String, nullable=True)
-    email = Column(String, nullable=True)
-    status = Column(String, default="ACTIVO")
+    shift_start = Column(DateTime, nullable=True)
+    shift_end = Column(DateTime, nullable=True)
 
 class Product(Base):
     __tablename__ = "products"
