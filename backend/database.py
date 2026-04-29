@@ -9,6 +9,10 @@ load_dotenv(os.path.join(base_dir, ".env"))
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./gym.db")
 
+# Clean up URL (remove quotes, whitespace)
+if DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.strip().strip("'").strip('"')
+
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
