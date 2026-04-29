@@ -119,14 +119,14 @@ export default function UserApp() {
       <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-8 font-sans">
         <div className="w-full max-w-sm bg-neutral-900/50 border border-white/10 p-10 rounded-[40px] backdrop-blur-2xl shadow-3xl space-y-10">
           <div className="text-center">
-            <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] mx-auto flex items-center justify-center shadow-3xl shadow-blue-600/40 mb-8 animate-pulse"><Brain size={48} className="text-white" /></div>
+            <div className="w-24 h-24 bg-orange-500 rounded-[2.5rem] mx-auto flex items-center justify-center shadow-3xl shadow-orange-500/40 mb-8 animate-pulse"><Brain size={48} className="text-white" /></div>
             <h1 className="text-5xl font-black text-white tracking-tighter mb-2">ATLAS APP</h1>
             <p className="text-white/20 text-xs font-black uppercase tracking-[0.4em]">Personal Fitness OS</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-6">
-             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Documento</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-blue-500 transition-all text-center font-black" value={dni} onChange={e=>setDni(e.target.value)} required /></div>
-             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Password</label><input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-blue-500 transition-all text-center font-black" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
-             <button type="submit" disabled={isLoading} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all text-sm disabled:opacity-50">
+             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Documento</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-orange-500 transition-all text-center font-black" value={dni} onChange={e=>setDni(e.target.value)} required /></div>
+             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Password</label><input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none focus:border-orange-500 transition-all text-center font-black" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
+             <button type="submit" disabled={isLoading} className="w-full py-5 bg-orange-500 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-sm disabled:opacity-50">
                {isLoading ? "Ingresando..." : "Entrar"}
              </button>
           </form>
@@ -140,7 +140,7 @@ export default function UserApp() {
       case 'Training':
         return (
           <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-500">
-             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-10 rounded-[50px] text-white shadow-3xl relative overflow-hidden">
+             <div className="bg-gradient-to-br from-orange-500 to-red-600 p-10 rounded-[50px] text-white shadow-3xl relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 p-10 opacity-10 rotate-12"><Dumbbell size={160}/></div>
                 <h3 className="text-3xl font-black mb-2 tracking-tighter">Plan del Día</h3>
                 <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Sigue tu progreso y sube cargas</p>
@@ -158,7 +158,7 @@ export default function UserApp() {
                         <button onClick={()=>toggleExercise(ex.id)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase ${ex.completed ? 'bg-green-500 text-white' : 'bg-white/5 text-white/40'}`}>{ex.completed ? 'Hecho' : 'Completar'}</button>
                      </div>
                      <div className="flex items-center gap-4 bg-black/40 rounded-3xl p-4 border border-white/5">
-                        <TrendingUp size={16} className="text-blue-500" />
+                        <TrendingUp size={16} className="text-orange-500" />
                         <span className="text-[10px] font-black text-white/20 uppercase mr-auto">Carga Actual:</span>
                         <input type="number" className="bg-transparent text-white font-black text-xl w-16 outline-none text-right" value={ex.weight} onChange={e=>updateWeight(ex.id, parseInt(e.target.value) || 0)} />
                         <span className="text-sm font-black text-white/40">KG</span>
@@ -172,7 +172,7 @@ export default function UserApp() {
         return (
           <div className="space-y-8 animate-in slide-in-from-bottom-8">
              <div className="bg-neutral-900 border border-white/5 p-10 rounded-[50px] shadow-3xl">
-                <h3 className="text-2xl font-black mb-8 flex items-center gap-4 uppercase tracking-tighter"><TrendingUp className="text-blue-500" size={28}/> Mi Progreso</h3>
+                <h3 className="text-2xl font-black mb-8 flex items-center gap-4 uppercase tracking-tighter"><TrendingUp className="text-orange-500" size={28}/> Mi Progreso</h3>
                 <div className="h-80 mb-10">
                    <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={userData.evolution}>
@@ -189,7 +189,7 @@ export default function UserApp() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                    <div className="bg-white/5 p-6 rounded-[32px] border border-white/5"><p className="text-[9px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-3xl font-black text-white">+25kg</p><p className="text-[10px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
-                   <div className="bg-white/5 p-6 rounded-[32px] border border-white/5"><p className="text-[9px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-3xl font-black text-white">48</p><p className="text-[10px] text-blue-500 font-black mt-1 uppercase">Consistencia</p></div>
+                   <div className="bg-white/5 p-6 rounded-[32px] border border-white/5"><p className="text-[9px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-3xl font-black text-white">48</p><p className="text-[10px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>
                 </div>
              </div>
           </div>
@@ -199,8 +199,8 @@ export default function UserApp() {
           <div className="space-y-8 animate-in slide-in-from-bottom-8">
              <div className="bg-neutral-900 border border-white/5 p-10 rounded-[50px] shadow-3xl">
                 <div className="flex justify-between items-center mb-10">
-                   <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4"><Clock className="text-blue-500" size={28}/> Agenda</h3>
-                   <div className="px-5 py-2 bg-blue-600/20 text-blue-400 text-[10px] font-black rounded-2xl uppercase shadow-lg">{bookings.length}/{userData.maxDaysPerWeek} Días</div>
+                   <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4"><Clock className="text-orange-500" size={28}/> Agenda</h3>
+                   <div className="px-5 py-2 bg-orange-500/20 text-orange-400 text-[10px] font-black rounded-2xl uppercase shadow-lg">{bookings.length}/{userData.maxDaysPerWeek} Días</div>
                 </div>
                 <div className="flex items-center justify-between mb-4">
                     <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">
@@ -224,7 +224,7 @@ export default function UserApp() {
                         days.push(
                           <div key={i} 
                             onClick={() => { setSelectedDay(i); setIsBookingModalOpen(true); }} 
-                            className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isBooked ? 'bg-blue-600 border-blue-400 text-white shadow-xl shadow-blue-600/30' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
+                            className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isBooked ? 'bg-orange-500 border-orange-400 text-white shadow-xl shadow-orange-500/30' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
                             {i}
                           </div>
                         );
@@ -249,15 +249,15 @@ export default function UserApp() {
         return (
           <div className="space-y-6 animate-in slide-in-from-bottom-8">
              <div className="bg-neutral-900 border border-white/5 p-10 rounded-[50px] flex flex-col items-center">
-                <div className="w-32 h-32 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-5xl font-black shadow-2xl mb-6 ring-4 ring-white/5">{userData.name[0]}</div>
+                <div className="w-32 h-32 bg-gradient-to-tr from-orange-500 to-red-500 rounded-full flex items-center justify-center text-5xl font-black shadow-2xl mb-6 ring-4 ring-white/5">{userData.name[0]}</div>
                 <h2 className="text-3xl font-black text-white mb-2">{userData.name}</h2>
-                <span className="px-4 py-1.5 bg-blue-600/10 text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-10">{userData.plan}</span>
+                <span className="px-4 py-1.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-10">{userData.plan}</span>
                 
                 <div className="w-full space-y-4 pt-10 border-t border-white/5">
                    <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
                    <div className="space-y-3">
-                      <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xs outline-none focus:border-blue-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
-                      <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-600/20 disabled:opacity-50">Actualizar Contraseña</button>
+                      <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xs outline-none focus:border-orange-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
+                      <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-orange-500/20 disabled:opacity-50">Actualizar Contraseña</button>
                    </div>
                 </div>
 
@@ -270,17 +270,17 @@ export default function UserApp() {
           <div className="space-y-10 animate-in fade-in duration-1000">
              <header className="flex items-center justify-between">
                 <div><h2 className="text-4xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2><p className="text-white/30 text-xs font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
-                <div onClick={()=>setActiveTab('Profile')} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all shadow-xl"><User size={24} className="text-blue-500" /></div>
+                <div onClick={()=>setActiveTab('Profile')} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all shadow-xl"><User size={24} className="text-orange-500" /></div>
              </header>
              <section className="bg-gradient-to-br from-neutral-900 to-black p-12 rounded-[60px] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] text-center relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.25),transparent_70%)]" />
-                <p className="text-xs uppercase tracking-[0.5em] font-black text-blue-500 mb-10 relative z-10 animate-pulse">Racha de Fuego</p>
+                <p className="text-xs uppercase tracking-[0.5em] font-black text-orange-500 mb-10 relative z-10 animate-pulse">Racha de Fuego</p>
                 <div className="relative z-10 flex items-center justify-center gap-6 mb-10"><div className="p-5 bg-orange-500/10 rounded-full text-orange-500 shadow-2xl animate-bounce"><Zap size={40} strokeWidth={3} /></div><span className="text-9xl font-black tracking-tighter text-white drop-shadow-[0_20px_50px_rgba(255,255,255,0.2)]">{userData.streak}</span></div>
-                <div onClick={()=>setActiveTab('Evolution')} className="bg-blue-600/10 py-5 px-10 rounded-3xl border border-blue-600/20 text-[10px] uppercase font-black tracking-widest text-blue-400 hover:bg-blue-600 hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-3">Explorar Evolución <ArrowUpRight size={16}/></div>
+                <div onClick={()=>setActiveTab('Evolution')} className="bg-orange-500/10 py-5 px-10 rounded-3xl border border-orange-500/20 text-[10px] uppercase font-black tracking-widest text-orange-400 hover:bg-orange-500 hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-3">Explorar Evolución <ArrowUpRight size={16}/></div>
              </section>
              <div className="grid grid-cols-2 gap-6 pb-10">
-                <button onClick={()=>setActiveTab('Training')} className="p-8 bg-neutral-900 border border-white/5 rounded-[50px] flex flex-col gap-6 group hover:border-blue-500/30 transition-all text-left shadow-2xl">
-                   <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-lg"><Dumbbell size={28}/></div>
+                <button onClick={()=>setActiveTab('Training')} className="p-8 bg-neutral-900 border border-white/5 rounded-[50px] flex flex-col gap-6 group hover:border-orange-500/30 transition-all text-left shadow-2xl">
+                   <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all shadow-lg"><Dumbbell size={28}/></div>
                    <div><p className="font-black text-2xl leading-none mb-1 uppercase">Entrenar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">3 Ejercicios hoy</p></div>
                 </button>
                 <button onClick={()=>setActiveTab('Calendar')} className="p-8 bg-neutral-900 border border-white/5 rounded-[50px] flex flex-col gap-6 group hover:border-indigo-500/30 transition-all text-left shadow-2xl">
@@ -300,7 +300,7 @@ export default function UserApp() {
            <div className="bg-neutral-900 border border-white/10 p-10 rounded-[50px] w-full max-w-sm shadow-3xl">
               <div className="flex justify-between items-center mb-10"><h3 className="text-2xl font-black uppercase tracking-tighter">Día {selectedDay}</h3><button onClick={()=>setIsBookingModalOpen(false)}><X size={24} className="text-white/20 hover:text-white"/></button></div>
               <div className="space-y-8">
-                 <div className="space-y-3"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest">¿A qué hora vas?</label><input type="time" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xl font-black outline-none focus:border-blue-500" value={selectedTime} onChange={e=>setSelectedTime(e.target.value)} /></div>
+                 <div className="space-y-3"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest">¿A qué hora vas?</label><input type="time" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xl font-black outline-none focus:border-orange-500" value={selectedTime} onChange={e=>setSelectedTime(e.target.value)} /></div>
                  <div className="space-y-3">
                     <label className="text-[10px] font-black text-white/20 uppercase tracking-widest">¿Qué vas a entrenar?</label>
                     <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
@@ -308,13 +308,13 @@ export default function UserApp() {
                          <button key={ex.id} onClick={()=>{
                            if(selectedExs.includes(ex.name)) setSelectedExs(selectedExs.filter(e=>e!==ex.name));
                            else setSelectedExs([...selectedExs, ex.name]);
-                         }} className={`p-4 rounded-2xl text-[10px] font-black uppercase text-left border transition-all ${selectedExs.includes(ex.name) ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/5 border-white/10 text-white/30'}`}>
+                         }} className={`p-4 rounded-2xl text-[10px] font-black uppercase text-left border transition-all ${selectedExs.includes(ex.name) ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-white/30'}`}>
                             {ex.name}
                          </button>
                        ))}
                     </div>
                  </div>
-                 <button onClick={handleConfirmBooking} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-widest shadow-2xl shadow-blue-600/30">Confirmar Reserva</button>
+                 <button onClick={handleConfirmBooking} className="w-full py-5 bg-orange-500 text-white rounded-3xl font-black uppercase tracking-widest shadow-2xl shadow-orange-500/30">Confirmar Reserva</button>
               </div>
            </div>
         </div>
@@ -332,9 +332,9 @@ export default function UserApp() {
 
 function NavBtn({ active, onClick, icon }: any) {
   return (
-    <button onClick={onClick} className={`p-5 rounded-3xl transition-all relative ${active ? 'text-blue-500' : 'text-white/10 hover:text-white/30'}`}>
+    <button onClick={onClick} className={`p-5 rounded-3xl transition-all relative ${active ? 'text-orange-500' : 'text-white/10 hover:text-white/30'}`}>
        {icon}
-       {active && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_#3b82f6]" />}
+       {active && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_15px_#3b82f6]" />}
     </button>
   );
 }

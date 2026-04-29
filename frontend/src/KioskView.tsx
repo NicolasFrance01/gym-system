@@ -45,7 +45,7 @@ export default function KioskView() {
   }, [currentMember, setCurrentMember]);
 
   return (
-    <div className="flex h-screen bg-neutral-950 text-white overflow-hidden font-sans selection:bg-blue-500/30">
+    <div className="flex h-screen bg-neutral-950 text-white overflow-hidden font-sans selection:bg-orange-500/30">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 to-red-900/10 pointer-events-none" />
       
       <div className="w-[30%] min-w-[350px] flex-shrink-0 z-10 border-r border-white/5 bg-black/40 backdrop-blur-3xl shadow-2xl shadow-black/50">
@@ -76,7 +76,7 @@ export default function KioskView() {
             <p className="text-neutral-400 mb-8 leading-relaxed">
               Vercel (HTTPS) bloquea la conexión con la cámara local por seguridad. Para usar el control de acceso, por favor abre:
             </p>
-            <div className="bg-black/50 p-6 rounded-3xl border border-white/10 mb-8 font-mono text-blue-400 break-all">
+            <div className="bg-black/50 p-6 rounded-3xl border border-white/10 mb-8 font-mono text-orange-400 break-all">
               http://localhost:5173
             </div>
             <button 

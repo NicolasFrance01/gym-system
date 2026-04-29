@@ -6,13 +6,17 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  background-color: #050505;
+  color-scheme: light dark;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root.dark {
+  background-color: #050505;
 }
 
 body {
@@ -21,6 +25,12 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: #ffffff;
+  color: #111111;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
   background: #050505;
   color: #e0e0e0;
 }
