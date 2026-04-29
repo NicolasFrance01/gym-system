@@ -52,8 +52,7 @@ class Staff(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     role = Column(String) # Trainer, Reception, Manager
-    shift_start = Column(DateTime, nullable=True)
-    shift_end = Column(DateTime, nullable=True)
+    shift = Column(String, default="Mañana")
 
 class Product(Base):
     __tablename__ = "products"

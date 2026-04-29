@@ -42,3 +42,17 @@ class BookingSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class StaffBase(BaseModel):
+    name: str
+    role: str
+    shift: Optional[str] = "Mañana"
+
+class StaffCreate(StaffBase):
+    pass
+
+class StaffSchema(StaffBase):
+    id: int
+
+    class Config:
+        from_attributes = True

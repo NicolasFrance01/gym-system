@@ -122,6 +122,41 @@ def get_finance_summary(db: Session = Depends(get_db)):
         "total_revenue": sum(p.amount for p in payments)
     }
 
+@router.get("/staff", response_model=List[schemas.StaffSchema])
+def get_all_staff(db: Session = Depends(get_db)):
+    staff = db.query(models.Staff).all()
+    return staff
+
+@router.post("/staff", response_model=schemas.StaffSchema)
+def create_staff(staff: schemas.StaffCreate, db: Session = Depends(get_db)):
+    db_staff = models.Staff(**staff.dict())
+    db.add(db_staff)
+    db.commit()
+    db.refresh(db_staff)
+    return db_staff
+
+@router.put("/staff/{staff_id}", response_model=schemas.StaffSchema)
+def update_staff(staff_id: int, staff_data: schemas.StaffCreate, db: Session = Depends(get_db)):
+    db_staff = db.query(models.Staff).filter(models.Staff.id == staff_id).first()
+    if not db_staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    for key, value in staff_data.dict().items():
+        setattr(db_staff, key, value)
+    
+    db.commit()
+    db.refresh(db_staff)
+    return db_staff
+
+@router.delete("/staff/{staff_id}")
+def delete_staff(staff_id: int, db: Session = Depends(get_db)):
+    staff = db.query(models.Staff).get(staff_id)
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    db.delete(staff)
+    db.commit()
+    return {"status": "deleted"}
+
 @router.get("/analytics/ai")
 def get_ai_analytics(db: Session = Depends(get_db)):
     # Mock data for AI Analytics Charts
