@@ -62,6 +62,21 @@ def health_check(db: Session = Depends(get_db)):
     except Exception as e:
         return {"status": "unhealthy", "error": str(e), "database_url_env": os.getenv("DATABASE_URL") is not None}
 
+@app.get("/debug/db")
+def debug_db():
+    url = os.getenv("DATABASE_URL", "NOT_SET")
+    if url != "NOT_SET" and len(url) > 10:
+        masked_url = f"{url[:10]}...{url[-10:]}"
+    else:
+        masked_url = url
+    
+    return {
+        "env_variable_present": os.getenv("DATABASE_URL") is not None,
+        "masked_url": masked_url,
+        "current_engine": str(engine.url.drivername) if hasattr(engine, 'url') else "unknown",
+        "is_sqlite": "sqlite" in str(engine.url)
+    }
+
 @app.get("/members/{dni}")
 def get_member(dni: str, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == dni).first()
