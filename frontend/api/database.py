@@ -13,22 +13,27 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL or DATABASE_URL.strip() in ("", "None", "undefined", "null"):
     DATABASE_URL = "sqlite:///./gym.db"
 
-# Clean up URL (remove quotes, whitespace, and potential 'DATABASE_URL=' prefix)
-DATABASE_URL = DATABASE_URL.strip().strip("'").strip('"')
-if DATABASE_URL.startswith("DATABASE_URL="):
-    DATABASE_URL = DATABASE_URL.replace("DATABASE_URL=", "", 1)
-
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
 try:
-    engine = create_engine(DATABASE_URL)
-    # Quick check to see if it's even a valid URL format for SQLAlchemy
+    # Clean up URL (remove quotes, whitespace, and potential 'DATABASE_URL=' prefix)
+    if DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.strip().strip("'").strip('"')
+        if DATABASE_URL.startswith("DATABASE_URL="):
+            DATABASE_URL = DATABASE_URL.replace("DATABASE_URL=", "", 1)
+        
+        if DATABASE_URL.startswith("postgres://"):
+            DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+        elif not DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("sqlite"):
+            # Some users forget the protocol when pasting
+            DATABASE_URL = "postgresql://" + DATABASE_URL
+
     from sqlalchemy.engine import url
+    # Test if it's parseable
     url.make_url(DATABASE_URL)
+    engine = create_engine(DATABASE_URL)
 except Exception as e:
-    print(f"DATABASE_URL parsing failed: {e}. Falling back to SQLite.")
-    DATABASE_URL = "sqlite:///./gym.db"
+    # On Vercel, we MUST use :memory: if SQLite fallback is needed because the disk is read-only
+    print(f"DATABASE_URL parsing failed for URL of length {len(DATABASE_URL) if DATABASE_URL else 0}: {e}")
+    DATABASE_URL = "sqlite:///:memory:"
     engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
