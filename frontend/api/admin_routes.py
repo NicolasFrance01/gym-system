@@ -18,11 +18,26 @@ def get_gym_stats(db: Session = Depends(get_db)):
     churn_risk = db.query(models.Member).filter(models.Member.status == "DEUDA").count()
     por_vencer = db.query(models.Member).filter(models.Member.status == "POR VENCER").count()
     
+    # Calculate real monthly growth for the last 4 months
+    monthly_stats = []
+    now = datetime.datetime.utcnow()
+    for i in range(4):
+        month_date = now - datetime.timedelta(days=30*i)
+        month_label = month_date.strftime("%b")
+        month_val = db.query(models.Payment).filter(
+            models.Payment.status == "paid",
+            func.extract('month', models.Payment.created_at) == month_date.month,
+            func.extract('year', models.Payment.created_at) == month_date.year
+        ).count()
+        monthly_stats.append({"month": month_label, "v": month_val})
+    monthly_stats.reverse()
+
     return {
         "active_members": active_members,
         "total_revenue": total_revenue,
         "churn_risk_count": churn_risk,
         "por_vencer_count": por_vencer,
+        "monthly_growth": monthly_stats,
         "alerts": [
             {"type": "churn", "message": f"{churn_risk} members are in debt and at risk of cancellation."},
             {"type": "renewal", "message": f"{por_vencer} memberships are expiring soon."}
@@ -136,6 +151,11 @@ def get_finance_summary(db: Session = Depends(get_db)):
         "recent_payments": recent_transactions,
         "total_revenue": sum(p.amount for p in payments)
     }
+
+@router.get("/staff")
+def get_all_staff(db: Session = Depends(get_db)):
+    staff = db.query(models.Staff).all()
+    return staff
 
 @router.get("/analytics/ai")
 def get_ai_analytics(db: Session = Depends(get_db)):
