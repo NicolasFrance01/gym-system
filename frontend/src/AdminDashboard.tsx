@@ -102,9 +102,9 @@ export default function AdminDashboard() {
           { month: "Abr", ingresos: totalRevenue, egresos: totalRevenue * 0.3 }
         ],
         revenue_breakdown: [
-          { name: "Musculación", value: (membersData.filter(m => !m.membership_type || m.membership_type.includes("Básico")).length * 5000) || 0 },
-          { name: "Premium", value: (membersData.filter(m => m.membership_type?.includes("Premium")).length * 8500) || 0 },
-          { name: "Elite", value: (membersData.filter(m => m.membership_type?.includes("Elite")).length * 12000) || 0 }
+          { name: "Musculación", value: (membersData.filter((m: any) => !m.membership_type || m.membership_type.includes("Básico")).length * 5000) || 0 },
+          { name: "Premium", value: (membersData.filter((m: any) => m.membership_type?.includes("Premium")).length * 8500) || 0 },
+          { name: "Elite", value: (membersData.filter((m: any) => m.membership_type?.includes("Elite")).length * 12000) || 0 }
         ],
         monthly_growth: stats.monthly_growth || [],
         arpu: membersData.length > 0 ? (totalRevenue / membersData.length).toFixed(0) : 0, 
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
           { subject: 'Crecimiento', A: 80, B: 60 }
         ],
         member_growth: stats.monthly_growth?.map((m: any) => ({ month: m.month, altas: m.v, bajas: Math.floor(m.v * 0.1) })) || [],
-        streaks: membersData.slice(0, 5).map(m => ({
+        streaks: membersData.slice(0, 5).map((m: any) => ({
           name: m.name,
           racha: Math.floor(Math.random() * 20) + 1,
           risk: m.status === 'DEUDA' ? 80 : 5,
