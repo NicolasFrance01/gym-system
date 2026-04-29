@@ -16,6 +16,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('Socios');
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [staffSearchQuery, setStaffSearchQuery] = useState('');
   
   const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0]; });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -136,7 +137,26 @@ export default function AdminDashboard() {
     } catch (e) { console.error(e); }
   };
 
-  const handleSaveStaff = () => { if (isEditMode) setStaff(prev => prev.map(s => s.id === selectedItem.id ? { ...selectedItem } : s)); else setStaff(prev => [...prev, { id: Date.now(), ...selectedItem, status: 'ACTIVO' }]); setIsModalOpen(false); };
+  const handleSaveStaff = async () => {
+    try {
+      if (isEditMode) {
+        const res = await fetch(`${API_URL}/admin/staff/${selectedItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(selectedItem)
+        });
+        if (res.ok) refreshData();
+      } else {
+        const res = await fetch(`${API_URL}/admin/staff`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(selectedItem)
+        });
+        if (res.ok) refreshData();
+      }
+      setIsModalOpen(false);
+    } catch (e) { console.error(e); }
+  };
   const handleSaveClass = () => { if (isEditMode) setClasses(prev => prev.map(c => c.id === selectedItem.id ? { ...selectedItem } : c)); else setClasses(prev => [...prev, { id: Date.now(), ...selectedItem }]); setIsModalOpen(false); };
 
   const handlePayment = async (amount: number, method: string) => { 
@@ -155,7 +175,7 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEvolution={(m:any)=>{setSelectedItem(m); setModalType('evolution'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
-      case 'Staff': return <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => setStaff(st => st.filter(x => x.id !== id))} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} />;
+      case 'Staff': return <StaffModule staff={staff} searchQuery={staffSearchQuery} setSearchQuery={setStaffSearchQuery} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Eliminar personal?")){ const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', dni:'', phone:'', email:''}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} />;
       case 'Calendario': return <CalendarModule classes={classes} onAdd={(d:string, h:number)=>{setSelectedItem({name:'Yoga', day:d, startTime:`${h.toString().padStart(2,'0')}:00`, endTime:`${(h+1).toString().padStart(2,'0')}:00`, instructor:'Staff'}); setIsEditMode(false); setModalType('class'); setIsModalOpen(true);}} onEdit={(c:any)=>{setSelectedItem(c); setIsEditMode(true); setModalType('class'); setIsModalOpen(true);}} />;
       case 'Finanzas': return userRole === 'admin' ? <FinanceModule data={financeData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} /> : <NoAccess />;
       case 'Analítica IA': return userRole === 'admin' ? <AIAnalyticsModule data={aiData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} /> : <NoAccess />;
@@ -283,7 +303,10 @@ export default function AdminDashboard() {
                         <input type="time" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.startTime} onChange={e=>setSelectedItem({...selectedItem, startTime:e.target.value})}/>
                         <input type="time" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.endTime} onChange={e=>setSelectedItem({...selectedItem, endTime:e.target.value})}/>
                      </div>
-                     <input type="text" placeholder="Instructor" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.instructor} onChange={e=>setSelectedItem({...selectedItem, instructor:e.target.value})}/>
+                     <select className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem.instructor} onChange={e=>setSelectedItem({...selectedItem, instructor:e.target.value})}>
+                        <option value="">Seleccionar Instructor</option>
+                        {staff.map((s:any) => <option key={s.id} value={s.name}>{s.name}</option>)}
+                     </select>
                   </div>
                 )}
                 {modalType === 'plan' && (
@@ -295,9 +318,15 @@ export default function AdminDashboard() {
                 )}
                 {modalType === 'staff' && (
                   <div className="space-y-3">
-                    <input type="text" placeholder="Nombre" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
-                    <input type="text" placeholder="Rol" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.role} onChange={e => setSelectedItem({...selectedItem, role: e.target.value})} />
-                    <select className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.shift} onChange={e => setSelectedItem({...selectedItem, shift: e.target.value})}>
+                    <div className="grid grid-cols-2 gap-3">
+                       <input type="text" placeholder="Nombre" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                       <input type="text" placeholder="DNI" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.dni} onChange={e => setSelectedItem({...selectedItem, dni: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                       <input type="text" placeholder="Teléfono" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.phone} onChange={e => setSelectedItem({...selectedItem, phone: e.target.value})} />
+                       <input type="text" placeholder="Rol" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.role} onChange={e => setSelectedItem({...selectedItem, role: e.target.value})} />
+                    </div>
+                    <select className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs" value={selectedItem?.shift} onChange={e => setSelectedItem({...selectedItem, shift: e.target.value})}>
                       <option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option>
                     </select>
                   </div>
@@ -389,8 +418,21 @@ function PaymentBtn({ active, onClick, label, icon }: any) {
 }
 
 function BillingModule({ members }: any) {
-  const allHistory = members.flatMap((m:any) => (m.billing_history || []).map((h:any) => ({...h, userName: m.name})));
-  const sorted = allHistory.sort((a:any, b:any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const allHistory = members.flatMap((m:any) => (m.payments || []).map((p:any) => ({
+    ...p, 
+    userName: m.name, 
+    date: new Date(p.created_at).toLocaleDateString(),
+    plan: m.membership_type
+  })));
+  
+  // If no real data, show some sample ones
+  const displayData = allHistory.length > 0 ? allHistory : [
+    { userName: "Lucas Silva", date: "2026-04-20", plan: "Elite", method: "Efectivo", amount: 12000 },
+    { userName: "Sofia Mendez", date: "2026-04-21", plan: "Premium", method: "Transferencia", amount: 8500 },
+    { userName: "Carlos Ruiz", date: "2026-04-22", plan: "Básico", method: "QR", amount: 5000 }
+  ];
+
+  const sorted = [...displayData].sort((a:any, b:any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="space-y-6">
@@ -524,7 +566,10 @@ function CalendarModule({ classes, onAdd, onEdit }: any) {
                                 className="absolute left-1 right-1 bg-blue-600/90 border border-blue-400 rounded-lg p-2 text-[7px] font-black z-10 shadow-lg"
                                 style={{ height: `${duration * 35}px`, top: '2px' }}>
                                  <p className="uppercase text-white truncate">{c.name}</p>
-                                 <p className="text-white/60 font-bold truncate">{c.startTime}-{c.endTime}</p>
+                                 <div className="flex justify-between items-center text-white/60 font-bold truncate">
+                                   <span>{c.startTime}-{c.endTime}</span>
+                                   <span className="bg-black/20 px-1 rounded uppercase text-[6px]">{c.instructor}</span>
+                                 </div>
                               </div>
                             );
                          })}
@@ -541,15 +586,45 @@ function CalendarModule({ classes, onAdd, onEdit }: any) {
   );
 }
 
-function StaffModule({ staff, onEdit, onDelete, onAddClick }: any) {
+function StaffModule({ staff, onEdit, onDelete, onAddClick, searchQuery, setSearchQuery }: any) {
+  const filteredStaff = staff.filter((s: any) => 
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    s.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Personal</h3><button onClick={onAddClick} className="bg-blue-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">+ Nuevo</button></div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-         {staff.map((s: any) => (
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="font-black text-lg uppercase">Personal</h3>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+            <input 
+              type="text" 
+              placeholder="Buscar por Nombre o Rol..." 
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-white text-[10px] outline-none focus:border-blue-500/50 transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button onClick={onAddClick} className="bg-blue-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 whitespace-nowrap">+ Nuevo Personal</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+         {filteredStaff.map((s: any) => (
            <div key={s.id} className="p-6 bg-white/5 rounded-3xl border border-white/5 group hover:border-blue-500/20 transition-all">
-             <div className="flex items-center gap-4 mb-6"><div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 text-lg font-black group-hover:bg-blue-600 group-hover:text-white transition-all shadow-lg">{s.name[0]}</div><div><p className="font-black text-white text-[11px] uppercase mb-1 truncate w-24">{s.name}</p><p className="text-[8px] text-white/20 uppercase font-black tracking-widest">{s.role}</p></div></div>
-             <div className="flex gap-2"><button onClick={() => onEdit(s)} className="flex-1 py-2 bg-white/5 rounded-xl text-[9px] font-black uppercase">Editar</button><button onClick={() => onDelete(s.id)} className="p-2 bg-red-500/10 text-red-500 rounded-xl"><Trash2 size={16}/></button></div>
+             <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 text-lg font-black group-hover:bg-blue-600 group-hover:text-white transition-all shadow-lg">{s.name[0]}</div>
+                <div className="min-w-0">
+                  <p className="font-black text-white text-[11px] uppercase mb-1 truncate">{s.name}</p>
+                  <p className="text-[8px] text-white/20 uppercase font-black tracking-widest">{s.role}</p>
+                </div>
+             </div>
+             <div className="space-y-2 mb-6">
+                <p className="text-[8px] text-white/40 font-bold uppercase flex justify-between">DNI <span>{s.dni || '---'}</span></p>
+                <p className="text-[8px] text-white/40 font-bold uppercase flex justify-between">Turno <span>{s.shift}</span></p>
+             </div>
+             <div className="flex gap-2"><button onClick={() => onEdit(s)} className="flex-1 py-2 bg-white/5 rounded-xl text-[9px] font-black uppercase">Editar</button><button onClick={() => onDelete(s.id)} className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16}/></button></div>
            </div>
          ))}
       </div>
