@@ -31,7 +31,22 @@ def get_gym_stats(db: Session = Depends(get_db)):
 
 @router.get("/members", response_model=List[schemas.MemberSchema])
 def get_all_members(db: Session = Depends(get_db)):
-    return db.query(models.Member).all()
+    members = db.query(models.Member).all()
+    result = []
+    for m in members:
+        # Convert to schema and manually add billing_history
+        m_schema = schemas.MemberSchema.from_orm(m)
+        m_schema.billing_history = [
+            {
+                "date": p.created_at.strftime("%Y-%m-%d"),
+                "amount": p.amount,
+                "plan": m.membership_type or "Musculación",
+                "method": p.method,
+                "status": "PAGADO"
+            } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
+        ]
+        result.append(m_schema)
+    return result
 
 @router.post("/members", response_model=schemas.MemberSchema)
 def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):

@@ -1,6 +1,33 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from datetime import datetime
+
+class PaymentBase(BaseModel):
+    amount: float
+    method: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class MemberPaymentSchema(BaseModel):
+    date: str = Field(alias="created_at")
+    amount: float
+    plan: str = "Premium" # Placeholder or derived
+    method: str
+    status: str = "PAGADO"
+
+    @classmethod
+    def from_orm(cls, obj):
+        # Custom mapping for the frontend format
+        return {
+            "date": obj.created_at.strftime("%Y-%m-%d"),
+            "amount": obj.amount,
+            "plan": "Premium", # In a real app, you'd store the plan name in the payment
+            "method": obj.method,
+            "status": "PAGADO" if obj.status == "paid" else obj.status
+        }
 
 class MemberBase(BaseModel):
     dni: str
@@ -13,13 +40,21 @@ class MemberBase(BaseModel):
     membership_type: Optional[str] = None
     wellness_data: Optional[Dict] = None
 
-class MemberCreate(MemberBase):
-    pass
+class MemberCreate(BaseModel):
+    dni: str
+    name: str
+    email: Optional[str] = None
+    status: str = "ACTIVO"
+    photo_url: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = "123"
+    membership_type: Optional[str] = None
 
 class MemberSchema(MemberBase):
     id: int
     joined_at: datetime
     last_checkin: Optional[datetime] = None
+    billing_history: List[Dict] = [] # We'll populate this manually in the route for now
 
     class Config:
         from_attributes = True
@@ -36,6 +71,7 @@ class PaymentSchema(BaseModel):
     amount: float
     currency: str
     status: str
+    method: str
     created_at: datetime
 
     class Config:

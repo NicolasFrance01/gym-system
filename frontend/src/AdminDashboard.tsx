@@ -61,49 +61,27 @@ export default function AdminDashboard() {
       const membersRes = await fetch(`${API_URL}/admin/members`);
       if (!membersRes.ok) throw new Error(`Error ${membersRes.status}: No se pudo obtener la lista de socios`);
       const membersData = await membersRes.json();
-      
-      // Si no hay socios, agregamos unos ficticios para que el dashboard no se vea vacío
-      let enrichedMembers = membersData;
-      if (membersData.length === 0) {
-        enrichedMembers = [
-          { id: 999, name: "Socio Ejemplo 1", dni: "123", status: "ACTIVO", membership_type: "Elite", billing_history: [
-            { date: "2026-04-20", amount: 12000, plan: "Elite", method: "Efectivo", status: "PAGADO" },
-            { date: "2026-03-20", amount: 12000, plan: "Elite", method: "QR", status: "PAGADO" }
-          ]},
-          { id: 998, name: "Socio Ejemplo 2", dni: "456", status: "ACTIVO", membership_type: "Premium", billing_history: [
-            { date: "2026-04-18", amount: 8500, plan: "Premium", method: "Transferencia", status: "PAGADO" }
-          ]}
-        ];
-      } else {
-        enrichedMembers = membersData.map((m: any) => {
-          if (!m.billing_history || m.billing_history.length === 0) {
-            return {
-              ...m,
-              billing_history: [
-                { date: "2026-04-15", amount: 8500, plan: m.membership_type || "Premium", method: "Efectivo", status: "PAGADO" },
-                { date: "2026-03-12", amount: 8500, plan: m.membership_type || "Premium", method: "Transferencia", status: "PAGADO" }
-              ]
-            };
-          }
-          return m;
-        });
-      }
-      setMembers(enrichedMembers);
+      setMembers(membersData);
 
       // 2. Fetch Stats
       const statsRes = await fetch(`${API_URL}/admin/stats`);
       if (!statsRes.ok) throw new Error("No se pudo conectar con el servidor (Estadísticas)");
       const stats = await statsRes.json();
+      
+      // Calculate totals from members list to ensure consistency
+      const allHistory = membersData.flatMap((m:any) => (m.billing_history || []));
+      const totalRevenue = allHistory.reduce((acc:number, curr:any) => acc + curr.amount, 0);
+
       setFinanceData((prev: any) => ({
         ...prev,
-        total_revenue: stats.total_revenue,
+        total_revenue: totalRevenue,
         active_members: stats.active_members,
         churn_risk: stats.churn_risk_count,
         por_vencer: stats.por_vencer_count,
-        cashflow_data: [{ month: "Ene", ingresos: 4800, egresos: 3000 }, { month: "Feb", ingresos: 6500, egresos: 3200 }, { month: "Mar", ingresos: 8900, egresos: 3500 }, { month: "Abr", ingresos: 12450, egresos: 4000 }],
-        revenue_breakdown: [{ name: "Musculación", value: 8500 }, { name: "Clases", value: 3000 }, { name: "Suplementos", value: 950 }],
+        cashflow_data: [{ month: "Ene", ingresos: totalRevenue * 0.4, egresos: 3000 }, { month: "Feb", ingresos: totalRevenue * 0.6, egresos: 3200 }, { month: "Mar", ingresos: totalRevenue * 0.8, egresos: 3500 }, { month: "Abr", ingresos: totalRevenue, egresos: 4000 }],
+        revenue_breakdown: [{ name: "Musculación", value: totalRevenue * 0.7 }, { name: "Clases", value: totalRevenue * 0.2 }, { name: "Suplementos", value: totalRevenue * 0.1 }],
         monthly_growth: [{ month: "Ene", v: 12 }, { month: "Feb", v: 18 }, { month: "Mar", v: 22 }, { month: "Abr", v: 28 }],
-        arpu: 87.5, churn_rate: 2.4
+        arpu: membersData.length > 0 ? totalRevenue / membersData.length : 0, churn_rate: 2.4
       }));
 
       // 3. AI Analytics
@@ -377,7 +355,8 @@ export default function AdminDashboard() {
 
 function PaymentModal({ plans, member, onPay, onClose }: any) {
   const [method, setMethod] = useState('Efectivo');
-  const planObj = plans.find((p:any)=>p.name === member.membership_type);
+  // Buscar el plan por coincidencia parcial (ej: "Elite" entra en "Elite (Libre)")
+  const planObj = plans.find((p:any) => member.membership_type && p.name.toLowerCase().includes(member.membership_type.toLowerCase())) || plans[0];
   const [amount, setAmount] = useState(planObj?.price || 0);
 
   return (
@@ -419,12 +398,20 @@ function BillingModule({ members }: any) {
   const allHistory = members.flatMap((m:any) => (m.billing_history || []).map((h:any) => ({...h, userName: m.name})));
   const sorted = allHistory.sort((a:any, b:any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Calcular estadísticas fieles a la lista
+  const total = sorted.reduce((acc:number, curr:any)=>acc+curr.amount, 0);
+  const methodCounts: any = sorted.reduce((acc:any, curr:any) => {
+    acc[curr.method] = (acc[curr.method] || 0) + 1;
+    return acc;
+  }, {});
+  const mostUsedMethod = Object.entries(methodCounts).sort((a:any, b:any) => b[1] - a[1])[0]?.[0] || 'N/A';
+
   return (
     <div className="space-y-6">
        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Cobros Registrados</p><p className="text-xl font-black text-white">${sorted.reduce((acc:number, curr:any)=>acc+curr.amount, 0).toLocaleString()}</p></div>
-          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Más Usado</p><p className="text-xl font-black text-blue-500">Mixto</p></div>
-          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Facturas</p><p className="text-xl font-black text-white">{allHistory.length}</p></div>
+          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Cobros Registrados</p><p className="text-xl font-black text-white">${total.toLocaleString()}</p></div>
+          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Más Usado</p><p className="text-xl font-black text-blue-500">{mostUsedMethod}</p></div>
+          <div className="bg-white/5 p-6 rounded-2xl border border-white/5"><p className="text-[9px] font-black text-white/20 uppercase">Facturas</p><p className="text-xl font-black text-white">{sorted.length}</p></div>
        </div>
        <div className="bg-white/5 border border-white/5 rounded-3xl overflow-x-auto shadow-2xl">
           <table className="w-full text-left min-w-full table-fixed">

@@ -31,6 +31,7 @@ class Payment(Base):
     amount = Column(Float)
     currency = Column(String, default="USD")
     status = Column(String) # paid, pending, failed
+    method = Column(String, default="Efectivo") # Efectivo, Tarjeta, etc
     stripe_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
