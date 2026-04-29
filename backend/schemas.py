@@ -47,6 +47,7 @@ class StaffBase(BaseModel):
     name: str
     role: str
     shift: Optional[str] = "Mañana"
+    password: Optional[str] = "1234"
 
 class StaffCreate(StaffBase):
     pass

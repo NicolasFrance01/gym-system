@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search } from 'lucide-react';
+import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -10,6 +10,7 @@ import autoTable from 'jspdf-autotable';
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'gerente' | 'administracion' | 'entrenador'>('gerente');
+  const [loggedUser, setLoggedUser] = useState<any>(null);
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
 
@@ -43,7 +44,7 @@ export default function AdminDashboard() {
     
     // Cuenta maestra de respaldo (por si la BD está vacía)
     if (loginUser === 'master' && loginPass === 'admin123') { 
-      setIsAuthenticated(true); setUserRole('gerente'); setActiveTab('Resumen'); 
+      setIsAuthenticated(true); setUserRole('gerente'); setLoggedUser({ name: 'Master', role: 'Gerente', id: 0 }); setActiveTab('Resumen'); 
       return; 
     }
 
@@ -53,8 +54,9 @@ export default function AdminDashboard() {
         const staffData = await res.json();
         const staffMember = staffData.find((s:any) => s.name.toLowerCase() === loginUser.toLowerCase());
         
-        if (staffMember && loginPass === '1234') {
+        if (staffMember && loginPass === (staffMember.password || '1234')) {
           setIsAuthenticated(true);
+          setLoggedUser(staffMember);
           const role = staffMember.role.toLowerCase() === 'administración' ? 'administracion' : staffMember.role.toLowerCase();
           setUserRole(role as any);
           if (role === 'entrenador') setActiveTab('Socios');
@@ -62,7 +64,7 @@ export default function AdminDashboard() {
           return;
         }
       }
-      alert("Credenciales incorrectas. Verifique nombre de staff o clave (1234).");
+      alert("Credenciales incorrectas. Verifique nombre de staff y contraseña.");
     } catch (err) {
       alert("Error de conexión al verificar staff.");
     }
@@ -221,7 +223,8 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
-      case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Eliminar empleado?")){ const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
+      case 'Mi Perfil': return <ProfileModule user={loggedUser} onSave={async (newPassword: string) => { if(!newPassword)return; try{ const res=await fetch(`${API_URL}/admin/staff/${loggedUser.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...loggedUser, password: newPassword})}); if(res.ok){ alert('Contraseña actualizada'); setLoggedUser({...loggedUser, password: newPassword}); } }catch(e){console.error(e);} }} />;
+      case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Eliminar empleado?")){ const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', password:'1234'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
       case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} /> : <NoAccess />;
       case 'Facturación': return (userRole === 'gerente' || userRole === 'administracion') ? <BillingModule members={members} /> : <NoAccess />;
       default: return (
@@ -323,7 +326,10 @@ export default function AdminDashboard() {
                     <select className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.shift} onChange={e => setSelectedItem({...selectedItem, shift: e.target.value})}>
                       <option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option>
                     </select>
-                    <p className="text-[9px] text-white/40 italic px-2">Nota: La contraseña por defecto para iniciar sesión es "1234".</p>
+                    <div className="space-y-1 mt-2">
+                       <label className="text-[8px] text-white/20 uppercase font-black ml-2">Contraseña de Acceso</label>
+                       <input type="text" placeholder="Contraseña..." className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={selectedItem?.password || ''} onChange={e => setSelectedItem({...selectedItem, password: e.target.value})} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -342,6 +348,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-3 mb-8"><div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg"><Brain size={16} className="text-white" /></div><h1 className="text-sm font-black tracking-tighter">ATLAS</h1></div>
         <nav className="space-y-1 flex-1 overflow-y-auto custom-scrollbar pr-1">
           <SidebarItem icon={<LayoutDashboard size={14} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => setActiveTab('Resumen')} />
+          <SidebarItem icon={<User size={14} />} label="Mi Perfil" active={activeTab === 'Mi Perfil'} onClick={() => setActiveTab('Mi Perfil')} />
           <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
           <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => setActiveTab('Planes')} />
           
@@ -592,6 +599,33 @@ function FinanceModule({ data, startDate, setStartDate, endDate, setEndDate }: a
             <div className="space-y-1"><label className="text-[8px] text-white/20 uppercase font-black">Desde</label><input type="date" className="bg-black/40 border border-white/10 rounded-lg p-2 text-white text-[8px] outline-none" value={startDate} onChange={e=>setStartDate(e.target.value)}/></div>
             <div className="space-y-1"><label className="text-[8px] text-white/20 uppercase font-black">Hasta</label><input type="date" className="bg-black/40 border border-white/10 rounded-lg p-2 text-white text-[8px] outline-none" value={endDate} onChange={e=>setEndDate(e.target.value)}/></div>
          </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileModule({ user, onSave }: any) {
+  const [password, setPassword] = useState('');
+  
+  return (
+    <div className="max-w-xl mx-auto space-y-6">
+      <div className="bg-white/5 border border-white/5 p-8 rounded-3xl text-center space-y-4">
+         <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto text-white shadow-xl shadow-blue-500/20">
+            <User size={32} />
+         </div>
+         <div>
+            <h2 className="text-xl font-black text-white uppercase tracking-widest">{user?.name}</h2>
+            <p className="text-[10px] text-blue-400 font-black uppercase mt-1">{user?.role}</p>
+         </div>
+      </div>
+      
+      <div className="bg-white/5 border border-white/5 p-6 rounded-3xl space-y-4">
+         <h3 className="text-xs font-black text-white/40 uppercase tracking-widest mb-4">Seguridad de la Cuenta</h3>
+         <div className="space-y-2">
+            <label className="text-[9px] text-white/20 uppercase font-black px-2">Nueva Contraseña</label>
+            <input type="text" placeholder="Ingresa tu nueva clave..." className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xs" value={password} onChange={e=>setPassword(e.target.value)} />
+         </div>
+         <button className="w-full py-4 bg-blue-600 rounded-xl font-black text-white text-xs uppercase transition-all hover:bg-blue-500 shadow-lg shadow-blue-600/20 mt-4" onClick={() => onSave(password)}>Guardar Cambios</button>
       </div>
     </div>
   );

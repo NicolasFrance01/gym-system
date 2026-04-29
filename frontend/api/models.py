@@ -52,6 +52,7 @@ class Staff(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     role = Column(String) # Trainer, Reception, Manager
+    password = Column(String, default="1234")
     shift = Column(String, default="Mañana")
 
 class Product(Base):
