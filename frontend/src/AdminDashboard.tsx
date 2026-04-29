@@ -1,8 +1,8 @@
-import { LayoutDashboard, Users, Brain, TrendingUp, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, Calendar as CalendarIcon, Flame, Plus, X, Settings, Activity, BarChart3, Receipt, CreditCard, Smartphone, Banknote, Search } from 'lucide-react';
+import { LayoutDashboard, Users, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, LineChart, Line, PieChart, Pie, Cell, Legend
+  LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -245,7 +245,7 @@ export default function AdminDashboard() {
       {(isModalOpen || isPaymentModalOpen) && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-10 bg-black/90 backdrop-blur-md overflow-y-auto">
           {isModalOpen && (
-            <div className={`bg-neutral-900 border border-white/10 p-8 rounded-[40px] w-full ${modalType === 'evolution' || modalType === 'workout' || modalType === 'history' ? 'max-w-4xl' : 'max-w-md'} shadow-2xl animate-in zoom-in duration-300`}>
+            <div className={`bg-neutral-900 border border-white/10 p-8 rounded-[40px] w-full ${modalType === 'workout' || modalType === 'history' ? 'max-w-4xl' : 'max-w-md'} shadow-2xl animate-in zoom-in duration-300`}>
               <div className="flex justify-between items-center mb-6"><h2 className="text-lg font-black uppercase tracking-widest text-blue-500">{modalType}</h2><button onClick={() => setIsModalOpen(false)}><X size={20} className="text-white/20 hover:text-white transition-colors"/></button></div>
               <div className="space-y-3">
                 {modalType === 'history' && (
