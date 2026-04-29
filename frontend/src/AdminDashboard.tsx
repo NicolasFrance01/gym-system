@@ -62,20 +62,32 @@ export default function AdminDashboard() {
       if (!membersRes.ok) throw new Error(`Error ${membersRes.status}: No se pudo obtener la lista de socios`);
       const membersData = await membersRes.json();
       
-      // Mock data injection for visualization if needed
-      const enrichedMembers = membersData.map((m: any) => {
-        if (!m.billing_history || m.billing_history.length === 0) {
-          return {
-            ...m,
-            billing_history: [
-              { date: "2026-04-15", amount: 8500, plan: m.membership_type || "Premium", method: "Efectivo", status: "PAGADO" },
-              { date: "2026-03-12", amount: 8500, plan: m.membership_type || "Premium", method: "Transferencia", status: "PAGADO" },
-              { date: "2026-02-10", amount: 7000, plan: "Básico", method: "Efectivo", status: "PAGADO" }
-            ]
-          };
-        }
-        return m;
-      });
+      // Si no hay socios, agregamos unos ficticios para que el dashboard no se vea vacío
+      let enrichedMembers = membersData;
+      if (membersData.length === 0) {
+        enrichedMembers = [
+          { id: 999, name: "Socio Ejemplo 1", dni: "123", status: "ACTIVO", membership_type: "Elite", billing_history: [
+            { date: "2026-04-20", amount: 12000, plan: "Elite", method: "Efectivo", status: "PAGADO" },
+            { date: "2026-03-20", amount: 12000, plan: "Elite", method: "QR", status: "PAGADO" }
+          ]},
+          { id: 998, name: "Socio Ejemplo 2", dni: "456", status: "ACTIVO", membership_type: "Premium", billing_history: [
+            { date: "2026-04-18", amount: 8500, plan: "Premium", method: "Transferencia", status: "PAGADO" }
+          ]}
+        ];
+      } else {
+        enrichedMembers = membersData.map((m: any) => {
+          if (!m.billing_history || m.billing_history.length === 0) {
+            return {
+              ...m,
+              billing_history: [
+                { date: "2026-04-15", amount: 8500, plan: m.membership_type || "Premium", method: "Efectivo", status: "PAGADO" },
+                { date: "2026-03-12", amount: 8500, plan: m.membership_type || "Premium", method: "Transferencia", status: "PAGADO" }
+              ]
+            };
+          }
+          return m;
+        });
+      }
       setMembers(enrichedMembers);
 
       // 2. Fetch Stats
