@@ -219,10 +219,77 @@ export default function AdminDashboard() {
         method: 'POST'
       });
       if (res.ok) {
+        generatePaymentPDF(selectedItem, amount, method, loggedUser?.name || 'Administración');
         setIsPaymentModalOpen(false);
         refreshData();
       }
     } catch (e) { console.error(e); }
+  };
+
+  const generatePaymentPDF = async (member: any, amount: number, method: string, staffName: string) => {
+    const doc = new jsPDF();
+
+    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    });
+
+    try {
+      const bgImg = await loadImage('/favicon.png');
+      const gState = new (doc as any).GState({opacity: 0.08});
+      doc.setGState(gState);
+      // Dibujar marca de agua centrada
+      doc.addImage(bgImg, 'PNG', 45, 80, 120, 120);
+      // Restaurar opacidad
+      doc.setGState(new (doc as any).GState({opacity: 1.0}));
+    } catch (e) {
+      console.warn('No se pudo cargar la marca de agua', e);
+    }
+
+    doc.setFontSize(22);
+    doc.setTextColor(249, 115, 22);
+    doc.text('FUSION FITNESS GYM', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('COMPROBANTE DE PAGO', 105, 30, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} ${new Date().toLocaleTimeString('es-AR')}`, 14, 45);
+
+    autoTable(doc, {
+      startY: 55,
+      head: [['Detalle', 'Información']],
+      body: [
+        ['Nombre Completo', member.name || '-'],
+        ['DNI', member.dni || '-'],
+        ['Correo Electrónico', member.email || '-'],
+        ['Número de Teléfono', member.phone || '-'],
+        ['Plan que se Abono', member.membership_type || '-'],
+        ['Monto Abonado', `$${amount.toLocaleString()}`],
+        ['Medio de Pago Utilizado', method || '-'],
+        ['Usuario del Sistema', staffName || '-'],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [249, 115, 22] },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || 120;
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('---------------------------------------------------------', 105, finalY + 20, { align: 'center' });
+    doc.text('Sello Institucional - Fusion Fitness', 105, finalY + 26, { align: 'center' });
+
+    try {
+      const logo = await loadImage('/logo_B.png');
+      doc.addImage(logo, 'PNG', 85, finalY + 35, 40, 40);
+    } catch (e) {
+      console.warn('No se pudo cargar el logo final', e);
+    }
+
+    doc.save(`Comprobante_Pago_${member.name.replace(/\\s+/g, '_')}.pdf`);
   };
 
   const renderContent = () => {
