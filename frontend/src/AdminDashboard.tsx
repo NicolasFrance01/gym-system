@@ -103,10 +103,18 @@ export default function AdminDashboard() {
     doc.text("Sello de Integridad Institucional - Fusion Fitness GYM", 105, 282, { align: "center" });
     doc.text("Sistema de Gestión de Reconocimiento y Administración - 2026", 105, 287, { align: "center" });
 
-    // Open in new tab using Blob URL (more reliable than dataurl)
+    // Set Metadata for specific filename on download
+    doc.setProperties({
+      title: "FusionFitnessGYM_Terminos_Y_Condiciones",
+      subject: "Términos y Condiciones de Uso",
+      author: "Fusion Fitness GYM"
+    });
+
+    // Open in new tab using Blob URL
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    const win = window.open(url, '_blank');
+    if (win) win.document.title = "Fusion Fitness GYM - Términos y Condiciones";
   };
 
   useEffect(() => { if (isAuthenticated) refreshData(); }, [isAuthenticated, startDate, endDate]);
