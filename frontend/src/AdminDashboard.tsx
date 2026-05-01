@@ -97,12 +97,16 @@ export default function AdminDashboard() {
     });
 
     // Institutional Seal
-    doc.line(10, 270, 200, 270);
-    doc.setFontSize(8); doc.setFont("helvetica", "italic");
-    doc.text("Sello de Integridad Institucional - Fusion Fitness GYM", 105, 278, { align: "center" });
-    doc.text("Sistema de Gestión de Reconocimiento y Administración", 105, 283, { align: "center" });
+    doc.line(10, 275, 200, 275);
+    doc.setFontSize(7); doc.setFont("helvetica", "italic");
+    doc.setTextColor(150);
+    doc.text("Sello de Integridad Institucional - Fusion Fitness GYM", 105, 282, { align: "center" });
+    doc.text("Sistema de Gestión de Reconocimiento y Administración - 2026", 105, 287, { align: "center" });
 
-    doc.output('dataurlnewwindow');
+    // Open in new tab using Blob URL (more reliable than dataurl)
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   };
 
   useEffect(() => { if (isAuthenticated) refreshData(); }, [isAuthenticated, startDate, endDate]);
