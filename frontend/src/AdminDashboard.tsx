@@ -414,14 +414,26 @@ export default function AdminDashboard() {
                 )}
                 {modalType === 'staff' && (
                   <div className="space-y-3">
-                    <input type="text" placeholder="Nombre Completo" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
-                    <input type="text" placeholder="Usuario" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.username || ''} onChange={e => setSelectedItem({...selectedItem, username: e.target.value})} />
-                    <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.role} onChange={e => setSelectedItem({...selectedItem, role: e.target.value})}>
-                      <option value="Entrenador">Entrenador</option><option value="Administración">Administración</option><option value="Gerente">Gerente</option>
-                    </select>
-                    <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.shift} onChange={e => setSelectedItem({...selectedItem, shift: e.target.value})}>
-                      <option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option>
-                    </select>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Nombre Completo</label>
+                      <input type="text" placeholder="Ej: Juan Pérez" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Nombre de Usuario (Para logueo)</label>
+                      <input type="text" placeholder="Ej: juan.perez" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.username || ''} onChange={e => setSelectedItem({...selectedItem, username: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Rol / Puesto</label>
+                      <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.role} onChange={e => setSelectedItem({...selectedItem, role: e.target.value})}>
+                        <option value="Entrenador">Entrenador</option><option value="Administración">Administración</option><option value="Gerente">Gerente</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Turno de Trabajo</label>
+                      <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.shift} onChange={e => setSelectedItem({...selectedItem, shift: e.target.value})}>
+                        <option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option>
+                      </select>
+                    </div>
                     <div className="space-y-1 mt-2">
                        <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Contraseña de Acceso</label>
                        <input type="text" placeholder="Contraseña..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.password || ''} onChange={e => setSelectedItem({...selectedItem, password: e.target.value})} />
