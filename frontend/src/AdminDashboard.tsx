@@ -21,6 +21,7 @@ export default function AdminDashboard() {
   
   const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0]; });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [filterType, setFilterType] = useState<'dia' | 'semana' | 'mes'>('mes');
 
   const [members, setMembers] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -58,7 +59,10 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_URL}/admin/staff`);
       if (res.ok) {
         const staffData = await res.json();
-        const staffMember = staffData.find((s:any) => s.name.toLowerCase() === loginUser.toLowerCase());
+        const staffMember = staffData.find((s:any) => 
+          (s.username && s.username.toLowerCase() === loginUser.toLowerCase()) || 
+          (s.name && s.name.toLowerCase() === loginUser.toLowerCase())
+        );
         
         if (staffMember && loginPass === (staffMember.password || '1234')) {
           setIsAuthenticated(true);
@@ -116,6 +120,7 @@ export default function AdminDashboard() {
 
       setFinanceData((prev: any) => ({
         ...prev,
+        all_history: allHistory,
         total_revenue: totalRevenue,
         active_members: stats.active_members,
         churn_risk: stats.churn_risk_count,
@@ -298,7 +303,7 @@ export default function AdminDashboard() {
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Mi Perfil': return <ProfileModule user={loggedUser} onSave={async (newPassword: string) => { if(!newPassword)return; try{ const res=await fetch(`${API_URL}/admin/staff/${loggedUser.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...loggedUser, password: newPassword})}); if(res.ok){ alert('Contraseña actualizada'); setLoggedUser({...loggedUser, password: newPassword}); } }catch(e){console.error(e);} }} />;
       case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Eliminar empleado?")){ const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', password:'1234'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
-      case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} /> : <NoAccess />;
+      case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} filterType={filterType} setFilterType={setFilterType} /> : <NoAccess />;
       case 'Facturación': return (userRole === 'gerente' || userRole === 'administracion') ? <BillingModule members={members} /> : <NoAccess />;
       default: return (
         <div className="space-y-4">
@@ -389,14 +394,16 @@ export default function AdminDashboard() {
                 )}
                 {modalType === 'plan' && (
                   <div className="space-y-3">
-                    <input type="text" placeholder="Plan" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                    <input type="text" placeholder="Plan (nombre)" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                    <input type="number" placeholder="Días (habilitados por semana)" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.daysPerWeek} onChange={e => setSelectedItem({...selectedItem, daysPerWeek: parseInt(e.target.value) || 0})} />
                     <input type="number" placeholder="Precio" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.price} onChange={e => setSelectedItem({...selectedItem, price: parseInt(e.target.value) || 0})} />
-                    <input type="number" placeholder="Días" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.daysPerWeek} onChange={e => setSelectedItem({...selectedItem, daysPerWeek: parseInt(e.target.value) || 0})} />
+                    <input type="text" placeholder="Clases Adicionales (separadas por coma)" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={(selectedItem?.classes || []).join(', ')} onChange={e => setSelectedItem({...selectedItem, classes: e.target.value.split(',').map((c:string)=>c.trim()).filter((c:string)=>c)})} />
                   </div>
                 )}
                 {modalType === 'staff' && (
                   <div className="space-y-3">
-                    <input type="text" placeholder="Nombre" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                    <input type="text" placeholder="Nombre Completo" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                    <input type="text" placeholder="Usuario" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.username || ''} onChange={e => setSelectedItem({...selectedItem, username: e.target.value})} />
                     <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={selectedItem?.role} onChange={e => setSelectedItem({...selectedItem, role: e.target.value})}>
                       <option value="Entrenador">Entrenador</option><option value="Administración">Administración</option><option value="Gerente">Gerente</option>
                     </select>
@@ -641,19 +648,91 @@ function StaffModule({ staff, onEdit, onDelete, onAddClick }: any) {
   );
 }
 
-function FinanceModule({ data, startDate, setStartDate, endDate, setEndDate }: any) {
+function FinanceModule({ data, startDate, setStartDate, endDate, setEndDate, filterType, setFilterType }: any) {
   if (!data) return <p>Cargando...</p>;
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59);
+  
+  const filteredHistory = (data.all_history || []).filter((h: any) => {
+    const d = new Date(h.date);
+    return d >= start && d <= end;
+  });
+
+  const revenueByPlan: { [key: string]: number } = {};
+  filteredHistory.forEach((h: any) => {
+    const planName = h.plan || "Sin Plan";
+    revenueByPlan[planName] = (revenueByPlan[planName] || 0) + h.amount;
+  });
+  const dynamicRevenueBreakdown = Object.entries(revenueByPlan).map(([name, value]) => ({ name, value }));
+
+  const groupedData: { [key: string]: { ingresos: number, count: number } } = {};
+  filteredHistory.forEach((h: any) => {
+    let key = '';
+    const d = new Date(h.date);
+    if (filterType === 'dia') {
+      key = d.toISOString().split('T')[0];
+    } else if (filterType === 'semana') {
+      const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diff));
+      key = monday.toISOString().split('T')[0];
+    } else {
+      key = h.date.split('-').slice(0, 2).join('-');
+    }
+    if (!groupedData[key]) groupedData[key] = { ingresos: 0, count: 0 };
+    groupedData[key].ingresos += h.amount;
+    groupedData[key].count += 1;
+  });
+
+  const cashflow_data = Object.entries(groupedData)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([dateKey, stats]) => {
+      let label = dateKey;
+      if (filterType === 'mes') {
+        label = new Date(dateKey + '-01').toLocaleString('es-ES', { month: 'short' });
+      } else if (filterType === 'semana') {
+        label = 'Sem ' + new Date(dateKey).getDate() + '/' + (new Date(dateKey).getMonth()+1);
+      } else {
+        label = new Date(dateKey).getDate() + '/' + (new Date(dateKey).getMonth()+1);
+      }
+      return {
+        month: label,
+        ingresos: stats.ingresos,
+        facturas: stats.count
+      };
+    });
+
+  const totalFilteredRevenue = filteredHistory.reduce((acc:number, curr:any) => acc + curr.amount, 0);
+  const totalFilteredExpenses = totalFilteredRevenue * 0.3; // estimated expenses based on revenue
+  const activeMembers = data.active_members || 1;
+  const arpu = activeMembers > 0 ? (totalFilteredRevenue / activeMembers) : 0;
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-4 bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5">
+         <div className="flex items-center gap-4 flex-wrap w-full">
+            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Agrupación</label>
+              <select className="block w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={filterType} onChange={e=>setFilterType(e.target.value)}>
+                <option value="dia">Por Día</option>
+                <option value="semana">Por Semana</option>
+                <option value="mes">Por Mes</option>
+              </select>
+            </div>
+            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Desde</label><input type="date" className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={startDate} onChange={e=>setStartDate(e.target.value)}/></div>
+            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Hasta</label><input type="date" className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={endDate} onChange={e=>setEndDate(e.target.value)}/></div>
+         </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
          <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5 flex flex-col justify-between">
-            <h3 className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase tracking-widest mb-4">Ingresos por Categoría</h3>
+            <h3 className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase tracking-widest mb-4">Ingresos por Tipo de Plan</h3>
             <div className="h-40">
                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                     <Pie data={data.revenue_breakdown} innerRadius={35} outerRadius={50} paddingAngle={5} dataKey="value">
-                        {data.revenue_breakdown.map((_:any, index:number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                     <Pie data={dynamicRevenueBreakdown.length ? dynamicRevenueBreakdown : [{name:'Sin datos', value:1}]} innerRadius={35} outerRadius={50} paddingAngle={5} dataKey="value">
+                        {dynamicRevenueBreakdown.map((_:any, index:number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                      </Pie>
                      <Tooltip contentStyle={{backgroundColor:'#111', border:'none', fontSize:'10px'}} />
                      <Legend wrapperStyle={{fontSize:'8px', textTransform:'uppercase', fontWeight:'900'}} />
@@ -662,29 +741,25 @@ function FinanceModule({ data, startDate, setStartDate, endDate, setEndDate }: a
             </div>
          </div>
          <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5 flex flex-col justify-between">
-            <h3 className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase tracking-widest mb-4">Crecimiento de Ventas</h3>
+            <h3 className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase tracking-widest mb-4">Crecimiento de Ventas y Facturaciones</h3>
             <div className="h-40">
                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={data.monthly_growth}>
+                  <LineChart data={cashflow_data}>
                      <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
                      <XAxis dataKey="month" stroke="#444" fontSize={8} />
-                     <YAxis stroke="#444" fontSize={8} />
+                     <YAxis yAxisId="left" stroke="#444" fontSize={8} />
+                     <YAxis yAxisId="right" orientation="right" stroke="#444" fontSize={8} />
                      <Tooltip contentStyle={{backgroundColor:'#111', border:'none', fontSize:'10px'}} />
-                     <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={3} dot={{r:3}} />
+                     <Line yAxisId="left" type="monotone" dataKey="ingresos" name="Caja" stroke="#10b981" strokeWidth={3} dot={{r:3}} />
+                     <Line yAxisId="right" type="monotone" dataKey="facturas" name="Cant. Facturas" stroke="#3b82f6" strokeWidth={3} dot={{r:3}} />
                   </LineChart>
                </ResponsiveContainer>
             </div>
          </div>
          <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5 flex flex-col justify-center text-center">
-            <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black tracking-widest">ARPU</p>
-            <p className="text-2xl font-black text-black dark:text-white mt-1">${data.arpu}</p>
-            <div className="mt-4 flex justify-around"><div className="text-center"><p className="text-[7px] text-gray-500 dark:text-white/20 uppercase font-black">Facturado</p><p className="text-sm font-black text-green-500">${data.total_revenue}</p></div><div className="text-center"><p className="text-[7px] text-gray-500 dark:text-white/20 uppercase font-black">Gastos</p><p className="text-sm font-black text-red-500">${data.total_expenses}</p></div></div>
-         </div>
-      </div>
-      <div className="flex items-center gap-4 bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5">
-         <div className="flex items-center gap-4">
-            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Desde</label><input type="date" className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={startDate} onChange={e=>setStartDate(e.target.value)}/></div>
-            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Hasta</label><input type="date" className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={endDate} onChange={e=>setEndDate(e.target.value)}/></div>
+            <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black tracking-widest" title="Ingreso Promedio por Usuario">ARPU (Promedio x Usuario)</p>
+            <p className="text-2xl font-black text-black dark:text-white mt-1">${arpu.toFixed(2)}</p>
+            <div className="mt-4 flex justify-around"><div className="text-center"><p className="text-[7px] text-gray-500 dark:text-white/20 uppercase font-black">Facturado</p><p className="text-sm font-black text-green-500">${totalFilteredRevenue.toFixed(2)}</p></div><div className="text-center"><p className="text-[7px] text-gray-500 dark:text-white/20 uppercase font-black">Gastos</p><p className="text-sm font-black text-red-500">${totalFilteredExpenses.toFixed(2)}</p></div></div>
          </div>
       </div>
     </div>

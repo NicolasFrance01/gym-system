@@ -50,6 +50,7 @@ class Staff(Base):
     __tablename__ = "staff"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
+    username = Column(String, unique=True, index=True, nullable=True)
     role = Column(String) # Trainer, Reception, Manager
     password = Column(String, default="1234")
     shift = Column(String, default="Mañana")

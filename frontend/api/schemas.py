@@ -88,6 +88,7 @@ class BookingSchema(BaseModel):
 
 class StaffBase(BaseModel):
     name: str
+    username: Optional[str] = None
     role: str
     shift: Optional[str] = "Mañana"
     password: Optional[str] = "1234"
