@@ -394,10 +394,22 @@ export default function AdminDashboard() {
                 )}
                 {modalType === 'plan' && (
                   <div className="space-y-3">
-                    <input type="text" placeholder="Plan (nombre)" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
-                    <input type="number" placeholder="Días (habilitados por semana)" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.daysPerWeek} onChange={e => setSelectedItem({...selectedItem, daysPerWeek: parseInt(e.target.value) || 0})} />
-                    <input type="number" placeholder="Precio" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.price} onChange={e => setSelectedItem({...selectedItem, price: parseInt(e.target.value) || 0})} />
-                    <input type="text" placeholder="Clases Adicionales (separadas por coma)" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={(selectedItem?.classes || []).join(', ')} onChange={e => setSelectedItem({...selectedItem, classes: e.target.value.split(',').map((c:string)=>c.trim()).filter((c:string)=>c)})} />
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Plan (nombre)</label>
+                      <input type="text" placeholder="Ej: Premium, Musculación..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Días (habilitados por semana)</label>
+                      <input type="number" placeholder="Ej: 3, 5, 7..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.daysPerWeek} onChange={e => setSelectedItem({...selectedItem, daysPerWeek: parseInt(e.target.value) || 0})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Precio Mensual</label>
+                      <input type="number" placeholder="Ej: 8500" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.price} onChange={e => setSelectedItem({...selectedItem, price: parseInt(e.target.value) || 0})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Clases Adicionales (separadas por coma)</label>
+                      <input type="text" placeholder="Ej: Yoga, Zumba, Funcional..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={(selectedItem?.classes || []).join(', ')} onChange={e => setSelectedItem({...selectedItem, classes: e.target.value.split(',').map((c:string)=>c.trim()).filter((c:string)=>c)})} />
+                    </div>
                   </div>
                 )}
                 {modalType === 'staff' && (
