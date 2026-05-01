@@ -38,6 +38,72 @@ export default function AdminDashboard() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const viewTermsPDF = async () => {
+    const doc = new jsPDF();
+    
+    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    });
+
+    try {
+      // Load Images
+      const [watermarkImg, logoImg] = await Promise.all([
+        loadImage("/favicon.png"),
+        loadImage("/logo_B.png")
+      ]);
+
+      // Background Watermark (Favicon)
+      const gState = new (doc as any).GState({ opacity: 0.05 });
+      doc.setGState(gState);
+      doc.addImage(watermarkImg, 'PNG', 40, 80, 130, 130);
+      
+      // Restore Opacity for Header
+      doc.setGState(new (doc as any).GState({ opacity: 1.0 }));
+      doc.addImage(logoImg, 'PNG', 10, 10, 30, 30);
+    } catch (e) {
+      console.warn("No se pudieron cargar las imágenes para el PDF", e);
+    }
+
+    // Header & Title
+    doc.setFontSize(18); doc.setFont("helvetica", "bold");
+    doc.text("TÉRMINOS Y CONDICIONES DE USO", 50, 25);
+    doc.setFontSize(14); doc.text("FUSION FITNESS GYM", 50, 35);
+    doc.setFontSize(8); doc.text("Versión: 1.0", 160, 15); doc.text("Fecha: 01/05/2026", 160, 20);
+    doc.line(10, 45, 200, 45);
+
+    // Content
+    doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    const terms = [
+      { t: "1. ACEPTACIÓN DE LOS TÉRMINOS", c: "Al acceder y utilizar el sistema de gestión de Fusion Fitness GYM, el usuario (personal administrativo, entrenadores o gerencia) acepta cumplir con los presentes términos y condiciones. Si no está de acuerdo, deberá abstenerse de utilizar la plataforma." },
+      { t: "2. USO DE LA CUENTA Y SEGURIDAD", c: "Cada usuario es responsable de mantener la confidencialidad de su nombre de usuario y contraseña. El acceso es personal e intransferible. Queda prohibido compartir credenciales con terceros. Cualquier actividad realizada bajo su cuenta será responsabilidad exclusiva del titular de la misma." },
+      { t: "3. PRIVACIDAD Y PROTECCIÓN DE DATOS (LEY 25.326)", c: "El sistema procesa datos personales de los socios (Nombre, DNI, Teléfono, Correo). El usuario se compromete a utilizar esta información únicamente para fines administrativos y operativos del gimnasio. Queda estrictamente prohibida la descarga, copia o divulgación de la base de datos de socios para fines ajenos a la institución. Los datos de facturación y pagos deben ser manejados con absoluta reserva." },
+      { t: "4. RESPONSABILIDAD DEL CONTENIDO", c: "El usuario se compromete a ingresar información veraz y exacta en los módulos de:\n- Socios: Registro de datos y estados de membresía.\n- Finanzas: Registro de cobros y facturación real.\n- Staff: Gestión de personal propio de la institución." },
+      { t: "5. PROPIEDAD INTELECTUAL", c: "El diseño, código fuente, logotipos (FUSION FITNESS GYM) y estructura del sistema son propiedad exclusiva de sus desarrolladores. No se permite la reproducción total o parcial del software sin autorización previa." },
+      { t: "6. LIMITACIÓN DE RESPONSABILIDAD", c: "Fusion Fitness GYM no se responsabiliza por:\n- Fallas en el acceso debido a problemas de conexión a internet del usuario.\n- Pérdida de información resultante del uso indebido de las funciones de 'Eliminar' o 'Dar de Baja' por parte del personal." },
+      { t: "7. MODIFICACIONES", c: "La administración se reserva el derecho de modificar estos términos en cualquier momento, notificando a los usuarios a través del panel principal del sistema." }
+    ];
+
+    let y = 55;
+    terms.forEach(item => {
+      doc.setFont("helvetica", "bold"); doc.text(item.t, 15, y); y += 5;
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(item.c, 180);
+      doc.text(lines, 15, y); y += (lines.length * 5) + 5;
+    });
+
+    // Institutional Seal
+    doc.line(10, 270, 200, 270);
+    doc.setFontSize(8); doc.setFont("helvetica", "italic");
+    doc.text("Sello de Integridad Institucional - Fusion Fitness GYM", 105, 278, { align: "center" });
+    doc.text("Sistema de Gestión de Reconocimiento y Administración", 105, 283, { align: "center" });
+
+    doc.output('dataurlnewwindow');
+  };
 
   useEffect(() => { if (isAuthenticated) refreshData(); }, [isAuthenticated, startDate, endDate]);
 
@@ -48,6 +114,10 @@ export default function AdminDashboard() {
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
+    if (!acceptedTerms) {
+      alert("Debe aceptar los Términos y Condiciones de uso para ingresar.");
+      return;
+    }
     
     // Cuenta maestra de respaldo (por si la BD está vacía)
     if (loginUser === 'master' && loginPass === 'admin123') { 
@@ -338,6 +408,14 @@ export default function AdminDashboard() {
           <form onSubmit={handleLogin} className="space-y-4">
             <input type="text" placeholder="Usuario" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-2xl py-4 px-6 text-black dark:text-white outline-none focus:border-orange-500 transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
             <input type="password" placeholder="Contraseña" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-2xl py-4 px-6 text-black dark:text-white outline-none focus:border-orange-500 transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
+            
+            <div className="flex items-center gap-2 px-2 py-1">
+              <input type="checkbox" id="terms" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} className="w-3 h-3 accent-orange-500 cursor-pointer" />
+              <label htmlFor="terms" className="text-[9px] text-gray-500 dark:text-white/40 font-black uppercase cursor-pointer select-none">
+                Acepto los <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); viewTermsPDF(); }} className="text-cyan-400 underline decoration-cyan-400 underline-offset-2 hover:text-cyan-300 transition-colors font-black">Términos y Condiciones de uso</span>
+              </label>
+            </div>
+
             <button type="submit" className="w-full py-4 bg-orange-500 rounded-2xl font-black text-black dark:text-white text-xs uppercase tracking-widest transition-all hover:bg-orange-600 shadow-xl shadow-orange-500/20">Ingresar</button>
           </form>
         </div>
