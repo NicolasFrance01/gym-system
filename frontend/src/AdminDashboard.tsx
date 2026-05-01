@@ -547,29 +547,76 @@ function PaymentBtn({ active, onClick, label, icon }: any) {
 }
 
 function BillingModule({ members }: any) {
-  const allHistory = members.flatMap((m:any) => (m.billing_history || []).map((h:any) => ({...h, userName: m.name})));
-  const sorted = allHistory.sort((a:any, b:any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const [filterType, setFilterType] = useState<'dia' | 'semana' | 'mes' | 'rango'>('mes');
+  const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0]; });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
 
-  // Calcular estadísticas fieles a la lista
+  const handleFilterChange = (type: string) => {
+    setFilterType(type as any);
+    const d = new Date();
+    if (type === 'dia') {
+      setStartDate(d.toISOString().split('T')[0]);
+      setEndDate(d.toISOString().split('T')[0]);
+    } else if (type === 'semana') {
+      const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diff));
+      setStartDate(monday.toISOString().split('T')[0]);
+      setEndDate(new Date().toISOString().split('T')[0]);
+    } else if (type === 'mes') {
+      const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(new Date().toISOString().split('T')[0]);
+    }
+  };
+
+  const allHistory = members.flatMap((m:any) => (m.billing_history || []).map((h:any) => ({...h, userName: m.name})));
+  
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59);
+
+  const filteredHistory = allHistory.filter((h:any) => {
+    const d = new Date(h.date);
+    return d >= start && d <= end;
+  });
+
+  const sorted = filteredHistory.sort((a:any, b:any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   const total = sorted.reduce((acc:number, curr:any)=>acc+curr.amount, 0);
-  const methodCounts: any = sorted.reduce((acc:any, curr:any) => {
-    acc[curr.method] = (acc[curr.method] || 0) + 1;
+  const planCounts: any = sorted.reduce((acc:any, curr:any) => {
+    const p = curr.plan || 'Sin Plan';
+    acc[p] = (acc[p] || 0) + 1;
     return acc;
   }, {});
-  const mostUsedMethod = Object.entries(methodCounts).sort((a:any, b:any) => b[1] - a[1])[0]?.[0] || 'N/A';
+  const mostUsedPlan = Object.entries(planCounts).sort((a:any, b:any) => b[1] - a[1])[0]?.[0] || 'N/A';
 
   return (
     <div className="space-y-6">
+       <div className="flex items-center gap-4 bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5">
+         <div className="flex items-center gap-4 flex-wrap w-full">
+            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Filtrar por</label>
+              <select className="block w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={filterType} onChange={e=>handleFilterChange(e.target.value)}>
+                <option value="dia">Día Actual</option>
+                <option value="semana">Semana Actual</option>
+                <option value="mes">Mes Actual</option>
+                <option value="rango">Rango Personalizado</option>
+              </select>
+            </div>
+            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Desde</label><input type="date" className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={startDate} onChange={e=>{setStartDate(e.target.value); setFilterType('rango');}}/></div>
+            <div className="space-y-1"><label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Hasta</label><input type="date" className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-black dark:text-white text-[8px] outline-none" value={endDate} onChange={e=>{setEndDate(e.target.value); setFilterType('rango');}}/></div>
+         </div>
+      </div>
+
        <div className="grid grid-cols-3 gap-4">
           <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"><p className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase">Cobros Registrados</p><p className="text-xl font-black text-black dark:text-white">${total.toLocaleString()}</p></div>
-          <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"><p className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase">Más Usado</p><p className="text-xl font-black text-orange-500">{mostUsedMethod}</p></div>
+          <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"><p className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase">Más Usado</p><p className="text-xl font-black text-orange-500 truncate" title={mostUsedPlan}>{mostUsedPlan}</p></div>
           <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"><p className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase">Facturas</p><p className="text-xl font-black text-black dark:text-white">{sorted.length}</p></div>
        </div>
        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-3xl overflow-x-auto shadow-2xl">
           <table className="w-full text-left min-w-full table-fixed">
              <thead className="bg-white dark:bg-white/5 border-b border-gray-200 dark:border-white/5 text-[8px] text-gray-500 dark:text-white/20 font-black uppercase tracking-widest"><tr ><th className="p-4 w-1/4">Socio</th><th className="p-4 w-1/5">Fecha</th><th className="p-4 w-1/5">Plan</th><th className="p-4 w-1/5">Método</th><th className="p-4 text-right w-1/5">Monto</th></tr></thead>
              <tbody className="divide-y divide-white/5">
-                {sorted.map((h:any, i:number)=>(
+                {sorted.length > 0 ? sorted.map((h:any, i:number)=>(
                   <tr key={i} className="hover:bg-white dark:bg-white/5 transition-colors">
                      <td className="p-4 font-black uppercase text-black dark:text-white truncate">{h.userName}</td>
                      <td className="p-4 text-gray-600 dark:text-white/40 text-[9px]">{h.date}</td>
@@ -577,7 +624,7 @@ function BillingModule({ members }: any) {
                      <td className="p-4"><span className="px-2 py-1 bg-white dark:bg-white/5 rounded-lg text-[7px] font-black uppercase">{h.method}</span></td>
                      <td className="p-4 text-right font-black text-green-500">${h.amount.toLocaleString()}</td>
                   </tr>
-                ))}
+                )) : <tr><td colSpan={5} className="p-8 text-center text-xs text-gray-500 dark:text-white/40 uppercase font-black tracking-widest">No hay facturas en este periodo</td></tr>}
              </tbody>
           </table>
        </div>
