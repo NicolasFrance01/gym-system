@@ -114,8 +114,10 @@ export default function AdminDashboard() {
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
+    setError(null);
+    
     if (!acceptedTerms) {
-      alert("Debe aceptar los Términos y Condiciones de uso para ingresar.");
+      setError("Debe aceptar los Términos y Condiciones de uso para ingresar.");
       return;
     }
     
@@ -144,9 +146,9 @@ export default function AdminDashboard() {
           return;
         }
       }
-      alert("Credenciales incorrectas. Verifique nombre de staff y contraseña.");
+      setError("Credenciales incorrectas. Verifique usuario y contraseña.");
     } catch (err) {
-      alert("Error de conexión al verificar staff.");
+      setError("Error de conexión al verificar credenciales.");
     }
   };
 
@@ -405,6 +407,14 @@ export default function AdminDashboard() {
             <div className="hidden p-4 bg-orange-500 rounded-2xl shadow-xl shadow-orange-500/30"><ShieldCheck size={32} className="text-black dark:text-white" /></div>
           </div>
           <h2 className="text-2xl font-black text-center mb-8 tracking-tighter uppercase font-sans"><span className="text-black dark:text-white">Fusion</span> <span className="text-orange-500">Fitness</span></h2>
+          
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[9px] font-black uppercase mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+              <XCircle size={14} className="flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             <input type="text" placeholder="Usuario" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-2xl py-4 px-6 text-black dark:text-white outline-none focus:border-orange-500 transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
             <input type="password" placeholder="Contraseña" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-2xl py-4 px-6 text-black dark:text-white outline-none focus:border-orange-500 transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
