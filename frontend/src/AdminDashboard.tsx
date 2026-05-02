@@ -365,15 +365,31 @@ export default function AdminDashboard() {
       headStyles: { fillColor: [249, 115, 22] },
     });
 
-    // Sello diagonal "PAGADO" sobre la tabla
+    // Sello diagonal "PAGADO" recortado dentro de los bordes de la tabla
     const tableEndY = (doc as any).lastAutoTable.finalY || 120;
-    const tableMidY = (55 + tableEndY) / 2;
-    doc.setGState(new (doc as any).GState({opacity: 0.13}));
+    const tableTopY = 55;
+    const tableLeftX = 14;
+    const tableRightX = (doc as any).internal.pageSize.getWidth() - 14;
+    const tableMidX = (tableLeftX + tableRightX) / 2;
+    const tableMidY = (tableTopY + tableEndY) / 2;
+
+    const sf = (doc as any).internal.scaleFactor;
+    const pageH = (doc as any).internal.pageSize.getHeight();
+    const px = tableLeftX * sf;
+    const py = (pageH - tableEndY) * sf;
+    const pw = (tableRightX - tableLeftX) * sf;
+    const ph = (tableEndY - tableTopY) * sf;
+
+    // Guardar estado, recortar al área de la tabla, dibujar sello, restaurar
+    (doc as any).internal.write('q');
+    (doc as any).internal.write(`${px.toFixed(2)} ${py.toFixed(2)} ${pw.toFixed(2)} ${ph.toFixed(2)} re W n`);
+    doc.setGState(new (doc as any).GState({opacity: 0.14}));
     doc.setFontSize(58);
     doc.setTextColor(249, 115, 22);
-    doc.text('PAGADO', 105, tableMidY, { align: 'center', angle: 45 });
+    doc.text('PAGADO', tableMidX, tableMidY, { align: 'center', angle: 45 });
     doc.setGState(new (doc as any).GState({opacity: 1.0}));
     doc.setTextColor(0, 0, 0);
+    (doc as any).internal.write('Q');
 
     const finalY = tableEndY;
     doc.setFontSize(10);
