@@ -369,7 +369,7 @@ export default function AdminDashboard() {
     const tableEndY = (doc as any).lastAutoTable.finalY || 130;
     const tableTopY = 55;
     // Valores fijos A4: tabla de x=14 a x=196 (ancho 182mm), centro en x=105
-    const TABLE_LEFT = 14, TABLE_RIGHT = 196, TABLE_CENTER_X = 105, TABLE_WIDTH = 182;
+    const TABLE_LEFT = 14, TABLE_CENTER_X = 105, TABLE_WIDTH = 182;
     const tableCenterY = (tableTopY + tableEndY) / 2;
     const tableHeight = tableEndY - tableTopY;
 
