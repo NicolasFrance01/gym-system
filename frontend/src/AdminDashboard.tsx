@@ -365,14 +365,25 @@ export default function AdminDashboard() {
       headStyles: { fillColor: [249, 115, 22] },
     });
 
-    // Sello diagonal "PAGADO" que llena la tabla
+    // Sello diagonal "PAGADO" centrado en la tabla
+    // align:'center' + angle en jsPDF desplaza el origen → el texto sale del cuadro.
+    // Solución: calcular el punto de inicio manualmente para que el centro visual
+    // quede en (105, tableCenterY).
     const tableEndY = (doc as any).lastAutoTable.finalY || 136;
     const tableCenterY = (55 + tableEndY) / 2;
 
-    doc.setGState(new (doc as any).GState({opacity: 0.13}));
     doc.setFontSize(80);
+    const textW = doc.getTextWidth('PAGADO');
+    const cos45 = Math.cos(Math.PI / 4);
+    const sin45 = Math.sin(Math.PI / 4);
+    // Con angle:45 el texto avanza en dirección (+cos45, -sin45) en coords de pantalla.
+    // Inicio = centro - (textW/2) * dirección
+    const stampStartX = 105 - (textW / 2) * cos45;
+    const stampStartY = tableCenterY + (textW / 2) * sin45;
+
+    doc.setGState(new (doc as any).GState({opacity: 0.13}));
     doc.setTextColor(249, 115, 22);
-    doc.text('PAGADO', 105, tableCenterY, { align: 'center', angle: 45 });
+    doc.text('PAGADO', stampStartX, stampStartY, { angle: 45 });
     doc.setGState(new (doc as any).GState({opacity: 1.0}));
     doc.setTextColor(0, 0, 0);
 
