@@ -365,7 +365,17 @@ export default function AdminDashboard() {
       headStyles: { fillColor: [249, 115, 22] },
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY || 120;
+    // Sello diagonal "PAGADO" sobre la tabla
+    const tableEndY = (doc as any).lastAutoTable.finalY || 120;
+    const tableMidY = (55 + tableEndY) / 2;
+    doc.setGState(new (doc as any).GState({opacity: 0.13}));
+    doc.setFontSize(58);
+    doc.setTextColor(249, 115, 22);
+    doc.text('PAGADO', 105, tableMidY, { align: 'center', angle: 45 });
+    doc.setGState(new (doc as any).GState({opacity: 1.0}));
+    doc.setTextColor(0, 0, 0);
+
+    const finalY = tableEndY;
     doc.setFontSize(10);
     doc.setTextColor(150);
     doc.text('---------------------------------------------------------', 105, finalY + 20, { align: 'center' });
@@ -377,6 +387,12 @@ export default function AdminDashboard() {
     } catch (e) {
       console.warn('No se pudo cargar el logo final', e);
     }
+
+    // Texto de validez sutil al pie
+    doc.setFontSize(7);
+    doc.setTextColor(190, 190, 190);
+    doc.text('ESTE COMPROBANTE ES VÁLIDO COMO CONSTANCIA DE PAGO', 105, finalY + 82, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
 
     doc.save(`Comprobante_Pago_${member.name.replace(/\\s+/g, '_')}.pdf`);
   };
