@@ -365,31 +365,16 @@ export default function AdminDashboard() {
       headStyles: { fillColor: [249, 115, 22] },
     });
 
-    // Sello diagonal "PAGADO" recortado dentro de los bordes de la tabla
-    const tableEndY = (doc as any).lastAutoTable.finalY || 130;
-    const tableTopY = 55;
-    // Valores fijos A4: tabla de x=14 a x=196 (ancho 182mm), centro en x=105
-    const TABLE_LEFT = 14, TABLE_CENTER_X = 105, TABLE_WIDTH = 182;
-    const tableCenterY = (tableTopY + tableEndY) / 2;
-    const tableHeight = tableEndY - tableTopY;
+    // Sello diagonal "PAGADO" que llena la tabla
+    const tableEndY = (doc as any).lastAutoTable.finalY || 136;
+    const tableCenterY = (55 + tableEndY) / 2;
 
-    // Clip al rectángulo exacto de la tabla usando operadores PDF directos
-    const sf = (doc as any).internal.scaleFactor || 2.8346;
-    const PAGE_H_MM = 297; // A4 alto en mm
-    const px = TABLE_LEFT * sf;
-    const py = (PAGE_H_MM - tableEndY) * sf;
-    const pw = TABLE_WIDTH * sf;
-    const ph = tableHeight * sf;
-
-    (doc as any).internal.write('q');
-    (doc as any).internal.write(`${px.toFixed(2)} ${py.toFixed(2)} ${pw.toFixed(2)} ${ph.toFixed(2)} re W n`);
-    doc.setGState(new (doc as any).GState({opacity: 0.14}));
-    doc.setFontSize(52);
+    doc.setGState(new (doc as any).GState({opacity: 0.13}));
+    doc.setFontSize(80);
     doc.setTextColor(249, 115, 22);
-    doc.text('PAGADO', TABLE_CENTER_X, tableCenterY, { align: 'center', angle: 45 });
+    doc.text('PAGADO', 105, tableCenterY, { align: 'center', angle: 45 });
     doc.setGState(new (doc as any).GState({opacity: 1.0}));
     doc.setTextColor(0, 0, 0);
-    (doc as any).internal.write('Q');
 
     const finalY = tableEndY;
     doc.setFontSize(10);
