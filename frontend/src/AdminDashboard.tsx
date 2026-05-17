@@ -70,38 +70,49 @@ export default function AdminDashboard() {
     }
 
     // Header & Title
-    doc.setFontSize(18); doc.setFont("helvetica", "bold");
-    doc.text("TÉRMINOS Y CONDICIONES DE USO", 50, 25);
-    doc.setFontSize(14); doc.text("FUSION FITNESS GYM", 50, 35);
-    doc.setFontSize(8); doc.text("Versión: 1.0", 160, 15); doc.text("Fecha: 01/05/2026", 160, 20);
-    doc.line(10, 45, 200, 45);
+    doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.text("TÉRMINOS Y CONDICIONES DE USO", 50, 22);
+    doc.setFontSize(11); doc.text("GYM Manager — Atlascore IT Services S.A.S.", 50, 30);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal");
+    doc.text("Versión: 2.0", 160, 15); doc.text("Fecha: 01/05/2026", 160, 20);
+    doc.line(10, 38, 200, 38);
 
     // Content
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
     const terms = [
-      { t: "1. ACEPTACIÓN DE LOS TÉRMINOS", c: "Al acceder y utilizar el sistema de gestión de Fusion Fitness GYM, el usuario (personal administrativo, entrenadores o gerencia) acepta cumplir con los presentes términos y condiciones. Si no está de acuerdo, deberá abstenerse de utilizar la plataforma." },
-      { t: "2. USO DE LA CUENTA Y SEGURIDAD", c: "Cada usuario es responsable de mantener la confidencialidad de su nombre de usuario y contraseña. El acceso es personal e intransferible. Queda prohibido compartir credenciales con terceros. Cualquier actividad realizada bajo su cuenta será responsabilidad exclusiva del titular de la misma." },
-      { t: "3. PRIVACIDAD Y PROTECCIÓN DE DATOS (LEY 25.326)", c: "El sistema procesa datos personales de los socios (Nombre, DNI, Teléfono, Correo). El usuario se compromete a utilizar esta información únicamente para fines administrativos y operativos del gimnasio. Queda estrictamente prohibida la descarga, copia o divulgación de la base de datos de socios para fines ajenos a la institución. Los datos de facturación y pagos deben ser manejados con absoluta reserva." },
-      { t: "4. RESPONSABILIDAD DEL CONTENIDO", c: "El usuario se compromete a ingresar información veraz y exacta en los módulos de:\n- Socios: Registro de datos y estados de membresía.\n- Finanzas: Registro de cobros y facturación real.\n- Staff: Gestión de personal propio de la institución." },
-      { t: "5. PROPIEDAD INTELECTUAL", c: "El diseño, código fuente, logotipos (FUSION FITNESS GYM) y estructura del sistema son propiedad exclusiva de sus desarrolladores. No se permite la reproducción total o parcial del software sin autorización previa." },
-      { t: "6. LIMITACIÓN DE RESPONSABILIDAD", c: "Fusion Fitness GYM no se responsabiliza por:\n- Fallas en el acceso debido a problemas de conexión a internet del usuario.\n- Pérdida de información resultante del uso indebido de las funciones de 'Eliminar' o 'Dar de Baja' por parte del personal." },
-      { t: "7. MODIFICACIONES", c: "La administración se reserva el derecho de modificar estos términos en cualquier momento, notificando a los usuarios a través del panel principal del sistema." }
+      { t: "1. Partes del Acuerdo", c: "El presente documento regula la relación contractual entre Atlascore IT Services S.A.S. (en adelante \"el Proveedor\") y la persona física o jurídica que contrata el acceso al software GYM Manager (en adelante \"el Cliente\"). La aceptación de estos términos —mediante registro, pago o uso efectivo del sistema— implica conformidad plena con las condiciones aquí establecidas." },
+      { t: "2. Descripción del Servicio", c: "GYM Manager es un sistema de gestión de gimnasios provisto bajo modalidad SaaS (Software as a Service), que incluye:\n- Gestión de socios: altas, bajas, modificaciones y estado de membresía.\n- Control de acceso: registro de ingresos y egresos vinculados al estado de pago del abono.\n- Gestión de pagos y abonos: facturación, vencimientos, alertas de mora.\n- Panel administrativo: reportes, estadísticas y configuración del establecimiento.\nEl alcance exacto de funcionalidades disponibles depende del plan contratado." },
+      { t: "3. Modalidad de Licencia", c: "3.1 Tipo de licencia: El acceso al software se otorga mediante licencia de uso mensual, no exclusiva, intransferible y revocable. El Cliente no adquiere derechos de propiedad sobre el software, su código fuente, base de datos estructural ni ningún componente del sistema.\n3.2 Vigencia: La licencia se activa a partir del primer pago y se renueva automáticamente cada mes calendario, salvo notificación de baja con al menos 5 días hábiles de anticipación.\n3.3 Restricciones: Queda expresamente prohibido sublicenciar, vender o ceder el acceso; realizar ingeniería inversa; usar el sistema para fines distintos a la gestión interna del establecimiento." },
+      { t: "4. Precio y Condiciones de Pago", c: "El precio de la licencia mensual será el vigente al momento de la contratación y podrá ser actualizado con un preaviso mínimo de 30 días corridos. El pago deberá realizarse dentro de los primeros 5 días de cada mes. El incumplimiento habilitará al Proveedor a suspender el acceso sin previo aviso adicional, sin perjuicio del cobro del período adeudado." },
+      { t: "5. Datos Personales de Socios", c: "5.1 El Cliente actúa como responsable del tratamiento de los datos personales de sus socios. Atlascore actúa como encargado del tratamiento, limitándose a almacenar y procesar dichos datos para prestar el servicio.\n5.2 El sistema puede almacenar: nombre y apellido, DNI/CUIT, fecha de nacimiento, datos de contacto, historial de pagos, estado de membresía y registros de acceso.\n5.3 El Cliente garantiza que cuenta con el consentimiento de sus socios y que cumple con la Ley N° 25.326 de Protección de Datos Personales.\n5.4 Atlascore se compromete a no comercializar ni divulgar los datos personales de los socios del Cliente a terceros, excepto requerimiento judicial." },
+      { t: "6. Control de Acceso", c: "El módulo de control de acceso opera en función del estado de pago de cada socio. El Proveedor no garantiza la infalibilidad del sistema ante fallas de conectividad, cortes de energía, errores de hardware del Cliente u otras circunstancias ajenas a su control. El Cliente es el único responsable de la operación y mantenimiento de los dispositivos de acceso." },
+      { t: "7. Disponibilidad y Soporte", c: "El Proveedor se compromete a mantener el servicio disponible con un nivel de uptime objetivo del 99% mensual, excluidos mantenimientos programados notificados con al menos 24 horas de anticipación. Las interrupciones no imputables al Proveedor no generan derecho a compensación. El soporte técnico se prestará por los canales y horarios informados oportunamente." },
+      { t: "8. Propiedad Intelectual", c: "Todos los derechos de propiedad intelectual sobre GYM Manager —incluyendo software, diseño, bases de datos estructurales, documentación y marca— son de titularidad exclusiva de Atlascore IT Services S.A.S.. Ninguna disposición de este acuerdo transfiere al Cliente derechos de propiedad intelectual." },
+      { t: "9. Limitación de Responsabilidad", c: "En ningún caso Atlascore IT Services S.A.S. será responsable por daños indirectos, lucro cesante, pérdida de datos, interrupción del negocio u otros daños consecuentes. La responsabilidad máxima del Proveedor frente al Cliente se limita al valor del último mes de licencia abonado." },
+      { t: "10. Suspensión y Rescisión", c: "El Proveedor podrá suspender o rescindir el acceso por: falta de pago por más de 5 días hábiles, uso en violación de los presentes términos, o instrucción judicial. El Cliente podrá rescindir notificando con al menos 5 días hábiles de anticipación. No se realizarán reembolsos de períodos parciales." },
+      { t: "11. Modificaciones a los Términos", c: "Atlascore se reserva el derecho de modificar estos términos. Los cambios serán notificados por correo electrónico o mediante aviso dentro del sistema con un mínimo de 15 días corridos de anticipación. El uso continuado del servicio tras dicho plazo implicará aceptación de los nuevos términos." },
+      { t: "12. Jurisdicción y Ley Aplicable", c: "Este acuerdo se rige por las leyes de la República Argentina. Ante cualquier controversia, las partes se someten a la jurisdicción de los Tribunales Ordinarios de la Ciudad de Córdoba, renunciando expresamente a cualquier otro fuero que pudiera corresponder." }
     ];
 
-    let y = 55;
+    let y = 46;
     terms.forEach(item => {
-      doc.setFont("helvetica", "bold"); doc.text(item.t, 15, y); y += 5;
-      doc.setFont("helvetica", "normal");
+      if (y > 265) { doc.addPage(); y = 15; }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.text(item.t, 15, y); y += 5;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8);
       const lines = doc.splitTextToSize(item.c, 180);
-      doc.text(lines, 15, y); y += (lines.length * 5) + 5;
+      doc.text(lines, 15, y); y += (lines.length * 4.5) + 4;
     });
 
-    // Institutional Seal
-    doc.line(10, 275, 200, 275);
-    doc.setFontSize(7); doc.setFont("helvetica", "italic");
-    doc.setTextColor(150);
-    doc.text("Sello de Integridad Institucional - Fusion Fitness GYM", 105, 282, { align: "center" });
-    doc.text("Sistema de Gestión de Reconocimiento y Administración - 2026", 105, 287, { align: "center" });
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.line(10, 275, 200, 275);
+      doc.setFontSize(7); doc.setFont("helvetica", "italic"); doc.setTextColor(150);
+      doc.text("© 2026 Atlascore IT Services S.A.S. — Todos los derechos reservados", 105, 281, { align: "center" });
+      doc.text(`Página ${i} de ${pageCount}`, 105, 286, { align: "center" });
+      doc.setTextColor(0);
+    }
 
     // Set Metadata for specific filename on download
     doc.setProperties({
@@ -415,7 +426,7 @@ export default function AdminDashboard() {
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Mi Perfil': return <ProfileModule user={loggedUser} onSave={async (newPassword: string) => { if(!newPassword)return; try{ const res=await fetch(`${API_URL}/admin/staff/${loggedUser.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...loggedUser, password: newPassword})}); if(res.ok){ alert('Contraseña actualizada'); setLoggedUser({...loggedUser, password: newPassword}); } }catch(e){console.error(e);} }} />;
       case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Eliminar empleado?")){ const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', password:'1234'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
-      case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} filterType={filterType} setFilterType={setFilterType} /> : <NoAccess />;
+      case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} members={members} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} filterType={filterType} setFilterType={setFilterType} /> : <NoAccess />;
       case 'Facturación': return (userRole === 'gerente' || userRole === 'administracion') ? <BillingModule members={members} /> : <NoAccess />;
       default: return (
         <div className="space-y-4">
@@ -462,7 +473,7 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-2 px-2 py-1">
               <input type="checkbox" id="terms" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} className="w-3 h-3 accent-orange-500 cursor-pointer" />
               <label htmlFor="terms" className="text-[9px] text-gray-500 dark:text-white/40 font-black uppercase cursor-pointer select-none">
-                Acepto los <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); viewTermsPDF(); }} className="text-cyan-400 underline decoration-cyan-400 underline-offset-2 hover:text-cyan-300 transition-colors font-black">Términos y Condiciones de uso</span>
+                Acepto los <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); viewTermsPDF(); }} className="text-cyan-400 underline decoration-cyan-400 underline-offset-2 hover:text-cyan-300 transition-colors font-black">Términos y Condiciones — Atlascore IT Services S.A.S.</span>
               </label>
             </div>
 
@@ -847,7 +858,7 @@ function StaffModule({ staff, onEdit, onDelete, onAddClick }: any) {
   );
 }
 
-function FinanceModule({ data, startDate, setStartDate, endDate, setEndDate, filterType, setFilterType }: any) {
+function FinanceModule({ data, members, startDate, setStartDate, endDate, setEndDate, filterType, setFilterType }: any) {
   if (!data) return <p>Cargando...</p>;
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
@@ -955,10 +966,48 @@ function FinanceModule({ data, startDate, setStartDate, endDate, setEndDate, fil
                </ResponsiveContainer>
             </div>
          </div>
-         <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5 flex flex-col justify-center text-center">
-            <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black tracking-widest" title="Ingreso Promedio por Usuario">ARPU (Promedio x Usuario)</p>
-            <p className="text-2xl font-black text-black dark:text-white mt-1">${arpu.toFixed(2)}</p>
-            <div className="mt-4 flex justify-around"><div className="text-center"><p className="text-[7px] text-gray-500 dark:text-white/20 uppercase font-black">Facturado</p><p className="text-sm font-black text-green-500">${totalFilteredRevenue.toFixed(2)}</p></div><div className="text-center"><p className="text-[7px] text-gray-500 dark:text-white/20 uppercase font-black">Gastos</p><p className="text-sm font-black text-red-500">${totalFilteredExpenses.toFixed(2)}</p></div></div>
+         <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/5 flex flex-col gap-4">
+            {/* ARPU */}
+            <div className="text-center">
+              <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black tracking-widest" title="Ingreso Promedio por Usuario">ARPU (Promedio x Usuario)</p>
+              <p className="text-2xl font-black text-black dark:text-white mt-1">${arpu.toFixed(2)}</p>
+            </div>
+            {/* Historial de transacciones */}
+            <div>
+              <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black tracking-widest mb-2">Historial de Transacciones</p>
+              <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                {filteredHistory.length === 0 ? (
+                  <p className="text-[9px] text-gray-400 dark:text-white/30 italic">Sin transacciones en el período</p>
+                ) : filteredHistory.slice().reverse().map((tx: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center bg-gray-50 dark:bg-black/30 rounded-lg px-2 py-1">
+                    <div>
+                      <p className="text-[8px] font-black text-black dark:text-white leading-tight">{tx.member_name || `ID ${tx.member_id}`}</p>
+                      <p className="text-[7px] text-gray-400 dark:text-white/30">{new Date(tx.created_at).toLocaleDateString('es-AR')}</p>
+                    </div>
+                    <span className="text-[9px] font-black text-green-500">+${tx.amount?.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Reporte de deudores y morosidad */}
+            <div>
+              <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black tracking-widest mb-2">Deudores y Morosidad</p>
+              <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                {(members || []).filter((m: any) => m.status === 'DEUDA' || m.status === 'POR VENCER').length === 0 ? (
+                  <p className="text-[9px] text-gray-400 dark:text-white/30 italic">Sin socios en deuda</p>
+                ) : (members || []).filter((m: any) => m.status === 'DEUDA' || m.status === 'POR VENCER').map((m: any) => (
+                  <div key={m.id} className="flex justify-between items-center bg-gray-50 dark:bg-black/30 rounded-lg px-2 py-1">
+                    <div>
+                      <p className="text-[8px] font-black text-black dark:text-white leading-tight">{m.name}</p>
+                      <p className="text-[7px] text-gray-400 dark:text-white/30">DNI {m.dni}</p>
+                    </div>
+                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-full ${m.status === 'DEUDA' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                      {m.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
          </div>
       </div>
     </div>
