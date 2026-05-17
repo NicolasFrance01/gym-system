@@ -57,6 +57,7 @@ def get_all_members(db: Session = Depends(get_db)):
                 "amount": p.amount,
                 "plan": m.membership_type or "Musculación",
                 "method": p.method,
+                "processed_by": p.stripe_id or "—",
                 "status": "PAGADO"
             } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
         ]
@@ -101,8 +102,8 @@ def update_member_status(member_id: int, status: str, db: Session = Depends(get_
     return {"status": "updated", "new_status": status}
 
 @router.post("/payments")
-def record_payment(member_id: int, amount: float, method: str = "card", db: Session = Depends(get_db)):
-    payment = models.Payment(member_id=member_id, amount=amount, status="paid", method=method, created_at=datetime.datetime.utcnow())
+def record_payment(member_id: int, amount: float, method: str = "card", processed_by: str = "", db: Session = Depends(get_db)):
+    payment = models.Payment(member_id=member_id, amount=amount, status="paid", method=method, stripe_id=processed_by or None, created_at=datetime.datetime.utcnow())
     db.add(payment)
     # Update member status to ACTIVO if they were in debt
     member = db.query(models.Member).get(member_id)

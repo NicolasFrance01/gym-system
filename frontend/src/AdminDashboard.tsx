@@ -313,9 +313,10 @@ export default function AdminDashboard() {
     } catch (e) { console.error(e); }
   };
 
-  const handlePayment = async (amount: number, method: string) => { 
+  const handlePayment = async (amount: number, method: string) => {
     try {
-      const res = await fetch(`${API_URL}/admin/payments?member_id=${selectedItem.id}&amount=${amount}&method=${method}`, {
+      const processedBy = encodeURIComponent(loggedUser?.name || 'Administración');
+      const res = await fetch(`${API_URL}/admin/payments?member_id=${selectedItem.id}&amount=${amount}&method=${method}&processed_by=${processedBy}`, {
         method: 'POST'
       });
       if (res.ok) {
@@ -762,7 +763,7 @@ function BillingModule({ members }: any) {
        </div>
        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-3xl overflow-x-auto shadow-2xl">
           <table className="w-full text-left min-w-full table-fixed">
-             <thead className="bg-white dark:bg-white/5 border-b border-gray-200 dark:border-white/5 text-[8px] text-gray-500 dark:text-white/20 font-black uppercase tracking-widest"><tr ><th className="p-4 w-1/4">Socio</th><th className="p-4 w-1/5">Fecha</th><th className="p-4 w-1/5">Plan</th><th className="p-4 w-1/5">Método</th><th className="p-4 text-right w-1/5">Monto</th></tr></thead>
+             <thead className="bg-white dark:bg-white/5 border-b border-gray-200 dark:border-white/5 text-[8px] text-gray-500 dark:text-white/20 font-black uppercase tracking-widest"><tr><th className="p-4 w-1/5">Socio</th><th className="p-4 w-1/6">Fecha</th><th className="p-4 w-1/5">Plan</th><th className="p-4 w-1/6">Método</th><th className="p-4 w-1/5">Cobró</th><th className="p-4 text-right w-1/6">Monto</th></tr></thead>
              <tbody className="divide-y divide-white/5">
                 {sorted.length > 0 ? sorted.map((h:any, i:number)=>(
                   <tr key={i} className="hover:bg-white dark:bg-white/5 transition-colors">
@@ -770,6 +771,7 @@ function BillingModule({ members }: any) {
                      <td className="p-4 text-gray-600 dark:text-white/40 text-[9px]">{h.date}</td>
                      <td className="p-4 text-gray-600 dark:text-white/40 text-[9px] truncate">{h.plan}</td>
                      <td className="p-4"><span className="px-2 py-1 bg-white dark:bg-white/5 rounded-lg text-[7px] font-black uppercase">{h.method}</span></td>
+                     <td className="p-4 text-[9px] font-black text-orange-400 truncate">{h.processed_by || '—'}</td>
                      <td className="p-4 text-right font-black text-green-500">${h.amount.toLocaleString()}</td>
                   </tr>
                 )) : <tr><td colSpan={5} className="p-8 text-center text-xs text-gray-500 dark:text-white/40 uppercase font-black tracking-widest">No hay facturas en este periodo</td></tr>}
@@ -1043,7 +1045,8 @@ function FinanceModule({ data, members, startDate, setStartDate, endDate, setEnd
               <div key={i} className="flex justify-between items-center bg-gray-50 dark:bg-black/30 rounded-lg px-3 py-2">
                 <div>
                   <p className="text-[9px] font-black text-black dark:text-white leading-tight">{memberName}</p>
-                  <p className="text-[7px] text-gray-400 dark:text-white/30">{txDate}</p>
+                  <p className="text-[7px] text-gray-400 dark:text-white/30">{txDate} · {tx.method || '—'}</p>
+                  <p className="text-[7px] text-orange-400 font-black">Cobró: {tx.processed_by || '—'}</p>
                 </div>
                 <span className="text-[10px] font-black text-green-500">+${tx.amount?.toFixed(2) ?? '0.00'}</span>
               </div>
