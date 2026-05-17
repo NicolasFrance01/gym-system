@@ -25,12 +25,7 @@ export default function AdminDashboard() {
 
   const [members, setMembers] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
-  const [plans, setPlans] = useState<any[]>([
-    { id: 1, name: "Básico (3 Días)", price: 5000, daysPerWeek: 3, classes: [] },
-    { id: 2, name: "Premium (Clases)", price: 8500, daysPerWeek: 5, classes: ["Yoga", "Zumba"] },
-    { id: 3, name: "Elite (Libre)", price: 12000, daysPerWeek: 7, classes: ["Yoga", "CrossFit", "Spinning"] },
-    { id: 4, name: "Boxeo", price: 7000, daysPerWeek: 3, classes: ["Boxeo"] },
-  ]);
+  const [plans, setPlans] = useState<any[]>([]);
   const [financeData, setFinanceData] = useState<any>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -182,11 +177,18 @@ export default function AdminDashboard() {
   const refreshData = async () => {
     try {
       setError(null);
-      // 1. Fetch Members
-      const membersRes = await fetch(`${API_URL}/admin/members`);
+      // 1. Fetch Members + Plans
+      const [membersRes, plansRes] = await Promise.all([
+        fetch(`${API_URL}/admin/members`),
+        fetch(`${API_URL}/admin/plans`)
+      ]);
       if (!membersRes.ok) throw new Error(`Error ${membersRes.status}: No se pudo obtener la lista de socios`);
       const membersData = await membersRes.json();
       setMembers(membersData);
+      if (plansRes.ok) {
+        const plansData = await plansRes.json();
+        setPlans(plansData.map((p: any) => ({ ...p, daysPerWeek: p.days_per_week })));
+      }
 
       // 2. Fetch Stats
       const statsRes = await fetch(`${API_URL}/admin/stats`);
@@ -259,7 +261,33 @@ export default function AdminDashboard() {
     doc.save(`Reporte_Atlas.pdf`);
   };
 
-  const handleSavePlan = () => { if (isEditMode) setPlans(prev => prev.map(p => p.id === selectedItem.id ? { ...selectedItem } : p)); else setPlans(prev => [...prev, { id: Date.now(), ...selectedItem }]); setIsModalOpen(false); };
+  const handleSavePlan = async () => {
+    try {
+      const payload = {
+        name: selectedItem.name,
+        price: selectedItem.price,
+        days_per_week: selectedItem.daysPerWeek ?? selectedItem.days_per_week ?? 3,
+        classes: selectedItem.classes || [],
+        is_active: true
+      };
+      if (isEditMode) {
+        const res = await fetch(`${API_URL}/admin/plans/${selectedItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) refreshData(); else alert('Error al actualizar plan');
+      } else {
+        const res = await fetch(`${API_URL}/admin/plans`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) refreshData(); else alert('Error al crear plan');
+      }
+      setIsModalOpen(false);
+    } catch (e) { console.error(e); }
+  };
   const handleSaveMember = async () => {
     try {
       if (isEditMode) {
@@ -424,7 +452,7 @@ export default function AdminDashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{setSelectedItem(m); setModalType('history'); setIsModalOpen(true);}} onEdit={(m: any) => { setSelectedItem(m); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
-      case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(id:any)=>setPlans(p=>p.filter(x=>x.id!==id))} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
+      case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={async (id:any)=>{ if(!confirm('¿Eliminar plan?')) return; const res = await fetch(`${API_URL}/admin/plans/${id}`,{method:'DELETE'}); if(res.ok) refreshData(); }} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Mi Perfil': return <ProfileModule user={loggedUser} onSave={async (newPassword: string) => {
         if (!newPassword) { alert('Ingresá una nueva contraseña'); return; }
         if (loggedUser.id === 0) { alert('La cuenta master no se puede modificar desde aquí'); return; }
