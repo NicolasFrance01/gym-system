@@ -49,9 +49,9 @@ def get_all_members(db: Session = Depends(get_db)):
     members = db.query(models.Member).all()
     result = []
     for m in members:
-        # Convert to schema and manually add billing_history
-        m_schema = schemas.MemberSchema.from_orm(m)
-        m_schema.billing_history = [
+        # Convert to dict first to avoid Pydantic mutability constraints
+        m_dict = schemas.MemberSchema.from_orm(m).dict()
+        m_dict["billing_history"] = [
             {
                 "id": p.id,
                 "date": p.created_at.strftime("%Y-%m-%d"),
@@ -62,7 +62,7 @@ def get_all_members(db: Session = Depends(get_db)):
                 "status": "PAGADO"
             } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
         ]
-        result.append(m_schema)
+        result.append(schemas.MemberSchema(**m_dict))
     return result
 
 @router.post("/members", response_model=schemas.MemberSchema)
