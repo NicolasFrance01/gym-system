@@ -11,6 +11,45 @@ def seed():
     
     db = SessionLocal()
     
+    # Seed ClassSchedules from Gym Schedule Image
+    class_schedules = [
+        # Lunes (0)
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=0, start_time="08:30", end_time="09:30", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Entrenamiento Personalizado", code="EP", day_of_week=0, start_time="10:00", end_time="11:00", color="#ec4899", capacity=10),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=0, start_time="18:15", end_time="19:15", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Pilates en Suelo", code="PS", day_of_week=0, start_time="18:15", end_time="19:15", color="#f97316", capacity=12),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=0, start_time="19:30", end_time="20:30", color="#3b82f6", capacity=15),
+        
+        # Martes (1)
+        models.ClassSchedule(name="Pilates en Suelo", code="PS", day_of_week=1, start_time="08:50", end_time="09:50", color="#f97316", capacity=12),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=1, start_time="10:00", end_time="11:00", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Salsa y Bachata", code="SB", day_of_week=1, start_time="17:30", end_time="18:30", color="#eab308", capacity=20),
+        models.ClassSchedule(name="Zumba", code="ZB", day_of_week=1, start_time="18:30", end_time="19:30", color="#ef4444", capacity=20),
+        models.ClassSchedule(name="Reguetón Juvenil", code="RJ", day_of_week=1, start_time="19:30", end_time="20:30", color="#06b6d4", capacity=20),
+        
+        # Miércoles (2)
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=2, start_time="08:30", end_time="09:30", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Entrenamiento Personalizado", code="EP", day_of_week=2, start_time="10:00", end_time="11:00", color="#ec4899", capacity=10),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=2, start_time="18:15", end_time="19:15", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Pilates en Suelo", code="PS", day_of_week=2, start_time="18:15", end_time="19:15", color="#f97316", capacity=12),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=2, start_time="19:30", end_time="20:30", color="#3b82f6", capacity=15),
+        
+        # Jueves (3)
+        models.ClassSchedule(name="Pilates en Suelo", code="PS", day_of_week=3, start_time="08:50", end_time="09:50", color="#f97316", capacity=12),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=3, start_time="10:00", end_time="11:00", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Salsa y Bachata", code="SB", day_of_week=3, start_time="17:30", end_time="18:30", color="#eab308", capacity=20),
+        models.ClassSchedule(name="Zumba", code="ZB", day_of_week=3, start_time="18:30", end_time="19:30", color="#ef4444", capacity=20),
+        models.ClassSchedule(name="Reguetón Juvenil", code="RJ", day_of_week=3, start_time="19:30", end_time="20:30", color="#06b6d4", capacity=20),
+        
+        # Viernes (4)
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=4, start_time="08:30", end_time="09:30", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Entrenamiento Personalizado", code="EP", day_of_week=4, start_time="10:00", end_time="11:00", color="#ec4899", capacity=10),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=4, start_time="18:15", end_time="19:15", color="#3b82f6", capacity=15),
+        models.ClassSchedule(name="Entrenamiento Funcional", code="EF", day_of_week=4, start_time="19:30", end_time="20:30", color="#3b82f6", capacity=15)
+    ]
+    db.add_all(class_schedules)
+    db.commit()
+    
     # Names for generating mock members
     first_names = ["Juan", "Maria", "Carlos", "Ana", "Luis", "Sofia", "Jorge", "Lucia", "Diego", "Valentina", "Pedro", "Camila"]
     last_names = ["Gomez", "Perez", "Rodriguez", "Fernandez", "Lopez", "Martinez", "Gonzalez", "Romero", "Sosa", "Torres"]

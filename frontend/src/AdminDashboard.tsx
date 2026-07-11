@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, Calendar, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -392,6 +392,7 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'Agenda': return <AgendaModule members={members} API_URL={API_URL} onAddMemberClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} />;
       case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{ setSelectedItem(m); setMemberCheckins([]); setCheckinStats(null); setModalType('history'); setIsModalOpen(true); fetch(`${API_URL}/admin/members/${m.id}/checkins`).then(r=>r.json()).then(data=>{ const checkinsList = Array.isArray(data) ? data : (data.checkins || []); const planName = m.membership_type || 'Básico'; const plan = plans.find((p:any) => p.name === planName); const daysPerWeek = plan ? (plan.daysPerWeek ?? plan.days_per_week ?? 3) : 3; const totalSessions = daysPerWeek * 4; const today = new Date(); let cycleStart = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); const joinedStr = m.effective_joined_at || m.joined_at; if(joinedStr){ const joined = new Date(joinedStr); const d1 = new Date(joined.getFullYear(), joined.getMonth(), joined.getDate()); const d2 = new Date(today.getFullYear(), today.getMonth(), today.getDate()); const totalDaysSinceJoined = Math.round((d2.getTime() - d1.getTime()) / 86400000); if(totalDaysSinceJoined >= 0){ const daysIn = totalDaysSinceJoined % 30; cycleStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysIn); } } const sessionsUsed = checkinsList.filter((c:any) => { const checkinDate = new Date(c.checkin_at.replace(' ', 'T')); return checkinDate >= cycleStart; }).length; const sessionsRemaining = Math.max(0, totalSessions - sessionsUsed); setMemberCheckins(checkinsList); setCheckinStats({ total: totalSessions, used: sessionsUsed, remaining: sessionsRemaining }); }).catch(()=>{}); }} onEdit={(m: any) => { const validPlan = plans.find((p:any) => p.name === m.membership_type)?.name || plans[0]?.name || ''; setSelectedItem({...m, membership_type: validPlan}); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={async (id:any)=>{ if(!confirm('¿Eliminar plan?')) return; const res = await fetch(`${API_URL}/admin/plans/${id}`,{method:'DELETE'}); if(res.ok) refreshData(); }} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Mi Perfil': return <ProfileModule user={loggedUser} onSave={async (newPassword: string) => {
@@ -596,6 +597,7 @@ export default function AdminDashboard() {
         </div>
         <nav className="space-y-1 flex-1 overflow-y-auto custom-scrollbar pr-1">
           <SidebarItem icon={<LayoutDashboard size={14} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => setActiveTab('Resumen')} />
+          <SidebarItem icon={<Calendar size={14} />} label="Agenda / Clases" active={activeTab === 'Agenda'} onClick={() => setActiveTab('Agenda')} />
           <SidebarItem icon={<User size={14} />} label="Mi Perfil" active={activeTab === 'Mi Perfil'} onClick={() => setActiveTab('Mi Perfil')} />
           <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
           <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => setActiveTab('Planes')} />
@@ -1121,3 +1123,477 @@ function ProfileModule({ user, onSave }: any) {
 function NoAccess() {
   return <div className="h-40 flex flex-col items-center justify-center text-center p-6 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10"><Lock size={24} className="text-red-500 mb-4" /><h3 className="text-xs font-black text-black dark:text-white uppercase tracking-widest">Acceso Restringido</h3></div>;
 }
+
+function AgendaModule({ members, API_URL }: any) {
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [activeSchedule, setActiveSchedule] = useState<any | null>(null);
+  const [classBookings, setClassBookings] = useState<any[]>([]);
+  const [walkInQuery, setWalkInQuery] = useState('');
+  const [isNewMemberOpen, setIsNewMemberOpen] = useState(false);
+  const [newMemberData, setNewMemberData] = useState({ name: '', dni: '', phone: '', email: '', membership_type: 'Basic' });
+  const [holidayDate, setHolidayDate] = useState('');
+  const [holidayDesc, setHolidayDesc] = useState('');
+  const [isHolidayModalOpen, setIsHolidayModalOpen] = useState(false);
+  const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+  const [newClassData, setNewClassData] = useState<{ id?: number, name: string, code: string, day_of_week: number, start_time: string, end_time: string, color: string, capacity: number }>({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: 0, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
+  const [isEditingClass, setIsEditingClass] = useState(false);
+
+  const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+  const getDayOfWeek = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    let day = d.getDay();
+    return day === 0 ? 6 : day - 1;
+  };
+
+  const fetchSchedules = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/class_schedules`);
+      if (res.ok) setSchedules(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchHolidays = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/holidays`);
+      if (res.ok) setHolidays(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchHolidays();
+  }, []);
+
+  const selectedWeekday = getDayOfWeek(selectedDate);
+  const isHoliday = holidays.find(h => h.date === selectedDate);
+
+  const currentDaySchedules = schedules.filter(s => s.day_of_week === selectedWeekday)
+    .sort((a,b) => a.start_time.localeCompare(b.start_time));
+
+  const fetchClassBookings = async (scheduleId: number) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/class_schedules/${scheduleId}/bookings?date=${selectedDate}`);
+      if (res.ok) setClassBookings(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const handleSelectSchedule = (schedule: any) => {
+    setActiveSchedule(schedule);
+    fetchClassBookings(schedule.id);
+  };
+
+  const handleToggleAttendance = async (bookingId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'attended' ? 'reserved' : 'attended';
+    try {
+      const res = await fetch(`${API_URL}/admin/bookings/${bookingId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        fetchClassBookings(activeSchedule.id);
+        fetchSchedules();
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleAddWalkIn = async (member: any) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/bookings/walk-in`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dni: member.dni,
+          class_schedule_id: activeSchedule.id,
+          date: selectedDate
+        })
+      });
+      if (res.ok) {
+        setWalkInQuery('');
+        fetchClassBookings(activeSchedule.id);
+        fetchSchedules();
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Error al agregar socio espontáneo");
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleCreateNewMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemberData.name || !newMemberData.dni) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newMemberData,
+          password: '123',
+          photo_url: `https://i.pravatar.cc/300?u=${newMemberData.dni}`
+        })
+      });
+      if (res.ok) {
+        const createdMember = await res.json();
+        await handleAddWalkIn(createdMember);
+        setIsNewMemberOpen(false);
+        setNewMemberData({ name: '', dni: '', phone: '', email: '', membership_type: 'Basic' });
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Error al crear socio");
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleSaveClass = async () => {
+    try {
+      const method = isEditingClass ? 'PUT' : 'POST';
+      const url = isEditingClass 
+        ? `${API_URL}/admin/class_schedules/${newClassData.id}` 
+        : `${API_URL}/admin/class_schedules`;
+        
+      const res = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClassData)
+      });
+      if (res.ok) {
+        fetchSchedules();
+        setIsClassModalOpen(false);
+        setIsEditingClass(false);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteClass = async (id: number) => {
+    if (!confirm("¿Eliminar este horario de clase de la grilla permanente?")) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/class_schedules/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchSchedules();
+        if (activeSchedule?.id === id) setActiveSchedule(null);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleSaveHoliday = async () => {
+    if (!holidayDate || !holidayDesc) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/holidays`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: holidayDate, description: holidayDesc })
+      });
+      if (res.ok) {
+        fetchHolidays();
+        setHolidayDate('');
+        setHolidayDesc('');
+        setIsHolidayModalOpen(false);
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Error al registrar feriado");
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteHoliday = async (id: number) => {
+    if (!confirm("¿Eliminar este feriado?")) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/holidays/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchHolidays();
+    } catch (e) { console.error(e); }
+  };
+
+  const filteredMembersSearch = walkInQuery.trim() === '' ? [] : members.filter((m: any) => {
+    const query = walkInQuery.toLowerCase();
+    const matchesDni = m.dni.includes(query);
+    const matchesName = m.name.toLowerCase().includes(query);
+    const alreadyBooked = classBookings.some(b => b.member.id === m.id);
+    return (matchesDni || matchesName) && !alreadyBooked;
+  }).slice(0, 5);
+
+  return (
+    <div className="space-y-6 text-black dark:text-[#e0e0e0]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="font-black text-lg uppercase text-black dark:text-white">Agenda y Horarios de Clases</h3>
+        <div className="flex items-center gap-3 flex-wrap">
+          <input type="date" className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-2.5 text-black dark:text-white text-[10px] outline-none" value={selectedDate} onChange={e=>{ setSelectedDate(e.target.value); setActiveSchedule(null); }} />
+          <button onClick={() => { 
+            setNewClassData({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: selectedWeekday, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
+            setIsEditingClass(false);
+            setIsClassModalOpen(true);
+          }} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#212C40] text-white dark:bg-[#6E8AC9] dark:text-[#212C40] border border-[#F38E26] whitespace-nowrap">+ Agregar Clase Fija</button>
+          <button onClick={() => setIsHolidayModalOpen(true)} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">+ Configurar Feriado</button>
+        </div>
+      </div>
+
+      {isHoliday && (
+        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider">⚠️ DÍA NO LABORABLE: {isHoliday.description}</p>
+          <button onClick={() => handleDeleteHoliday(isHoliday.id)} className="text-[8px] font-black uppercase tracking-widest bg-red-500 text-white px-3 py-1 rounded-lg">Eliminar Feriado</button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px]">
+            <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest mb-4">
+              Clases Programadas para el {weekdayNames[selectedWeekday]}
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {currentDaySchedules.length > 0 ? currentDaySchedules.map((s) => {
+                const isActive = activeSchedule?.id === s.id;
+                return (
+                  <div key={s.id} 
+                    onClick={() => handleSelectSchedule(s)}
+                    style={{ borderColor: isActive ? s.color : 'rgba(255,255,255,0.05)' }}
+                    className={`p-5 rounded-2xl border cursor-pointer transition-all flex justify-between items-center bg-white dark:bg-[#141b29]/40 ${isActive ? 'bg-[#141b29] scale-[1.01]' : 'hover:bg-white/5'}`}>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded text-[8px] font-black text-white" style={{ backgroundColor: s.color }}>{s.code}</span>
+                        <span className="font-black text-black dark:text-white uppercase text-[10px] truncate max-w-[120px]">{s.name}</span>
+                      </div>
+                      <p className="text-[8px] text-gray-500 dark:text-white/20 font-black uppercase tracking-wider">
+                        ⏰ {s.start_time} A {s.end_time}
+                      </p>
+                      <p className="text-[8px] text-gray-500 dark:text-white/20 font-black uppercase tracking-wider">
+                        👥 Capacidad: {s.capacity} socios
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex gap-2">
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          setNewClassData(s);
+                          setIsEditingClass(true);
+                          setIsClassModalOpen(true);
+                        }} className="text-[8px] font-black text-gray-500 dark:text-white/30 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded">Editar</button>
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClass(s.id);
+                        }} className="text-[8px] font-black text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded">Eliminar</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <p className="col-span-2 text-center text-gray-400 dark:text-white/10 italic text-[10px] font-black uppercase py-8">
+                  No hay clases programadas para este día de la semana.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px]">
+            <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest mb-4">Feriados Registrados en el Sistema</h4>
+            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+              {holidays.length > 0 ? holidays.map(h => (
+                <div key={h.id} className="flex justify-between items-center bg-white dark:bg-[#141b29]/40 p-3 rounded-xl border border-gray-200 dark:border-white/5">
+                  <div>
+                    <p className="font-black text-black dark:text-white text-[9px] uppercase">{h.description}</p>
+                    <p className="text-[8px] text-gray-400 dark:text-white/20 font-black">{new Date(h.date + 'T00:00:00').toLocaleDateString('es-AR')}</p>
+                  </div>
+                  <button onClick={() => handleDeleteHoliday(h.id)} className="text-[8px] font-black text-red-500 bg-red-500/10 px-3 py-1.5 rounded-lg hover:bg-red-500 hover:text-white transition-all">Eliminar</button>
+                </div>
+              )) : (
+                <p className="text-center text-gray-400 dark:text-white/10 italic text-[9px] font-black uppercase py-6">No hay feriados agendados</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {activeSchedule ? (
+            <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px] space-y-6">
+              <div>
+                <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest">
+                  Control de Asistencia
+                </h4>
+                <p className="text-sm font-black text-black dark:text-white uppercase leading-tight mt-1">
+                  {activeSchedule.name}
+                </p>
+                <p className="text-[8px] text-orange-400 font-black uppercase tracking-widest mt-1">
+                  📅 {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-AR')} • {activeSchedule.start_time} hs
+                </p>
+                <p className="text-[10px] font-black text-black dark:text-white mt-2">
+                  Confirmados: <span className="text-orange-500">{classBookings.length} / {activeSchedule.capacity}</span>
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Registrar Asistencia Espontánea (Walk-In)</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/20" size={12} />
+                    <input type="text" placeholder="Buscar por Nombre o DNI..." className="w-full bg-[#141b29]/40 border border-white/10 dark:border-white/10 rounded-xl py-2 pl-8 pr-3 text-black dark:text-white text-[10px] outline-none" value={walkInQuery} onChange={e=>setWalkInQuery(e.target.value)} />
+                    {filteredMembersSearch.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 bg-[#1b2435] border border-white/10 rounded-xl mt-1 overflow-hidden shadow-2xl">
+                        {filteredMembersSearch.map((m: any) => (
+                          <div key={m.id} onClick={() => handleAddWalkIn(m)} className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-b-0 text-[10px] uppercase font-black flex justify-between items-center text-white">
+                            <span>{m.name} <span className="text-white/40 font-normal">({m.dni})</span></span>
+                            <span className="text-[8px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-black uppercase">Añadir</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setIsNewMemberOpen(true)} className="px-3 bg-green-500/10 text-green-500 border border-green-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all">+ Socio</button>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-white/5">
+                <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Listado de Confirmados</p>
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+                  {classBookings.length > 0 ? classBookings.map((b) => (
+                    <div key={b.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#141b29]/40 rounded-xl border border-gray-200 dark:border-white/5">
+                      <div className="min-w-0">
+                        <p className="font-black text-black dark:text-white text-[10px] uppercase truncate">{b.member.name}</p>
+                        <p className="text-[8px] text-gray-400 dark:text-white/20 font-black">DNI: {b.member.dni}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={b.status === 'attended'} onChange={() => handleToggleAttendance(b.id, b.status)} className="w-4 h-4 accent-green-500 rounded border-white/10" />
+                          <span className={`text-[8px] font-black uppercase ${b.status === 'attended' ? 'text-green-500' : 'text-gray-400'}`}>Asistió</span>
+                        </label>
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-center text-gray-400 dark:text-white/10 italic text-[9px] font-black uppercase py-8">
+                      Nadie reservó esta clase para hoy aún.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-8 rounded-[35px] text-center py-20 flex flex-col items-center justify-center">
+              <Clock className="text-gray-400 dark:text-white/10 mb-4" size={40} />
+              <p className="text-[10px] font-black uppercase text-gray-500 dark:text-white/20 tracking-wider">
+                Selecciona una clase de la grilla para ver confirmados y tomar asistencia.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isHolidayModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="text-sm font-black uppercase text-red-500">Configurar Feriado</h4>
+              <button onClick={() => setIsHolidayModalOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Fecha Feriado</label>
+                <input type="date" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-red-500" value={holidayDate} onChange={e=>setHolidayDate(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Motivo / Descripción</label>
+                <input type="text" placeholder="Ej: Navidad, Feriado Puente..." className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-red-500" value={holidayDesc} onChange={e=>setHolidayDesc(e.target.value)} />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setIsHolidayModalOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
+                <button onClick={handleSaveHoliday} className="flex-1 py-3 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase">Registrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isClassModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="text-sm font-black uppercase text-orange-500">{isEditingClass ? 'Editar Clase Fija' : 'Añadir Clase Fija'}</h4>
+              <button onClick={() => setIsClassModalOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Actividad / Nombre</label>
+                <input type="text" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.name} onChange={e=>setNewClassData({...newClassData, name: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Código (2 letras)</label>
+                  <input type="text" maxLength={2} className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500 text-center uppercase" value={newClassData.code} onChange={e=>setNewClassData({...newClassData, code: e.target.value.toUpperCase()})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Día</label>
+                  <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.day_of_week} onChange={e=>setNewClassData({...newClassData, day_of_week: parseInt(e.target.value)})}>
+                    {weekdayNames.map((n, i) => <option key={i} value={i}>{n}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Inicio</label>
+                  <input type="time" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500 text-center" value={newClassData.start_time} onChange={e=>setNewClassData({...newClassData, start_time: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Fin</label>
+                  <input type="time" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500 text-center" value={newClassData.end_time} onChange={e=>setNewClassData({...newClassData, end_time: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Capacidad</label>
+                  <input type="number" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.capacity} onChange={e=>setNewClassData({...newClassData, capacity: parseInt(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Color</label>
+                  <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.color} onChange={e=>setNewClassData({...newClassData, color: e.target.value})}>
+                    <option value="#3b82f6">Azul (Funcional)</option>
+                    <option value="#f97316">Naranja (Pilates)</option>
+                    <option value="#ec4899">Rosa (Personalizado)</option>
+                    <option value="#eab308">Amarillo (Salsa)</option>
+                    <option value="#ef4444">Rojo (Zumba)</option>
+                    <option value="#06b6d4">Celeste (Reguetón)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setIsClassModalOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
+                <button onClick={handleSaveClass} className="flex-1 py-3 bg-[#212C40] text-white rounded-xl text-[9px] font-black uppercase border border-[#F38E26]">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isNewMemberOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <form onSubmit={handleCreateNewMember} className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="text-sm font-black uppercase text-green-500">Crear y Agregar Nuevo Socio</h4>
+              <button type="button" onClick={() => setIsNewMemberOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input type="text" placeholder="Nombre Completo" required className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.name} onChange={e=>setNewMemberData({...newMemberData, name: e.target.value})} />
+              <input type="text" placeholder="DNI" required className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.dni} onChange={e=>setNewMemberData({...newMemberData, dni: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input type="text" placeholder="WhatsApp / Celular" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.phone} onChange={e=>setNewMemberData({...newMemberData, phone: e.target.value})} />
+              <input type="email" placeholder="Correo" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.email} onChange={e=>setNewMemberData({...newMemberData, email: e.target.value})} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Membresía</label>
+              <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.membership_type} onChange={e=>setNewMemberData({...newMemberData, membership_type: e.target.value})}>
+                <option value="Basic">Basic (3 días)</option>
+                <option value="Premium">Premium (5 días)</option>
+                <option value="Elite">Elite (7 días)</option>
+              </select>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button type="button" onClick={() => setIsNewMemberOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
+              <button type="submit" className="flex-1 py-3 bg-green-500 text-white rounded-xl text-[9px] font-black uppercase">Crear y Sumar</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+

@@ -312,3 +312,152 @@ def get_ai_analytics(db: Session = Depends(get_db)):
         "attendance_heatmap": attendance_heatmap,
         "churn_factors": churn_factors
     }
+
+# --- CLASS SCHEDULES & HOLIDAYS CRUD & ATTENDANCE ---
+
+@router.get("/class_schedules", response_model=List[schemas.ClassScheduleSchema])
+def get_class_schedules(db: Session = Depends(get_db)):
+    return db.query(models.ClassSchedule).all()
+
+@router.post("/class_schedules", response_model=schemas.ClassScheduleSchema)
+def create_class_schedule(schedule: schemas.ClassScheduleCreate, db: Session = Depends(get_db)):
+    db_schedule = models.ClassSchedule(**schedule.dict())
+    db.add(db_schedule)
+    db.commit()
+    db.refresh(db_schedule)
+    return db_schedule
+
+@router.put("/class_schedules/{schedule_id}", response_model=schemas.ClassScheduleSchema)
+def update_class_schedule(schedule_id: int, schedule_data: schemas.ClassScheduleCreate, db: Session = Depends(get_db)):
+    db_schedule = db.query(models.ClassSchedule).filter(models.ClassSchedule.id == schedule_id).first()
+    if not db_schedule:
+        raise HTTPException(status_code=404, detail="Horario de clase no encontrado")
+    for key, value in schedule_data.dict().items():
+        setattr(db_schedule, key, value)
+    db.commit()
+    db.refresh(db_schedule)
+    return db_schedule
+
+@router.delete("/class_schedules/{schedule_id}")
+def delete_class_schedule(schedule_id: int, db: Session = Depends(get_db)):
+    db_schedule = db.query(models.ClassSchedule).filter(models.ClassSchedule.id == schedule_id).first()
+    if not db_schedule:
+        raise HTTPException(status_code=404, detail="Horario de clase no encontrado")
+    db.query(models.Booking).filter(models.Booking.class_schedule_id == schedule_id).delete()
+    db.delete(db_schedule)
+    db.commit()
+    return {"status": "deleted"}
+
+@router.get("/holidays", response_model=List[schemas.HolidaySchema])
+def get_holidays(db: Session = Depends(get_db)):
+    return db.query(models.Holiday).order_by(models.Holiday.date).all()
+
+@router.post("/holidays", response_model=schemas.HolidaySchema)
+def create_holiday(holiday: schemas.HolidayCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.Holiday).filter(models.Holiday.date == holiday.date).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya existe un feriado en esta fecha")
+    db_holiday = models.Holiday(**holiday.dict())
+    db.add(db_holiday)
+    db.commit()
+    db.refresh(db_holiday)
+    return db_holiday
+
+@router.delete("/holidays/{holiday_id}")
+def delete_holiday(holiday_id: int, db: Session = Depends(get_db)):
+    db_holiday = db.query(models.Holiday).filter(models.Holiday.id == holiday_id).first()
+    if not db_holiday:
+        raise HTTPException(status_code=404, detail="Feriado no encontrado")
+    db.delete(db_holiday)
+    db.commit()
+    return {"status": "deleted"}
+
+@router.get("/class_schedules/{schedule_id}/bookings")
+def get_class_bookings(schedule_id: int, date: str, db: Session = Depends(get_db)):
+    try:
+        query_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Usar YYYY-MM-DD")
+    
+    bookings = db.query(models.Booking).filter(
+        models.Booking.class_schedule_id == schedule_id,
+        func.date(models.Booking.start_time) == query_date
+    ).all()
+    
+    result = []
+    for b in bookings:
+        result.append({
+            "id": b.id,
+            "status": b.status,
+            "exercises_done": b.exercises_done,
+            "member": {
+                "id": b.member.id,
+                "dni": b.member.dni,
+                "name": b.member.name,
+                "status": b.member.status
+            }
+        })
+    return result
+
+@router.put("/bookings/{booking_id}/status")
+def update_booking_status(booking_id: int, payload: dict, db: Session = Depends(get_db)):
+    booking = db.query(models.Booking).filter(models.Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada")
+    
+    new_status = payload.get("status")
+    if new_status not in ["reserved", "attended", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    
+    booking.status = new_status
+    db.commit()
+    return {"status": "updated", "booking_id": booking_id, "new_status": new_status}
+
+@router.post("/bookings/walk-in")
+def create_walk_in_booking(payload: dict, db: Session = Depends(get_db)):
+    member_dni = payload.get("dni")
+    schedule_id = payload.get("class_schedule_id")
+    date_str = payload.get("date")
+    
+    member = db.query(models.Member).filter(models.Member.dni == member_dni).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Socio no encontrado")
+        
+    schedule = db.query(models.ClassSchedule).filter(models.ClassSchedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Clase no encontrada")
+        
+    try:
+        class_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido")
+        
+    holiday = db.query(models.Holiday).filter(models.Holiday.date == date_str).first()
+    if holiday:
+        raise HTTPException(status_code=400, detail=f"No se puede registrar asistencia en un día no laborable: {holiday.description}")
+        
+    existing = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.class_schedule_id == schedule_id,
+        func.date(models.Booking.start_time) == class_date
+    ).first()
+    
+    if existing:
+        existing.status = "attended"
+        db.commit()
+        return {"status": "success", "booking_id": existing.id, "message": "Reserva existente marcada como asistida"}
+        
+    time_parts = schedule.start_time.split(":")
+    start_dt = datetime.datetime.combine(class_date, datetime.time(int(time_parts[0]), int(time_parts[1])))
+    
+    new_booking = models.Booking(
+        member_id=member.id,
+        class_schedule_id=schedule.id,
+        class_name=schedule.name,
+        start_time=start_dt,
+        status="attended"
+    )
+    db.add(new_booking)
+    db.commit()
+    db.refresh(new_booking)
+    return {"status": "success", "booking_id": new_booking.id}

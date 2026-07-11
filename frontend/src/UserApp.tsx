@@ -34,8 +34,22 @@ export default function UserApp() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [selectedTime, setSelectedTime] = useState('08:00');
-  const [selectedExs, setSelectedExs] = useState<string[]>([]);
+  const [daySchedules, setDaySchedules] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<any[]>([]);
+
+  const fetchUserBookings = async (memberDni: string) => {
+    try {
+      const res = await fetch(`${API_URL}/user/${memberDni}/bookings`);
+      if (res.ok) setBookings(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchHolidays = async () => {
+    try {
+      const res = await fetch(`${API_URL}/user/holidays`);
+      if (res.ok) setHolidays(await res.json());
+    } catch (e) { console.error(e); }
+  };
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
@@ -54,9 +68,11 @@ export default function UserApp() {
           name: data.member.name,
           dni: data.member.dni,
           plan: data.member.membership_type,
-          streak: 5 // Mock streak for now
+          streak: 5
         }));
         setIsAuthenticated(true);
+        fetchUserBookings(data.member.dni);
+        fetchHolidays();
       } else {
         alert(data.detail || "Error al ingresar");
       }
@@ -103,15 +119,96 @@ export default function UserApp() {
     }));
   };
 
-  const handleConfirmBooking = () => {
-    const booking = { day: selectedDay, time: selectedTime, exercises: selectedExs };
-    if (bookings.length >= userData.maxDaysPerWeek) {
-      alert(`Límite alcanzado (${userData.maxDaysPerWeek} días)`);
+  const handleDayClick = async (dayNum: number) => {
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    const holiday = holidays.find(h => h.date === dateStr);
+    if (holiday) {
+      alert(`Día no laborable: ${holiday.description}`);
       return;
     }
-    setBookings([...bookings, booking]);
-    setIsBookingModalOpen(false);
-    setSelectedExs([]);
+    setSelectedDay(dayNum);
+    try {
+      const res = await fetch(`${API_URL}/user/class_schedules?date=${dateStr}`);
+      if (res.ok) {
+        setDaySchedules(await res.json());
+        setIsBookingModalOpen(true);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBookClass = async (scheduleId: number) => {
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    try {
+      const res = await fetch(`${API_URL}/user/${userData.dni}/book`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ class_schedule_id: scheduleId, date: dateStr })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Reserva realizada con éxito");
+        fetchUserBookings(userData.dni);
+        setIsBookingModalOpen(false);
+      } else {
+        alert(data.detail || "Error al reservar");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error al conectar con el servidor");
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: number) => {
+    if (!confirm("¿Cancelar esta reserva?")) return;
+    try {
+      const res = await fetch(`${API_URL}/user/${userData.dni}/bookings/${bookingId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        alert("Reserva cancelada");
+        fetchUserBookings(userData.dni);
+      } else {
+        const data = await res.json();
+        alert(data.detail || "Error al cancelar");
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const todayBooking = bookings.find(b => {
+    const dt = new Date(b.start_time);
+    const now = new Date();
+    return dt.getFullYear() === now.getFullYear() && 
+           dt.getMonth() === now.getMonth() && 
+           dt.getDate() === now.getDate() &&
+           b.status !== "cancelled";
+  });
+
+  const handleSaveWorkout = async () => {
+    if (!todayBooking) {
+      alert("Debes tener una reserva confirmada para hoy para registrar tus ejercicios.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/user/bookings/${todayBooking.id}/workout`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exercises: userData.currentRoutine })
+      });
+      if (res.ok) {
+        alert("Entrenamiento registrado en tu historial.");
+        fetchUserBookings(userData.dni);
+      } else {
+        alert("Error al guardar entrenamiento");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de conexión");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -161,9 +258,15 @@ export default function UserApp() {
                         <span className="text-[10px] font-black text-white/20 uppercase mr-auto">Carga Actual:</span>
                         <input type="number" className="bg-transparent text-white font-black text-xl w-16 outline-none text-right" value={ex.weight} onChange={e=>updateWeight(ex.id, parseInt(e.target.value) || 0)} />
                         <span className="text-sm font-black text-white/40">KG</span>
-                     </div>
+                      </div>
                   </div>
                 ))}
+                
+                <div className="pt-4">
+                  <button onClick={handleSaveWorkout} disabled={isLoading} className="w-full py-5 text-white bg-green-600 border border-green-500 rounded-[2rem] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all text-sm disabled:opacity-50 shadow-md">
+                    {isLoading ? "Guardando..." : "Finalizar y Guardar Entrenamiento"}
+                  </button>
+                </div>
              </div>
           </div>
         );
@@ -175,14 +278,14 @@ export default function UserApp() {
                 <div className="h-80 mb-10">
                    <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={userData.evolution}>
-                         <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
-                         <XAxis dataKey="date" stroke="#444" fontSize={10} fontStyle="italic" />
-                         <YAxis stroke="#444" fontSize={10} />
-                         <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'20px', padding:'15px'}} />
-                         <Legend wrapperStyle={{fontSize:'10px', textTransform:'uppercase', fontWeight:'900', marginTop:'20px'}} />
-                         <Line type="monotone" dataKey="Press de Banca" stroke="#3b82f6" strokeWidth={4} dot={{r:6, fill:'#3b82f6'}} activeDot={{r:10}} />
-                         <Line type="monotone" dataKey="Sentadillas" stroke="#10b981" strokeWidth={4} dot={{r:6, fill:'#10b981'}} />
-                         <Line type="monotone" dataKey="Jalón al Pecho" stroke="#f59e0b" strokeWidth={4} dot={{r:6, fill:'#f59e0b'}} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                          <XAxis dataKey="date" stroke="#444" fontSize={10} fontStyle="italic" />
+                          <YAxis stroke="#444" fontSize={10} />
+                          <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'20px', padding:'15px'}} />
+                          <Legend wrapperStyle={{fontSize:'10px', textTransform:'uppercase', fontWeight:'900', marginTop:'20px'}} />
+                          <Line type="monotone" dataKey="Press de Banca" stroke="#3b82f6" strokeWidth={4} dot={{r:6, fill:'#3b82f6'}} activeDot={{r:10}} />
+                          <Line type="monotone" dataKey="Sentadillas" stroke="#10b981" strokeWidth={4} dot={{r:6, fill:'#10b981'}} />
+                          <Line type="monotone" dataKey="Jalón al Pecho" stroke="#f59e0b" strokeWidth={4} dot={{r:6, fill:'#f59e0b'}} />
                       </LineChart>
                    </ResponsiveContainer>
                 </div>
@@ -199,7 +302,7 @@ export default function UserApp() {
              <div className="bg-[#141b29] border border-white/5 p-10 rounded-[50px] shadow-3xl">
                 <div className="flex justify-between items-center mb-10">
                    <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4"><Clock className="text-blue-500" size={28}/> Agenda</h3>
-                   <div onClick={()=>setActiveTab('Calendar')} className="px-5 py-2 text-[10px] font-black rounded-2xl uppercase shadow-lg" style={{backgroundColor:'rgba(110,138,201,0.2)', color:'#6E8AC9'}}>{bookings.length}/{userData.maxDaysPerWeek} Días</div>
+                   <div onClick={()=>setActiveTab('Calendar')} className="px-5 py-2 text-[10px] font-black rounded-2xl uppercase shadow-lg" style={{backgroundColor:'rgba(110,138,201,0.2)', color:'#6E8AC9'}}>{bookings.filter(b=>b.status !== "cancelled").length} Reservas</div>
                 </div>
                 <div className="flex items-center justify-between mb-4">
                     <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">
@@ -219,11 +322,19 @@ export default function UserApp() {
                         days.push(<div key={`pad-${i}`} />);
                       }
                       for (let i = 1; i <= daysInMonth; i++) {
-                        const isBooked = bookings.some(b => b.day === i);
+                        const bookingDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                        const isBookedReal = bookings.some(b => {
+                          const dt = new Date(b.start_time);
+                          return dt.getFullYear() === now.getFullYear() && 
+                                 (dt.getMonth() + 1) === (now.getMonth() + 1) && 
+                                 dt.getDate() === i &&
+                                 b.status !== "cancelled";
+                        });
+                        const isHoliday = holidays.some(h => h.date === bookingDateStr);
                         days.push(
                           <div key={i} 
-                            onClick={() => { setSelectedDay(i); setIsBookingModalOpen(true); }} 
-                            className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isBooked ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
+                            onClick={() => handleDayClick(i)} 
+                            className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isHoliday ? 'bg-red-500/10 border-red-500/30 text-red-500' : isBookedReal ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
                             {i}
                           </div>
                         );
@@ -233,13 +344,23 @@ export default function UserApp() {
                 </div>
                 <div className="space-y-4">
                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Próximas Sesiones</p>
-                   {bookings.map((b,i)=>(
-                     <div key={i} className="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between group">
-                        <div><p className="font-black text-white uppercase">Día {b.day} • {b.time} HS</p><p className="text-[10px] text-white/20 font-black uppercase mt-1">{b.exercises.length} Ejercicios Planificados</p></div>
-                        <button onClick={()=>setBookings(bookings.filter((_,idx)=>idx!==i))} className="text-red-500/20 group-hover:text-red-500 transition-colors"><X size={20}/></button>
-                     </div>
-                   ))}
-                   {bookings.length === 0 && <p className="text-center text-white/10 italic text-[10px] font-black uppercase py-10">No tienes reservas aún</p>}
+                   {bookings.filter(b=>b.status !== "cancelled").slice(0, 10).map((b,i)=>{
+                     const dt = new Date(b.start_time);
+                     const dateStr = dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+                     const timeStr = b.start_time.split('T')[1]?.substring(0, 5) || '';
+                     return (
+                      <div key={i} className="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between group">
+                         <div>
+                           <p className="font-black text-white uppercase">{b.class_name}</p>
+                           <p className="text-[10px] text-white/25 font-black uppercase mt-1">Día {dateStr} • {timeStr} HS • Estado: {b.status === 'attended' ? 'ASISTIDO' : 'CONFIRMADO'}</p>
+                         </div>
+                         {b.status === "reserved" && (
+                           <button onClick={()=>handleCancelBooking(b.id)} className="text-red-500/20 group-hover:text-red-500 transition-colors"><X size={20}/></button>
+                         )}
+                      </div>
+                     );
+                   })}
+                   {bookings.filter(b=>b.status !== "cancelled").length === 0 && <p className="text-center text-white/10 italic text-[10px] font-black uppercase py-10">No tienes reservas aún</p>}
                 </div>
              </div>
           </div>
@@ -253,6 +374,31 @@ export default function UserApp() {
                 <span className="px-4 py-1.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-10">{userData.plan}</span>
                 
                 <div className="w-full space-y-4 pt-10 border-t border-white/5">
+                   <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Dumbbell size={14}/> Historial de Entrenamientos</h4>
+                   <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar text-left w-full">
+                      {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).map((b, i) => {
+                         const dt = new Date(b.start_time);
+                         const dateStr = dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                         return (
+                            <div key={i} className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2">
+                               <p className="font-black text-white text-[10px] uppercase">{b.class_name} • {dateStr}</p>
+                               <div className="space-y-1 pl-2 border-l border-[#F38E26]/50">
+                                  {b.exercises_done.map((ex: any, idx: number) => (
+                                     <p key={idx} className="text-[9px] text-white/55 uppercase font-black">
+                                        {ex.name}: {ex.completed ? `✅ ${ex.sets}x${ex.reps} (${ex.weight}kg)` : '❌ Incompleto'}
+                                     </p>
+                                  ))}
+                               </div>
+                            </div>
+                         );
+                      })}
+                      {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).length === 0 && (
+                         <p className="text-center text-white/20 italic text-[9px] font-black uppercase py-4">No hay entrenamientos registrados aún</p>
+                      )}
+                   </div>
+                </div>
+
+                <div className="w-full space-y-4 pt-10 border-t border-white/5 mt-10">
                    <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
                    <div className="space-y-3">
                       <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xs outline-none focus:border-blue-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
@@ -272,21 +418,21 @@ export default function UserApp() {
                 <div onClick={()=>setActiveTab('Profile')} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all"><User size={24} className="text-blue-500" /></div>
              </header>
              <section className="bg-gradient-to-br from-[#141b29] to-black p-12 rounded-[60px] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] text-center relative overflow-hidden group">
-                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(110,138,201,0.25),transparent_70%)]" />
-                 <p className="text-xs uppercase tracking-[0.5em] font-black mb-10 relative z-10 animate-pulse" style={{color:'#F38E26'}}>Racha de Fuego</p>
+                  <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(110,138,201,0.25),transparent_70%)]" />
+                  <p className="text-xs uppercase tracking-[0.5em] font-black mb-10 relative z-10 animate-pulse" style={{color:'#F38E26'}}>Racha de Fuego</p>
                 <div className="relative z-10 flex items-center justify-center gap-6 mb-10"><div className="p-5 bg-orange-500/10 rounded-full text-orange-500"><Zap size={40} strokeWidth={3} /></div><span className="text-9xl font-black tracking-tighter text-white">{userData.streak}</span></div>
-                 <div onClick={()=>setActiveTab('Evolution')} className="py-5 px-10 rounded-3xl border text-[10px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-3" style={{backgroundColor:'rgba(243,142,38,0.1)', borderColor:'rgba(243,142,38,0.2)', color:'#F38E26'}} onMouseEnter={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='#F38E26';(e.currentTarget as HTMLDivElement).style.color='#fff'}} onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='rgba(243,142,38,0.1)';(e.currentTarget as HTMLDivElement).style.color='#F38E26'}}>Explorar Evolución <ArrowUpRight size={16}/></div>
+                  <div onClick={()=>setActiveTab('Evolution')} className="py-5 px-10 rounded-3xl border text-[10px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-3" style={{backgroundColor:'rgba(243,142,38,0.1)', borderColor:'rgba(243,142,38,0.2)', color:'#F38E26'}} onMouseEnter={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='#F38E26';(e.currentTarget as HTMLDivElement).style.color='#fff'}} onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='rgba(243,142,38,0.1)';(e.currentTarget as HTMLDivElement).style.color='#F38E26'}}>Explorar Evolución <ArrowUpRight size={16}/></div>
              </section>
              <div className="grid grid-cols-2 gap-6 pb-10">
-                 <button onClick={()=>setActiveTab('Training')} className="p-8 bg-[#141b29] border border-white/5 rounded-[50px] flex flex-col gap-6 group text-left transition-all" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'}}>
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all" style={{backgroundColor:'rgba(243,142,38,0.1)', color:'#F38E26'}} onMouseEnter={e=>{e.currentTarget.style.backgroundColor='#F38E26';e.currentTarget.style.color='#fff'}} onMouseLeave={e=>{e.currentTarget.style.backgroundColor='rgba(243,142,38,0.1)';e.currentTarget.style.color='#F38E26'}}><Dumbbell size={28}/></div>
-                   <div><p className="font-black text-2xl leading-none mb-1 uppercase">Entrenar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">3 Ejercicios hoy</p></div>
-                </button>
-                 <button onClick={()=>setActiveTab('Calendar')} className="p-8 bg-[#141b29] border border-white/5 rounded-[50px] flex flex-col gap-6 group text-left transition-all" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(110,138,201,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'}}>
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all" style={{backgroundColor:'rgba(110,138,201,0.1)', color:'#6E8AC9'}} onMouseEnter={e=>{e.currentTarget.style.backgroundColor='#6E8AC9';e.currentTarget.style.color='#fff'}} onMouseLeave={e=>{e.currentTarget.style.backgroundColor='rgba(110,138,201,0.1)';e.currentTarget.style.color='#6E8AC9'}}><Clock size={28}/></div>
-                   <div><p className="font-black text-2xl leading-none mb-1 uppercase">Agendar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">{bookings.length} Sesiones</p></div>
-                </button>
-             </div>
+                  <button onClick={()=>setActiveTab('Training')} className="p-8 bg-[#141b29] border border-white/5 rounded-[50px] flex flex-col gap-6 group text-left transition-all" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'}}>
+                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all" style={{backgroundColor:'rgba(243,142,38,0.1)', color:'#F38E26'}} onMouseEnter={e=>{e.currentTarget.style.backgroundColor='#F38E26';e.currentTarget.style.color='#fff'}} onMouseLeave={e=>{e.currentTarget.style.backgroundColor='rgba(243,142,38,0.1)';e.currentTarget.style.color='#F38E26'}}><Dumbbell size={28}/></div>
+                    <div><p className="font-black text-2xl leading-none mb-1 uppercase">Entrenar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">3 Ejercicios hoy</p></div>
+                 </button>
+                  <button onClick={()=>setActiveTab('Calendar')} className="p-8 bg-[#141b29] border border-white/5 rounded-[50px] flex flex-col gap-6 group text-left transition-all" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(110,138,201,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'}}>
+                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all" style={{backgroundColor:'rgba(110,138,201,0.1)', color:'#6E8AC9'}} onMouseEnter={e=>{e.currentTarget.style.backgroundColor='#6E8AC9';e.currentTarget.style.color='#fff'}} onMouseLeave={e=>{e.currentTarget.style.backgroundColor='rgba(110,138,201,0.1)';e.currentTarget.style.color='#6E8AC9'}}><Clock size={28}/></div>
+                    <div><p className="font-black text-2xl leading-none mb-1 uppercase">Agendar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">{bookings.filter(b=>b.status !== "cancelled").length} Sesiones</p></div>
+                 </button>
+              </div>
           </div>
         );
     }
@@ -298,25 +444,43 @@ export default function UserApp() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-8 animate-in fade-in duration-300">
            <div className="bg-[#1b2435] border border-white/10 p-10 rounded-[50px] w-full max-w-sm">
               <div className="flex justify-between items-center mb-10"><h3 className="text-2xl font-black uppercase tracking-tighter">Día {selectedDay}</h3><button onClick={()=>setIsBookingModalOpen(false)}><X size={24} className="text-white/20 hover:text-white"/></button></div>
-              <div className="space-y-8">
-                 <div className="space-y-3"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest">¿A qué hora vas?</label><input type="time" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xl font-black outline-none focus:border-orange-500" value={selectedTime} onChange={e=>setSelectedTime(e.target.value)} /></div>
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-white/20 uppercase tracking-widest">¿Qué vas a entrenar?</label>
-                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                       {userData.currentRoutine.map(ex => (
-                         <button key={ex.id} onClick={()=>{
-                           if(selectedExs.includes(ex.name)) setSelectedExs(selectedExs.filter(e=>e!==ex.name));
-                           else setSelectedExs([...selectedExs, ex.name]);
-                         }} className={`p-4 rounded-2xl text-[10px] font-black uppercase text-left border transition-all ${selectedExs.includes(ex.name) ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-white/30'}`}>
-                            {ex.name}
-                         </button>
-                       ))}
-                    </div>
-                 </div>
-                 <button onClick={handleConfirmBooking} className="w-full py-5 bg-orange-500 text-white rounded-3xl font-black uppercase tracking-widest shadow-md hover:scale-[1.01] active:scale-95 transition-all">Confirmar Reserva</button>
-              </div>
-           </div>
-        </div>
+              <div className="space-y-6">
+                 <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Clases Disponibles</p>
+                 <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                    {daySchedules.length > 0 ? daySchedules.map((s) => {
+                      const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && new Date(b.start_time).getDate() === selectedDay && b.status !== "cancelled");
+                      const userBooking = bookings.find(b => b.class_schedule_id === s.id && new Date(b.start_time).getDate() === selectedDay && b.status !== "cancelled");
+                      return (
+                        <div key={s.id} className="p-5 bg-white/5 rounded-3xl border border-white/5 flex justify-between items-center">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded text-[8px] font-black text-white" style={{backgroundColor: s.color}}>{s.code}</span>
+                              <span className="font-black text-white uppercase text-[11px] truncate max-w-[120px]">{s.name}</span>
+                            </div>
+                            <p className="text-[9px] text-white/30 font-black uppercase tracking-wider">⏰ {s.start_time} A {s.end_time}</p>
+                            <p className="text-[9px] text-[#F38E26] font-black uppercase tracking-wider">👥 Confirmados: {s.bookings_count} / {s.capacity}</p>
+                          </div>
+                          <div>
+                            {isAlreadyBooked ? (
+                              <button onClick={() => handleCancelBooking(userBooking.id)} className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase">Cancelar</button>
+                            ) : (
+                              <button 
+                                onClick={() => handleBookClass(s.id)} 
+                                disabled={s.bookings_count >= s.capacity}
+                                className="px-4 py-2 bg-green-500 text-white rounded-xl text-[8px] font-black uppercase disabled:opacity-50">
+                                Reservar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }) : (
+                      <p className="text-center text-white/20 italic text-[10px] font-black uppercase py-4">No hay clases programadas para este día.</p>
+                    )}
+                  </div>
+               </div>
+            </div>
+         </div>
       )}
       <main className="max-w-lg mx-auto">{renderTabContent()}</main>
       <nav className="fixed bottom-8 left-8 right-8 h-24 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-[50px] z-50 flex items-center justify-around px-8 shadow-3xl animate-in slide-in-from-bottom-10 duration-1000">

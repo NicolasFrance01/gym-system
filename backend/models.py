@@ -41,11 +41,31 @@ class Booking(Base):
     __tablename__ = "bookings"
     id = Column(Integer, primary_key=True, index=True)
     member_id = Column(Integer, ForeignKey("members.id"))
+    class_schedule_id = Column(Integer, ForeignKey("class_schedules.id"), nullable=True)
     class_name = Column(String)
     start_time = Column(DateTime)
-    status = Column(String) # reserved, attended, cancelled
+    status = Column(String, default="reserved") # reserved, attended, cancelled
+    exercises_done = Column(JSON, nullable=True)
 
     member = relationship("Member", back_populates="bookings")
+    class_schedule = relationship("ClassSchedule")
+
+class ClassSchedule(Base):
+    __tablename__ = "class_schedules"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    code = Column(String)
+    day_of_week = Column(Integer)  # 0=Lunes, 1=Martes...
+    start_time = Column(String)  # "08:30"
+    end_time = Column(String)  # "09:30"
+    color = Column(String, default="#3b82f6")
+    capacity = Column(Integer, default=20)
+
+class Holiday(Base):
+    __tablename__ = "holidays"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(String, unique=True, index=True)  # YYYY-MM-DD
+    description = Column(String)
 
 class Staff(Base):
     __tablename__ = "staff"
