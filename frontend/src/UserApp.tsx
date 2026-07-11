@@ -1,5 +1,5 @@
 import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tooltip, ResponsiveContainer, CartesianGrid, XAxis, YAxis, LineChart, Line, Legend } from 'recharts';
 
 export default function UserApp() {
@@ -36,6 +36,51 @@ export default function UserApp() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [daySchedules, setDaySchedules] = useState<any[]>([]);
   const [holidays, setHolidays] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekSchedulesMap, setWeekSchedulesMap] = useState<Record<string, any[]>>({});
+
+  const getWeekDates = (offsetWeeks: number) => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(today.setDate(diff));
+    monday.setDate(monday.getDate() + offsetWeeks * 7);
+    
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  };
+
+  const fetchWeekSchedules = async (dates: Date[]) => {
+    try {
+      const promises = dates.map(d => {
+        const dateStr = d.toISOString().split('T')[0];
+        return fetch(`${API_URL}/user/class_schedules?date=${dateStr}`)
+          .then(r => r.json())
+          .then(data => ({ dateStr, schedules: data }));
+      });
+      const results = await Promise.all(promises);
+      const map: Record<string, any[]> = {};
+      results.forEach(res => {
+        map[res.dateStr] = Array.isArray(res.schedules) ? res.schedules : [];
+      });
+      setWeekSchedulesMap(map);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === 'week') {
+      const dates = getWeekDates(weekOffset);
+      fetchWeekSchedules(dates);
+    }
+  }, [weekOffset, viewMode]);
 
   const fetchUserBookings = async (memberDni: string) => {
     try {
@@ -160,6 +205,27 @@ export default function UserApp() {
     }
   };
 
+  const handleBookClassFromWeek = async (scheduleId: number, dateStr: string) => {
+    try {
+      const res = await fetch(`${API_URL}/user/${userData.dni}/book`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ class_schedule_id: scheduleId, date: dateStr })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Reserva realizada con éxito");
+        fetchUserBookings(userData.dni);
+        fetchWeekSchedules(getWeekDates(weekOffset));
+      } else {
+        alert(data.detail || "Error al reservar");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error al conectar con el servidor");
+    }
+  };
+
   const handleCancelBooking = async (bookingId: number) => {
     if (!confirm("¿Cancelar esta reserva?")) return;
     try {
@@ -169,6 +235,9 @@ export default function UserApp() {
       if (res.ok) {
         alert("Reserva cancelada");
         fetchUserBookings(userData.dni);
+        if (viewMode === 'week') {
+          fetchWeekSchedules(getWeekDates(weekOffset));
+        }
       } else {
         const data = await res.json();
         alert(data.detail || "Error al cancelar");
@@ -297,52 +366,161 @@ export default function UserApp() {
           </div>
         );
       case 'Calendar':
+        const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+        const weekDates = getWeekDates(weekOffset);
         return (
           <div className="space-y-8 animate-in slide-in-from-bottom-8">
-             <div className="bg-[#141b29] border border-white/5 p-10 rounded-[50px] shadow-3xl">
-                <div className="flex justify-between items-center mb-10">
+             <div className="bg-[#141b29] border border-white/5 p-10 rounded-[50px] shadow-3xl space-y-6">
+                <div className="flex justify-between items-center">
                    <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4"><Clock className="text-blue-500" size={28}/> Agenda</h3>
-                   <div onClick={()=>setActiveTab('Calendar')} className="px-5 py-2 text-[10px] font-black rounded-2xl uppercase shadow-lg" style={{backgroundColor:'rgba(110,138,201,0.2)', color:'#6E8AC9'}}>{bookings.filter(b=>b.status !== "cancelled").length} Reservas</div>
+                   <div onClick={()=>setActiveTab('Calendar')} className="px-5 py-2 text-[10px] font-black rounded-2xl uppercase shadow-lg bg-blue-500/20 text-[#6E8AC9]">{bookings.filter(b=>b.status !== "cancelled").length} Reservas</div>
                 </div>
-                <div className="flex items-center justify-between mb-4">
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">
-                       {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
-                    </p>
+
+                {/* Vista Toggle Slider */}
+                <div className="flex bg-black/40 p-1 border border-white/5 rounded-2xl max-w-xs mx-auto">
+                   <button 
+                      onClick={() => setViewMode('month')} 
+                      className={`flex-1 py-2.5 px-6 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${viewMode === 'month' ? 'bg-[#F38E26] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>
+                      Mes
+                   </button>
+                   <button 
+                      onClick={() => setViewMode('week')} 
+                      className={`flex-1 py-2.5 px-6 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${viewMode === 'week' ? 'bg-[#F38E26] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>
+                      Semana
+                   </button>
                 </div>
-                <div className="grid grid-cols-7 gap-2 mb-10 text-center font-black text-[10px] uppercase">
-                    {["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map((d,i)=>(<div key={i} className="text-white/10">{d}</div>))}
-                    {(() => {
-                      const now = new Date();
-                      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
-                      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                      const padding = firstDay === 0 ? 6 : firstDay - 1;
-                      
-                      const days = [];
-                      for (let i = 0; i < padding; i++) {
-                        days.push(<div key={`pad-${i}`} />);
-                      }
-                      for (let i = 1; i <= daysInMonth; i++) {
-                        const bookingDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                        const isBookedReal = bookings.some(b => {
-                          const dt = new Date(b.start_time);
-                          return dt.getFullYear() === now.getFullYear() && 
-                                 (dt.getMonth() + 1) === (now.getMonth() + 1) && 
-                                 dt.getDate() === i &&
-                                 b.status !== "cancelled";
-                        });
-                        const isHoliday = holidays.some(h => h.date === bookingDateStr);
-                        days.push(
-                          <div key={i} 
-                            onClick={() => handleDayClick(i)} 
-                            className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isHoliday ? 'bg-red-500/10 border-red-500/30 text-red-500' : isBookedReal ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
-                            {i}
-                          </div>
-                        );
-                      }
-                      return days;
-                    })()}
-                </div>
-                <div className="space-y-4">
+
+                {viewMode === 'month' ? (
+                  <>
+                     <div className="flex items-center justify-between mb-4">
+                         <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">
+                            {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+                         </p>
+                     </div>
+                     <div className="grid grid-cols-7 gap-2 mb-10 text-center font-black text-[10px] uppercase">
+                         {["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map((d,i)=>(<div key={i} className="text-white/10">{d}</div>))}
+                         {(() => {
+                           const now = new Date();
+                           const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+                           const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                           const padding = firstDay === 0 ? 6 : firstDay - 1;
+                           
+                           const days = [];
+                           for (let i = 0; i < padding; i++) {
+                             days.push(<div key={`pad-${i}`} />);
+                           }
+                           for (let i = 1; i <= daysInMonth; i++) {
+                             const bookingDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                             const isBookedReal = bookings.some(b => {
+                               const dt = new Date(b.start_time);
+                               return dt.getFullYear() === now.getFullYear() && 
+                                      (dt.getMonth() + 1) === (now.getMonth() + 1) && 
+                                      dt.getDate() === i &&
+                                      b.status !== "cancelled";
+                             });
+                             const isHoliday = holidays.some(h => h.date === bookingDateStr);
+                             days.push(
+                               <div key={i} 
+                                 onClick={() => handleDayClick(i)} 
+                                 className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isHoliday ? 'bg-red-500/10 border-red-500/30 text-red-500' : isBookedReal ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
+                                 {i}
+                               </div>
+                             );
+                           }
+                           return days;
+                         })()}
+                     </div>
+                  </>
+                ) : (
+                  <div className="space-y-6">
+                     {/* Controles de Semana */}
+                     <div className="flex justify-between items-center gap-3">
+                        <button 
+                           onClick={() => setWeekOffset(prev => prev - 1)} 
+                           className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:bg-white/10 text-white transition-all">
+                           Anterior
+                        </button>
+                        <span className="text-[10px] font-black uppercase text-white/60 text-center tracking-wider">
+                           {weekDates[0].toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit'})} AL {weekDates[6].toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit'})}
+                        </span>
+                        <button 
+                           onClick={() => setWeekOffset(prev => prev + 1)} 
+                           className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:bg-white/10 text-white transition-all">
+                           Siguiente
+                        </button>
+                     </div>
+
+                     {/* Grid Horizontal Swiper */}
+                     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory custom-scrollbar scrollbar-thin">
+                        {weekDates.map((d) => {
+                           const dateStr = d.toISOString().split('T')[0];
+                           const dayName = weekdayNames[d.getDay() === 0 ? 6 : d.getDay() - 1];
+                           const shortDate = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+                           const holiday = holidays.find(h => h.date === dateStr);
+                           const daySchedulesList = weekSchedulesMap[dateStr] || [];
+
+                           return (
+                              <div key={dateStr} className="w-64 flex-shrink-0 snap-align-start bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col space-y-4">
+                                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                                    <h4 className="font-black uppercase text-[10px] text-white tracking-wider">{dayName}</h4>
+                                    <span className="text-[9px] font-black text-white/40">{shortDate}</span>
+                                 </div>
+                                 
+                                 {holiday ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4 py-8 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                                       <span className="text-[9px] font-black text-red-500 uppercase tracking-wider">⚠️ Feriado</span>
+                                       <p className="text-[8px] text-red-500/60 uppercase font-black mt-1">{holiday.description}</p>
+                                    </div>
+                                 ) : (
+                                    <div className="flex-1 space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                                       {daySchedulesList.length > 0 ? daySchedulesList.map((s: any) => {
+                                          const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
+                                          const userBooking = bookings.find(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
+                                          
+                                          return (
+                                             <div key={s.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col space-y-3 hover:bg-white/[0.07] transition-all">
+                                                <div className="flex justify-between items-start gap-1">
+                                                   <div className="space-y-1 min-w-0 flex-1">
+                                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                                         <span className="px-1.5 py-0.5 rounded text-[7px] font-black text-white" style={{backgroundColor: s.color}}>{s.code}</span>
+                                                         <span className="font-black text-white uppercase text-[9px] leading-tight truncate block max-w-[100px]">{s.name}</span>
+                                                      </div>
+                                                      <p className="text-[8px] text-white/30 font-black uppercase tracking-wider mt-1">⏰ {s.start_time} - {s.end_time}</p>
+                                                   </div>
+                                                   <span className="text-[9px] font-black text-[#F38E26] shrink-0">{s.bookings_count} / {s.capacity}</span>
+                                                </div>
+                                                
+                                                <div>
+                                                   {isAlreadyBooked ? (
+                                                      <button 
+                                                         onClick={() => handleCancelBooking(userBooking.id)} 
+                                                         className="w-full py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">
+                                                         Cancelar
+                                                      </button>
+                                                   ) : (
+                                                      <button 
+                                                         onClick={() => handleBookClassFromWeek(s.id, dateStr)} 
+                                                         disabled={s.bookings_count >= s.capacity}
+                                                         className="w-full py-2 bg-green-500 text-white rounded-xl text-[8px] font-black uppercase disabled:opacity-30 hover:scale-[1.01] active:scale-95 transition-all">
+                                                         {s.bookings_count >= s.capacity ? "Lleno" : "Reservar"}
+                                                      </button>
+                                                   )}
+                                                </div>
+                                             </div>
+                                          );
+                                       }) : (
+                                          <p className="text-center text-white/20 italic text-[9px] font-black uppercase py-8">Sin clases</p>
+                                       )}
+                                    </div>
+                                 )}
+                              </div>
+                           );
+                        })}
+                     </div>
+                  </div>
+                )}
+
+                <div className="space-y-4 border-t border-white/5 pt-6">
                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Próximas Sesiones</p>
                    {bookings.filter(b=>b.status !== "cancelled").slice(0, 10).map((b,i)=>{
                      const dt = new Date(b.start_time);
