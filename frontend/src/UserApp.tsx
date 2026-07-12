@@ -365,9 +365,35 @@ export default function UserApp() {
              </div>
           </div>
         );
-      case 'Calendar':
-        const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+        const allWeekSchedules = Object.values(weekSchedulesMap).flat();
+        const getUniqueSlots = (allSchedules: any[]) => {
+          const slotsMap = new Map<string, { start: string, end: string }>();
+          const defaultSlots = [
+            { start: "08:30", end: "09:30" },
+            { start: "08:50", end: "09:50" },
+            { start: "10:00", end: "11:00" },
+            { start: "17:30", end: "18:30" },
+            { start: "18:15", end: "19:15" },
+            { start: "18:30", end: "19:30" },
+            { start: "19:30", end: "20:30" }
+          ];
+          defaultSlots.forEach(s => slotsMap.set(`${s.start}-${s.end}`, s));
+          allSchedules.forEach(s => {
+            if (s && s.start_time && s.end_time) {
+              const key = `${s.start_time}-${s.end_time}`;
+              slotsMap.set(key, { start: s.start_time, end: s.end_time });
+            }
+          });
+          const sortedSlots = Array.from(slotsMap.values()).sort((a, b) => a.start.localeCompare(b.start));
+          const morning = sortedSlots.filter(s => parseInt(s.start.split(":")[0]) < 12);
+          const evening = sortedSlots.filter(s => parseInt(s.start.split(":")[0]) >= 12);
+          return { morning, evening };
+        };
+
+        const { morning: morningSlots, evening: eveningSlots } = getUniqueSlots(allWeekSchedules);
+        const weekdayShortNames = ["L", "M", "MI", "J", "V", "S", "D"];
         const weekDates = getWeekDates(weekOffset);
+
         return (
           <div className="space-y-8 animate-in slide-in-from-bottom-8">
              <div className="bg-[#141b29] border border-white/5 p-10 rounded-[50px] shadow-3xl space-y-6">
@@ -450,72 +476,182 @@ export default function UserApp() {
                         </button>
                      </div>
 
-                     {/* Grid Horizontal Swiper */}
-                     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory custom-scrollbar scrollbar-thin">
-                        {weekDates.map((d) => {
-                           const dateStr = d.toISOString().split('T')[0];
-                           const dayName = weekdayNames[d.getDay() === 0 ? 6 : d.getDay() - 1];
-                           const shortDate = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-                           const holiday = holidays.find(h => h.date === dateStr);
-                           const daySchedulesList = weekSchedulesMap[dateStr] || [];
+                     {/* Grilla Semanal */}
+                     <div className="space-y-6 bg-white/5 border border-white/10 p-5 rounded-3xl">
+                        
+                        {/* Clases por la Mañana */}
+                        <div>
+                          <div className="bg-[#F38E26] text-white font-black text-center py-2 uppercase tracking-widest text-[8px] rounded-t-xl">
+                            Clases por la Mañana
+                          </div>
+                          <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-xl scrollbar-thin">
+                            <table className="w-full border-collapse text-left">
+                              <thead>
+                                <tr className="bg-white/[0.02] text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
+                                  <th className="p-3 text-center w-20">Hora</th>
+                                  <th className="p-3 text-center">L</th>
+                                  <th className="p-3 text-center">M</th>
+                                  <th className="p-3 text-center">MI</th>
+                                  <th className="p-3 text-center">J</th>
+                                  <th className="p-3 text-center">V</th>
+                                  <th className="p-3 text-center">S</th>
+                                  <th className="p-3 text-center">D</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {morningSlots.map((slot, rowIndex) => (
+                                  <tr key={rowIndex} className="border-b border-white/5">
+                                    <td className="p-2.5 text-center">
+                                      <span className="inline-block px-2 py-1 bg-white/5 text-white/50 font-black rounded-lg border border-white/5 text-[8px] tracking-tight">
+                                        {slot.start} - {slot.end}
+                                      </span>
+                                    </td>
+                                    {weekdayShortNames.map((_, dayIndex) => {
+                                      const date = weekDates[dayIndex];
+                                      const dateStr = date.toISOString().split('T')[0];
+                                      const holiday = holidays.find(h => h.date === dateStr);
+                                      const daySchedulesList = weekSchedulesMap[dateStr] || [];
+                                      const cellSchedules = daySchedulesList.filter((s: any) => s.start_time === slot.start && s.end_time === slot.end);
 
-                           return (
-                              <div key={dateStr} className="w-64 flex-shrink-0 snap-align-start bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col space-y-4">
-                                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                                    <h4 className="font-black uppercase text-[10px] text-white tracking-wider">{dayName}</h4>
-                                    <span className="text-[9px] font-black text-white/40">{shortDate}</span>
-                                 </div>
-                                 
-                                 {holiday ? (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4 py-8 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                                       <span className="text-[9px] font-black text-red-500 uppercase tracking-wider">⚠️ Feriado</span>
-                                       <p className="text-[8px] text-red-500/60 uppercase font-black mt-1">{holiday.description}</p>
-                                    </div>
-                                 ) : (
-                                    <div className="flex-1 space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                                       {daySchedulesList.length > 0 ? daySchedulesList.map((s: any) => {
-                                          const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
-                                          const userBooking = bookings.find(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
-                                          
-                                          return (
-                                             <div key={s.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col space-y-3 hover:bg-white/[0.07] transition-all">
-                                                <div className="flex justify-between items-start gap-1">
-                                                   <div className="space-y-1 min-w-0 flex-1">
-                                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                                         <span className="px-1.5 py-0.5 rounded text-[7px] font-black text-white" style={{backgroundColor: s.color}}>{s.code}</span>
-                                                         <span className="font-black text-white uppercase text-[9px] leading-tight truncate block max-w-[100px]">{s.name}</span>
-                                                      </div>
-                                                      <p className="text-[8px] text-white/30 font-black uppercase tracking-wider mt-1">⏰ {s.start_time} - {s.end_time}</p>
-                                                   </div>
-                                                   <span className="text-[9px] font-black text-[#F38E26] shrink-0">{s.bookings_count} / {s.capacity}</span>
-                                                </div>
-                                                
-                                                <div>
-                                                   {isAlreadyBooked ? (
-                                                      <button 
-                                                         onClick={() => handleCancelBooking(userBooking.id)} 
-                                                         className="w-full py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">
-                                                         Cancelar
-                                                      </button>
-                                                   ) : (
-                                                      <button 
-                                                         onClick={() => handleBookClassFromWeek(s.id, dateStr)} 
-                                                         disabled={s.bookings_count >= s.capacity}
-                                                         className="w-full py-2 bg-green-500 text-white rounded-xl text-[8px] font-black uppercase disabled:opacity-30 hover:scale-[1.01] active:scale-95 transition-all">
-                                                         {s.bookings_count >= s.capacity ? "Lleno" : "Reservar"}
-                                                      </button>
-                                                   )}
-                                                </div>
-                                             </div>
-                                          );
-                                       }) : (
-                                          <p className="text-center text-white/20 italic text-[9px] font-black uppercase py-8">Sin clases</p>
-                                       )}
-                                    </div>
-                                 )}
-                              </div>
-                           );
-                        })}
+                                      return (
+                                        <td key={dayIndex} className="p-1.5 text-center min-w-[55px]">
+                                          <div className="flex flex-col gap-1 items-center justify-center">
+                                            {holiday ? (
+                                              <span className="text-[7px] font-black text-red-500/30 uppercase">Feriado</span>
+                                            ) : cellSchedules.length > 0 ? cellSchedules.map((s: any) => {
+                                              const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
+                                              const userBooking = bookings.find(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
+                                              
+                                              return (
+                                                <button
+                                                  key={s.id}
+                                                  onClick={async () => {
+                                                    if (isAlreadyBooked) {
+                                                      await handleCancelBooking(userBooking.id);
+                                                    } else {
+                                                      if (confirm(`¿Reservar clase de ${s.name} para el ${date.toLocaleDateString('es-AR')} a las ${s.start_time} HS?`)) {
+                                                        await handleBookClassFromWeek(s.id, dateStr);
+                                                      }
+                                                    }
+                                                  }}
+                                                  style={{ backgroundColor: s.color }}
+                                                  className={`w-12 h-8 rounded-xl text-white font-black text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
+                                                  <span className="leading-none text-[9px]">{s.code}</span>
+                                                  <span className="text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
+                                                  {isAlreadyBooked && (
+                                                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center text-[7px] text-white border border-[#141b29] font-black">✓</span>
+                                                  )}
+                                                </button>
+                                              );
+                                            }) : (
+                                              <div className="w-12 h-8 rounded-xl border border-white/5 bg-transparent flex items-center justify-center opacity-10 text-[9px] font-black text-white">
+                                                -
+                                              </div>
+                                            )}
+                                          </div>
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Clases por la Tarde / Noche */}
+                        <div>
+                          <div className="bg-[#F38E26] text-white font-black text-center py-2 uppercase tracking-widest text-[8px] rounded-t-xl">
+                            Clases por la Tarde/Noche
+                          </div>
+                          <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-xl scrollbar-thin">
+                            <table className="w-full border-collapse text-left">
+                              <thead>
+                                <tr className="bg-white/[0.02] text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
+                                  <th className="p-3 text-center w-20">Hora</th>
+                                  <th className="p-3 text-center">L</th>
+                                  <th className="p-3 text-center">M</th>
+                                  <th className="p-3 text-center">MI</th>
+                                  <th className="p-3 text-center">J</th>
+                                  <th className="p-3 text-center">V</th>
+                                  <th className="p-3 text-center">S</th>
+                                  <th className="p-3 text-center">D</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {eveningSlots.map((slot, rowIndex) => (
+                                  <tr key={rowIndex} className="border-b border-white/5">
+                                    <td className="p-2.5 text-center">
+                                      <span className="inline-block px-2 py-1 bg-white/5 text-white/50 font-black rounded-lg border border-white/5 text-[8px] tracking-tight">
+                                        {slot.start} - {slot.end}
+                                      </span>
+                                    </td>
+                                    {weekdayShortNames.map((_, dayIndex) => {
+                                      const date = weekDates[dayIndex];
+                                      const dateStr = date.toISOString().split('T')[0];
+                                      const holiday = holidays.find(h => h.date === dateStr);
+                                      const daySchedulesList = weekSchedulesMap[dateStr] || [];
+                                      const cellSchedules = daySchedulesList.filter((s: any) => s.start_time === slot.start && s.end_time === slot.end);
+
+                                      return (
+                                        <td key={dayIndex} className="p-1.5 text-center min-w-[55px]">
+                                          <div className="flex flex-col gap-1 items-center justify-center">
+                                            {holiday ? (
+                                              <span className="text-[7px] font-black text-red-500/30 uppercase">Feriado</span>
+                                            ) : cellSchedules.length > 0 ? cellSchedules.map((s: any) => {
+                                              const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
+                                              const userBooking = bookings.find(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
+                                              
+                                              return (
+                                                <button
+                                                  key={s.id}
+                                                  onClick={async () => {
+                                                    if (isAlreadyBooked) {
+                                                      await handleCancelBooking(userBooking.id);
+                                                    } else {
+                                                      if (confirm(`¿Reservar clase de ${s.name} para el ${date.toLocaleDateString('es-AR')} a las ${s.start_time} HS?`)) {
+                                                        await handleBookClassFromWeek(s.id, dateStr);
+                                                      }
+                                                    }
+                                                  }}
+                                                  style={{ backgroundColor: s.color }}
+                                                  className={`w-12 h-8 rounded-xl text-white font-black text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
+                                                  <span className="leading-none text-[9px]">{s.code}</span>
+                                                  <span className="text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
+                                                  {isAlreadyBooked && (
+                                                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center text-[7px] text-white border border-[#141b29] font-black">✓</span>
+                                                  )}
+                                                </button>
+                                              );
+                                            }) : (
+                                              <div className="w-12 h-8 rounded-xl border border-white/5 bg-transparent flex items-center justify-center opacity-10 text-[9px] font-black text-white">
+                                                -
+                                              </div>
+                                            )}
+                                          </div>
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Actividades Leyenda */}
+                        <div className="pt-3 border-t border-white/5 text-center">
+                          <span className="text-[8px] font-black uppercase tracking-wider text-white/30 block mb-2">Actividades</span>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center text-[7px] font-black uppercase">
+                            <span className="text-[#3b82f6]">● Entrenamiento Funcional (EF)</span>
+                            <span className="text-[#f97316]">● Pilates en Suelo (PS)</span>
+                            <span className="text-[#ec4899]">● Entrenamiento Personalizado (EP)</span>
+                            <span className="text-[#eab308]">● Salsa y Bachata (SB)</span>
+                            <span className="text-[#ef4444]">● Zumba (ZB)</span>
+                            <span className="text-[#06b6d4]">● Reguetón Juvenil (RJ)</span>
+                          </div>
+                        </div>
+
                      </div>
                   </div>
                 )}

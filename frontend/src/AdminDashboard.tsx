@@ -1148,6 +1148,59 @@ function AgendaModule({ members, API_URL }: any) {
     return day === 0 ? 6 : day - 1;
   };
 
+  const getWeekDatesForDate = (dateStr: string) => {
+    const baseDate = new Date(dateStr + 'T00:00:00');
+    const day = baseDate.getDay();
+    const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(baseDate.setDate(diff));
+    
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  };
+
+  const getUniqueSlots = (allSchedules: any[]) => {
+    const slotsMap = new Map<string, { start: string, end: string }>();
+    
+    const defaultSlots = [
+      { start: "08:30", end: "09:30" },
+      { start: "08:50", end: "09:50" },
+      { start: "10:00", end: "11:00" },
+      { start: "17:30", end: "18:30" },
+      { start: "18:15", end: "19:15" },
+      { start: "18:30", end: "19:30" },
+      { start: "19:30", end: "20:30" }
+    ];
+    defaultSlots.forEach(s => {
+      slotsMap.set(`${s.start}-${s.end}`, s);
+    });
+
+    allSchedules.forEach(s => {
+      const key = `${s.start_time}-${s.end_time}`;
+      if (!slotsMap.has(key)) {
+        slotsMap.set(key, { start: s.start_time, end: s.end_time });
+      }
+    });
+
+    const sortedSlots = Array.from(slotsMap.values()).sort((a, b) => a.start.localeCompare(b.start));
+    
+    const morning = sortedSlots.filter(s => {
+      const hour = parseInt(s.start.split(":")[0]);
+      return hour < 12;
+    });
+    
+    const evening = sortedSlots.filter(s => {
+      const hour = parseInt(s.start.split(":")[0]);
+      return hour >= 12;
+    });
+
+    return { morning, evening };
+  };
+
   const fetchSchedules = async () => {
     try {
       const res = await fetch(`${API_URL}/admin/class_schedules`);
@@ -1170,19 +1223,11 @@ function AgendaModule({ members, API_URL }: any) {
   const selectedWeekday = getDayOfWeek(selectedDate);
   const isHoliday = holidays.find(h => h.date === selectedDate);
 
-  const currentDaySchedules = schedules.filter(s => s.day_of_week === selectedWeekday)
-    .sort((a,b) => a.start_time.localeCompare(b.start_time));
-
   const fetchClassBookings = async (scheduleId: number) => {
     try {
       const res = await fetch(`${API_URL}/admin/class_schedules/${scheduleId}/bookings?date=${selectedDate}`);
       if (res.ok) setClassBookings(await res.json());
     } catch (e) { console.error(e); }
-  };
-
-  const handleSelectSchedule = (schedule: any) => {
-    setActiveSchedule(schedule);
-    fetchClassBookings(schedule.id);
   };
 
   const handleToggleAttendance = async (bookingId: number, currentStatus: string) => {
@@ -1314,6 +1359,55 @@ function AgendaModule({ members, API_URL }: any) {
     return (matchesDni || matchesName) && !alreadyBooked;
   }).slice(0, 5);
 
+  const { morning: morningSlots, evening: eveningSlots } = getUniqueSlots(schedules);
+  const weekDates = getWeekDatesForDate(selectedDate);
+  const weekdayShortNames = ["L", "M", "MI", "J", "V", "S", "D"];
+
+  const renderSlotRows = (slots: typeof morningSlots) => {
+    return slots.map((slot, rowIndex) => {
+      return (
+        <tr key={rowIndex} className="border-b border-gray-200 dark:border-white/5">
+          <td className="p-3 text-center">
+            <span className="inline-block px-3 py-1.5 bg-[#6E8AC9]/10 text-gray-700 dark:text-gray-300 font-black rounded-xl border border-gray-200 dark:border-white/10 text-[9px] uppercase tracking-wider">
+              {slot.start} A {slot.end}
+            </span>
+          </td>
+          {weekdayShortNames.map((_, dayIndex) => {
+            const cellSchedules = schedules.filter(s => s.day_of_week === dayIndex && s.start_time === slot.start && s.end_time === slot.end);
+            return (
+              <td key={dayIndex} className="p-2 text-center min-w-[70px]">
+                <div className="flex flex-col gap-1 items-center justify-center">
+                  {cellSchedules.length > 0 ? cellSchedules.map(s => {
+                    const isSelected = activeSchedule?.id === s.id && getDayOfWeek(selectedDate) === dayIndex;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          const targetDate = weekDates[dayIndex];
+                          const targetDateStr = targetDate.toISOString().split('T')[0];
+                          setSelectedDate(targetDateStr);
+                          setActiveSchedule(s);
+                          fetchClassBookings(s.id);
+                        }}
+                        style={{ backgroundColor: s.color }}
+                        className={`w-14 h-9 rounded-xl text-white font-black text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md ${isSelected ? 'ring-2 ring-orange-500 scale-105' : 'opacity-90'}`}>
+                        <span>{s.code}</span>
+                      </button>
+                    );
+                  }) : (
+                    <div className="w-14 h-9 rounded-xl border border-gray-300 dark:border-white/10 bg-transparent flex items-center justify-center opacity-30 text-[9px] font-black text-gray-400">
+                      -
+                    </div>
+                  )}
+                </div>
+              </td>
+            );
+          })}
+        </tr>
+      );
+    });
+  };
+
   return (
     <div className="space-y-6 text-black dark:text-[#e0e0e0]">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1337,55 +1431,78 @@ function AgendaModule({ members, API_URL }: any) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px]">
-            <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest mb-4">
-              Clases Programadas para el {weekdayNames[selectedWeekday]}
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {currentDaySchedules.length > 0 ? currentDaySchedules.map((s) => {
-                const isActive = activeSchedule?.id === s.id;
-                return (
-                  <div key={s.id} 
-                    onClick={() => handleSelectSchedule(s)}
-                    style={{ borderColor: isActive ? s.color : 'rgba(255,255,255,0.05)' }}
-                    className={`p-5 rounded-2xl border cursor-pointer transition-all flex justify-between items-center bg-white dark:bg-[#141b29]/40 ${isActive ? 'bg-[#141b29] scale-[1.01]' : 'hover:bg-white/5'}`}>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[8px] font-black text-white" style={{ backgroundColor: s.color }}>{s.code}</span>
-                        <span className="font-black text-black dark:text-white uppercase text-[10px] truncate max-w-[120px]">{s.name}</span>
-                      </div>
-                      <p className="text-[8px] text-gray-500 dark:text-white/20 font-black uppercase tracking-wider">
-                        ⏰ {s.start_time} A {s.end_time}
-                      </p>
-                      <p className="text-[8px] text-gray-500 dark:text-white/20 font-black uppercase tracking-wider">
-                        👥 Capacidad: {s.capacity} socios
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex gap-2">
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          setNewClassData(s);
-                          setIsEditingClass(true);
-                          setIsClassModalOpen(true);
-                        }} className="text-[8px] font-black text-gray-500 dark:text-white/30 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded">Editar</button>
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClass(s.id);
-                        }} className="text-[8px] font-black text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded">Eliminar</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }) : (
-                <p className="col-span-2 text-center text-gray-400 dark:text-white/10 italic text-[10px] font-black uppercase py-8">
-                  No hay clases programadas para este día de la semana.
-                </p>
-              )}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Grilla Semanal */}
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px] space-y-6">
+            
+            {/* Clases por la Mañana */}
+            <div>
+              <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl">
+                Clases por la Mañana
+              </div>
+              <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[8px] uppercase tracking-wider font-black">
+                      <th className="p-3 text-center w-24">Hora</th>
+                      <th className="p-3 text-center">L</th>
+                      <th className="p-3 text-center">M</th>
+                      <th className="p-3 text-center">MI</th>
+                      <th className="p-3 text-center">J</th>
+                      <th className="p-3 text-center">V</th>
+                      <th className="p-3 text-center">S</th>
+                      <th className="p-3 text-center">D</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderSlotRows(morningSlots)}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            {/* Clases por la Tarde / Noche */}
+            <div>
+              <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl">
+                Clases por la Tarde/Noche
+              </div>
+              <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[8px] uppercase tracking-wider font-black">
+                      <th className="p-3 text-center w-24">Hora</th>
+                      <th className="p-3 text-center">L</th>
+                      <th className="p-3 text-center">M</th>
+                      <th className="p-3 text-center">MI</th>
+                      <th className="p-3 text-center">J</th>
+                      <th className="p-3 text-center">V</th>
+                      <th className="p-3 text-center">S</th>
+                      <th className="p-3 text-center">D</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderSlotRows(eveningSlots)}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Actividades Leyenda */}
+            <div className="pt-4 border-t border-gray-200 dark:border-white/5 text-center">
+              <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-white/20 block mb-3">Actividades</span>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center text-[8px] font-black uppercase">
+                <span className="text-[#3b82f6]">● Entrenamiento Funcional (EF)</span>
+                <span className="text-[#f97316]">● Pilates en Suelo (PS)</span>
+                <span className="text-[#ec4899]">● Entrenamiento Personalizado (EP)</span>
+                <span className="text-[#eab308]">● Salsa y Bachata (SB)</span>
+                <span className="text-[#ef4444]">● Zumba (ZB)</span>
+                <span className="text-[#06b6d4]">● Reguetón Juvenil (RJ)</span>
+              </div>
+            </div>
+
           </div>
 
+          {/* Feriados */}
           <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px]">
             <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest mb-4">Feriados Registrados en el Sistema</h4>
             <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
@@ -1407,19 +1524,31 @@ function AgendaModule({ members, API_URL }: any) {
         <div className="space-y-4">
           {activeSchedule ? (
             <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px] space-y-6">
-              <div>
-                <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest">
-                  Control de Asistencia
-                </h4>
-                <p className="text-sm font-black text-black dark:text-white uppercase leading-tight mt-1">
-                  {activeSchedule.name}
-                </p>
-                <p className="text-[8px] text-orange-400 font-black uppercase tracking-widest mt-1">
-                  📅 {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-AR')} • {activeSchedule.start_time} hs
-                </p>
-                <p className="text-[10px] font-black text-black dark:text-white mt-2">
-                  Confirmados: <span className="text-orange-500">{classBookings.length} / {activeSchedule.capacity}</span>
-                </p>
+              <div className="flex justify-between items-start gap-2">
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest">
+                    Control de Asistencia
+                  </h4>
+                  <p className="text-sm font-black text-black dark:text-white uppercase leading-tight mt-1">
+                    {activeSchedule.name}
+                  </p>
+                  <p className="text-[8px] text-orange-400 font-black uppercase tracking-widest mt-1">
+                    📅 {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-AR')} • {activeSchedule.start_time} hs
+                  </p>
+                  <p className="text-[10px] font-black text-black dark:text-white mt-2">
+                    Confirmados: <span className="text-orange-500">{classBookings.length} / {activeSchedule.capacity}</span>
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => {
+                    setNewClassData(activeSchedule);
+                    setIsEditingClass(true);
+                    setIsClassModalOpen(true);
+                  }} className="text-[8px] font-black text-gray-500 dark:text-white/30 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded">Editar</button>
+                  <button onClick={() => {
+                    handleDeleteClass(activeSchedule.id);
+                  }} className="text-[8px] font-black text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded">Eliminar</button>
+                </div>
               </div>
 
               <div className="space-y-2">
