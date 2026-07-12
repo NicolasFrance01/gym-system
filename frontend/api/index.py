@@ -65,33 +65,19 @@ def health_check(db: Session = Depends(get_db)):
         return {"status": "unhealthy", "error": str(e), "database_url_env": os.getenv("DATABASE_URL") is not None}
 
 @app.get("/debug/db")
-def debug_db(db: Session = Depends(get_db)):
-    try:
-        from sqlalchemy import text
-        tables = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")).all()
-        table_names = [t[0] for t in tables]
-        
-        # Test members count
-        try:
-            member_count = db.execute(text("SELECT count(*) FROM members")).scalar()
-        except Exception as me:
-            member_count = f"Error: {me}"
-            
-        try:
-            plan_count = db.execute(text("SELECT count(*) FROM plans")).scalar()
-        except Exception as pe:
-            plan_count = f"Error: {pe}"
-            
-        return {
-            "status": "connected",
-            "tables": table_names,
-            "member_count": member_count,
-            "plan_count": plan_count,
-            "url_mask": os.getenv("DATABASE_URL")[:30] if os.getenv("DATABASE_URL") else "None"
-        }
-    except Exception as e:
-        import traceback
-        return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
+def debug_db():
+    url = os.getenv("DATABASE_URL", "NOT_SET")
+    if url != "NOT_SET" and len(url) > 10:
+        masked_url = f"{url[:10]}...{url[-10:]}"
+    else:
+        masked_url = url
+    
+    return {
+        "env_variable_present": os.getenv("DATABASE_URL") is not None,
+        "masked_url": masked_url,
+        "current_engine": str(engine.url.drivername) if hasattr(engine, 'url') else "unknown",
+        "is_sqlite": "sqlite" in str(engine.url)
+    }
 
 @app.get("/members/{dni}")
 def get_member(dni: str, db: Session = Depends(get_db)):
