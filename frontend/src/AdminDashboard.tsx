@@ -1140,6 +1140,49 @@ function AgendaModule({ members, API_URL }: any) {
   const [newClassData, setNewClassData] = useState<{ id?: number, name: string, code: string, day_of_week: number, start_time: string, end_time: string, color: string, capacity: number }>({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: 0, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
   const [isEditingClass, setIsEditingClass] = useState(false);
 
+  const defaultActivities = [
+    { name: 'Entrenamiento Funcional', code: 'EF', color: '#3b82f6' },
+    { name: 'Pilates en Suelo', code: 'PS', color: '#f97316' },
+    { name: 'Entrenamiento Personalizado', code: 'EP', color: '#ec4899' },
+    { name: 'Salsa y Bachata', code: 'SB', color: '#eab308' },
+    { name: 'Zumba', code: 'ZB', color: '#ef4444' },
+    { name: 'Reguetón Juvenil', code: 'RJ', color: '#06b6d4' }
+  ];
+
+  const [activities, setActivities] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem('gym_activities');
+      return stored ? JSON.parse(stored) : defaultActivities;
+    } catch {
+      return defaultActivities;
+    }
+  });
+
+  const [isAddingNewActivity, setIsAddingNewActivity] = useState(false);
+  const [newActivityData, setNewActivityData] = useState({ name: '', code: '', color: '#3b82f6' });
+
+  const handleAddNewActivity = () => {
+    if (!newActivityData.name || !newActivityData.code) {
+      alert("Por favor completa el nombre y código de la actividad.");
+      return;
+    }
+    const codeUpper = newActivityData.code.substring(0, 2).toUpperCase();
+    const updated = [...activities, { name: newActivityData.name, code: codeUpper, color: newActivityData.color }];
+    setActivities(updated);
+    localStorage.setItem('gym_activities', JSON.stringify(updated));
+    
+    // Auto-select this newly created activity in the new class form
+    setNewClassData(prev => ({
+      ...prev,
+      name: newActivityData.name,
+      code: codeUpper,
+      color: newActivityData.color
+    }));
+    
+    setNewActivityData({ name: '', code: '', color: '#3b82f6' });
+    setIsAddingNewActivity(false);
+  };
+
   const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
   const getDayOfWeek = (dateStr: string) => {
@@ -1641,6 +1684,61 @@ function AgendaModule({ members, API_URL }: any) {
             </div>
             <div className="space-y-4">
               <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Seleccionar Actividad</label>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" 
+                    value={newClassData.name} 
+                    onChange={e => {
+                      const selected = activities.find(act => act.name === e.target.value);
+                      if (selected) {
+                        setNewClassData(prev => ({
+                          ...prev,
+                          name: selected.name,
+                          code: selected.code,
+                          color: selected.color
+                        }));
+                      }
+                    }}>
+                    <option value="">-- Seleccionar Actividad --</option>
+                    {activities.map((act, i) => (
+                      <option key={i} value={act.name}>{act.name} ({act.code})</option>
+                    ))}
+                  </select>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsAddingNewActivity(!isAddingNewActivity)} 
+                    className="px-3 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-xl text-[9px] font-black uppercase hover:bg-orange-500 hover:text-white transition-all whitespace-nowrap">
+                    {isAddingNewActivity ? "Cerrar" : "+ Nueva"}
+                  </button>
+                </div>
+              </div>
+
+              {isAddingNewActivity && (
+                <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl space-y-3">
+                  <p className="text-[9px] font-black uppercase text-orange-500">Nueva Actividad Personalizada</p>
+                  <div className="space-y-1">
+                    <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Nombre de Actividad</label>
+                    <input type="text" placeholder="Ej: Spinning, Yoga..." className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newActivityData.name} onChange={e=>setNewActivityData({...newActivityData, name: e.target.value})} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Código (2 letras)</label>
+                      <input type="text" maxLength={2} placeholder="Ej: SP" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500 uppercase text-center font-bold" value={newActivityData.code} onChange={e=>setNewActivityData({...newActivityData, code: e.target.value.toUpperCase()})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Color</label>
+                      <div className="flex gap-2 items-center">
+                        <input type="color" className="w-10 h-10 bg-transparent border-0 outline-none cursor-pointer rounded-xl flex-shrink-0" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                        <input type="text" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-[10px] outline-none focus:border-orange-500" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" onClick={handleAddNewActivity} className="w-full py-2 bg-orange-500 text-white rounded-xl text-[9px] font-black uppercase hover:scale-[1.01] transition-all">Guardar Actividad</button>
+                </div>
+              )}
+
+              <div className="space-y-1">
                 <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Actividad / Nombre</label>
                 <input type="text" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.name} onChange={e=>setNewClassData({...newClassData, name: e.target.value})} />
               </div>
@@ -1673,14 +1771,10 @@ function AgendaModule({ members, API_URL }: any) {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Color</label>
-                  <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.color} onChange={e=>setNewClassData({...newClassData, color: e.target.value})}>
-                    <option value="#3b82f6">Azul (Funcional)</option>
-                    <option value="#f97316">Naranja (Pilates)</option>
-                    <option value="#ec4899">Rosa (Personalizado)</option>
-                    <option value="#eab308">Amarillo (Salsa)</option>
-                    <option value="#ef4444">Rojo (Zumba)</option>
-                    <option value="#06b6d4">Celeste (Reguetón)</option>
-                  </select>
+                  <div className="flex gap-2 items-center">
+                    <input type="color" className="w-10 h-10 bg-transparent border-0 outline-none cursor-pointer rounded-xl flex-shrink-0" value={newClassData.color} onChange={e=>setNewClassData({...newClassData, color: e.target.value})} />
+                    <input type="text" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.color} onChange={e=>setNewClassData({...newClassData, color: e.target.value})} />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
