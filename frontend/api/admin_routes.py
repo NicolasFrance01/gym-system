@@ -44,7 +44,7 @@ def get_gym_stats(db: Session = Depends(get_db)):
         ]
     }
 
-@router.get("/members", response_model=List[schemas.MemberSchema])
+@router.get("/members")
 def get_all_members(db: Session = Depends(get_db)):
     try:
         members = db.query(models.Member).all()
@@ -63,7 +63,7 @@ def get_all_members(db: Session = Depends(get_db)):
                     "status": "PAGADO"
                 } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
             ]
-            result.append(schemas.MemberSchema(**m_dict))
+            result.append(m_dict)
         return result
     except Exception as e:
         import traceback
