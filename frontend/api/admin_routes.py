@@ -46,24 +46,29 @@ def get_gym_stats(db: Session = Depends(get_db)):
 
 @router.get("/members", response_model=List[schemas.MemberSchema])
 def get_all_members(db: Session = Depends(get_db)):
-    members = db.query(models.Member).all()
-    result = []
-    for m in members:
-        # Convert to dict first to avoid Pydantic mutability constraints
-        m_dict = schemas.MemberSchema.from_orm(m).dict()
-        m_dict["billing_history"] = [
-            {
-                "id": p.id,
-                "date": p.created_at.strftime("%Y-%m-%d"),
-                "amount": p.amount,
-                "plan": m.membership_type or "Musculación",
-                "method": p.method,
-                "processed_by": p.stripe_id or "—",
-                "status": "PAGADO"
-            } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
-        ]
-        result.append(schemas.MemberSchema(**m_dict))
-    return result
+    try:
+        members = db.query(models.Member).all()
+        result = []
+        for m in members:
+            # Convert to dict first to avoid Pydantic mutability constraints
+            m_dict = schemas.MemberSchema.from_orm(m).dict()
+            m_dict["billing_history"] = [
+                {
+                    "id": p.id,
+                    "date": p.created_at.strftime("%Y-%m-%d"),
+                    "amount": p.amount,
+                    "plan": m.membership_type or "Musculación",
+                    "method": p.method,
+                    "processed_by": p.stripe_id or "—",
+                    "status": "PAGADO"
+                } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
+            ]
+            result.append(schemas.MemberSchema(**m_dict))
+        return result
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"Error: {e}\nTraceback:\n{tb}")
 
 @router.post("/members", response_model=schemas.MemberSchema)
 def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
