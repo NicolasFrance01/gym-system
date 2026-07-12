@@ -777,9 +777,9 @@ export default function UserApp() {
                       return (
                         <div key={s.id} className="p-5 bg-white/5 rounded-3xl border border-white/5 flex justify-between items-center">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded text-[8px] font-black text-white" style={{backgroundColor: s.color}}>{s.code}</span>
-                              <span className="font-black text-white uppercase text-[11px] truncate max-w-[120px]">{s.name}</span>
+                            <div className="flex items-start gap-2">
+                              <span className="px-2 py-0.5 rounded text-[8px] font-black text-white mt-0.5 flex-shrink-0" style={{backgroundColor: s.color}}>{s.code}</span>
+                              <span className="font-black text-white uppercase text-[11px] leading-tight">{s.name}</span>
                             </div>
                             <p className="text-[9px] text-white/30 font-black uppercase tracking-wider">⏰ {s.start_time} A {s.end_time}</p>
                             <p className="text-[9px] text-[#F38E26] font-black uppercase tracking-wider">👥 Confirmados: {s.bookings_count} / {s.capacity}</p>
