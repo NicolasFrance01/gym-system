@@ -108,11 +108,20 @@ export default function UserApp() {
       
       const data = await res.json();
       if (res.ok) {
+        const loadedRoutine = Array.isArray(data.member.routine) && data.member.routine.length > 0
+          ? data.member.routine
+          : [
+              { id: 1, name: "Press de Banca", sets: "4", reps: "10", weight: 0, completed: false },
+              { id: 2, name: "Sentadillas", sets: "3", reps: "12", weight: 0, completed: false },
+              { id: 3, name: "Jalón al Pecho", sets: "4", reps: "10", weight: 0, completed: false }
+            ];
+
         setUserData(prev => ({
           ...prev,
           name: data.member.name,
           dni: data.member.dni,
           plan: data.member.membership_type,
+          currentRoutine: loadedRoutine,
           streak: 5
         }));
         setIsAuthenticated(true);
@@ -365,6 +374,7 @@ export default function UserApp() {
              </div>
           </div>
         );
+      case 'Calendar':
         const allWeekSchedules = Object.values(weekSchedulesMap).flat();
         const getUniqueSlots = (allSchedules: any[]) => {
           const slotsMap = new Map<string, { start: string, end: string }>();

@@ -12,6 +12,7 @@ class MemberBase(BaseModel):
     password: Optional[str] = "123"
     membership_type: Optional[str] = None
     wellness_data: Optional[Dict] = None
+    routine: Optional[List[Dict]] = None
 
 class MemberCreate(MemberBase):
     joined_at: Optional[datetime] = None
@@ -100,3 +101,10 @@ class StaffSchema(StaffBase):
 
     class Config:
         from_attributes = True
+
+class UserLogin(BaseModel):
+    dni: str
+    password: str
+
+class PasswordChange(BaseModel):
+    new_password: str

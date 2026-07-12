@@ -463,7 +463,7 @@ export default function AdminDashboard() {
       {(isModalOpen || isPaymentModalOpen) && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-10 bg-black/50 dark:bg-black/90 backdrop-blur-md overflow-y-auto">
           {isModalOpen && (
-            <div className={`bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[40px] w-full ${modalType === 'workout' || modalType === 'history' ? 'max-w-4xl' : 'max-w-md'} shadow-2xl animate-in zoom-in duration-300`}>
+            <div className={`bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[40px] w-full ${modalType === 'workout' || modalType === 'history' ? 'max-w-4xl' : 'max-w-md'} shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar`}>
               <div className="flex justify-between items-center mb-6"><h2 className="text-lg font-black uppercase tracking-widest text-orange-500">{modalType}</h2><button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400 hover:text-black dark:text-white/20 dark:hover:text-white transition-colors"/></button></div>
               <div className="space-y-3">
                 {modalType === 'history' && (
@@ -520,6 +520,75 @@ export default function AdminDashboard() {
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Contraseña de Acceso</label>
                       <input type="text" placeholder="Asignar Contraseña" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.password || ''} onChange={e => setSelectedItem({...selectedItem, password: e.target.value})} />
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200 dark:border-white/5 space-y-3">
+                      <p className="text-[9px] font-black uppercase text-orange-500 tracking-wider ml-2">Plan de Entrenamiento / Rutina</p>
+                      
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                        {(selectedItem?.routine || []).map((ex: any, idx: number) => (
+                          <div key={idx} className="flex gap-2 items-center bg-gray-50 dark:bg-black/40 p-2 rounded-xl border border-gray-200 dark:border-white/5">
+                            <input 
+                              type="text" 
+                              placeholder="Ejercicio" 
+                              className="flex-1 bg-transparent border-0 outline-none text-black dark:text-white text-[10px] uppercase font-black px-1" 
+                              value={ex.name} 
+                              onChange={e => {
+                                const newRoutine = [...(selectedItem.routine || [])];
+                                newRoutine[idx].name = e.target.value;
+                                setSelectedItem({...selectedItem, routine: newRoutine});
+                              }} 
+                            />
+                            <input 
+                              type="text" 
+                              placeholder="Sets" 
+                              className="w-10 bg-transparent border-0 outline-none text-black dark:text-white text-[10px] text-center" 
+                              value={ex.sets} 
+                              onChange={e => {
+                                const newRoutine = [...(selectedItem.routine || [])];
+                                newRoutine[idx].sets = e.target.value;
+                                setSelectedItem({...selectedItem, routine: newRoutine});
+                              }} 
+                            />
+                            <span className="text-[8px] text-gray-500 font-bold">x</span>
+                            <input 
+                              type="text" 
+                              placeholder="Reps" 
+                              className="w-10 bg-transparent border-0 outline-none text-black dark:text-white text-[10px] text-center" 
+                              value={ex.reps} 
+                              onChange={e => {
+                                const newRoutine = [...(selectedItem.routine || [])];
+                                newRoutine[idx].reps = e.target.value;
+                                setSelectedItem({...selectedItem, routine: newRoutine});
+                              }} 
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                const newRoutine = (selectedItem.routine || []).filter((_: any, i: number) => i !== idx);
+                                setSelectedItem({...selectedItem, routine: newRoutine});
+                              }} 
+                              className="text-red-500 hover:text-red-400 p-1 font-black"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        {(selectedItem?.routine || []).length === 0 && (
+                          <p className="text-center text-gray-400 dark:text-white/15 italic text-[9px] font-black uppercase py-4">Sin ejercicios asignados. Usará rutina por defecto.</p>
+                        )}
+                      </div>
+                      
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const newRoutine = [...(selectedItem?.routine || []), { id: Date.now(), name: '', sets: '3', reps: '12', weight: 0, completed: false }];
+                          setSelectedItem({...selectedItem, routine: newRoutine});
+                        }} 
+                        className="w-full py-2 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-xl text-[9px] font-black uppercase hover:bg-orange-500 hover:text-white transition-colors"
+                      >
+                        + Agregar Ejercicio
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1418,14 +1487,33 @@ function AgendaModule({ members, API_URL }: any) {
           {weekdayShortNames.map((_, dayIndex) => {
             const cellSchedules = schedules.filter(s => s.day_of_week === dayIndex && s.start_time === slot.start && s.end_time === slot.end);
             return (
-              <td key={dayIndex} className="p-2 text-center min-w-[70px]">
+              <td 
+                key={dayIndex} 
+                className="p-2 text-center min-w-[70px] cursor-pointer hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all rounded-xl"
+                title="Doble click para agregar clase en este horario"
+                onDoubleClick={() => {
+                  setNewClassData({
+                    name: 'Entrenamiento Funcional',
+                    code: 'EF',
+                    day_of_week: dayIndex,
+                    start_time: slot.start,
+                    end_time: slot.end,
+                    color: '#3b82f6',
+                    capacity: 15
+                  });
+                  setIsEditingClass(false);
+                  setIsClassModalOpen(true);
+                }}
+              >
                 <div className="flex flex-col gap-1 items-center justify-center">
                   {cellSchedules.length > 0 ? cellSchedules.map(s => {
                     const isSelected = activeSchedule?.id === s.id && getDayOfWeek(selectedDate) === dayIndex;
                     return (
                       <button
                         key={s.id}
-                        onClick={() => {
+                        onDoubleClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const targetDate = weekDates[dayIndex];
                           const targetDateStr = targetDate.toISOString().split('T')[0];
                           setSelectedDate(targetDateStr);
@@ -1677,7 +1765,7 @@ function AgendaModule({ members, API_URL }: any) {
 
       {isClassModalOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm">
+          <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-sm font-black uppercase text-orange-500">{isEditingClass ? 'Editar Clase Fija' : 'Añadir Clase Fija'}</h4>
               <button onClick={() => setIsClassModalOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
@@ -1715,22 +1803,22 @@ function AgendaModule({ members, API_URL }: any) {
               </div>
 
               {isAddingNewActivity && (
-                <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl space-y-3">
+                <div className="p-4 bg-[#141b29]/60 dark:bg-black/40 border border-orange-500/20 rounded-2xl space-y-3">
                   <p className="text-[9px] font-black uppercase text-orange-500">Nueva Actividad Personalizada</p>
                   <div className="space-y-1">
                     <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Nombre de Actividad</label>
-                    <input type="text" placeholder="Ej: Spinning, Yoga..." className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newActivityData.name} onChange={e=>setNewActivityData({...newActivityData, name: e.target.value})} />
+                    <input type="text" placeholder="Ej: Spinning, Yoga..." className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newActivityData.name} onChange={e=>setNewActivityData({...newActivityData, name: e.target.value})} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Código (2 letras)</label>
-                      <input type="text" maxLength={2} placeholder="Ej: SP" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500 uppercase text-center font-bold" value={newActivityData.code} onChange={e=>setNewActivityData({...newActivityData, code: e.target.value.toUpperCase()})} />
+                      <input type="text" maxLength={2} placeholder="Ej: SP" className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500 uppercase text-center font-bold" value={newActivityData.code} onChange={e=>setNewActivityData({...newActivityData, code: e.target.value.toUpperCase()})} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Color</label>
                       <div className="flex gap-2 items-center">
-                        <input type="color" className="w-10 h-10 bg-transparent border-0 outline-none cursor-pointer rounded-xl flex-shrink-0" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
-                        <input type="text" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-[10px] outline-none focus:border-orange-500" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                        <input type="color" className="w-10 h-10 p-0 bg-transparent border-0 outline-none cursor-pointer rounded-xl flex-shrink-0" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                        <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-black dark:text-white text-[10px] outline-none focus:border-orange-500" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
                       </div>
                     </div>
                   </div>

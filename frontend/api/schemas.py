@@ -39,6 +39,7 @@ class MemberBase(BaseModel):
     password: Optional[str] = "123"
     membership_type: Optional[str] = None
     wellness_data: Optional[Dict] = None
+    routine: Optional[List[Dict]] = None
 
 class MemberCreate(BaseModel):
     dni: str
@@ -50,6 +51,7 @@ class MemberCreate(BaseModel):
     password: Optional[str] = "123"
     membership_type: Optional[str] = None
     joined_at: Optional[datetime] = None
+    routine: Optional[List[Dict]] = None
 
 class MemberSchema(MemberBase):
     id: int

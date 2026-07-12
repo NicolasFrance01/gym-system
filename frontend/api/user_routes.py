@@ -26,7 +26,8 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
             "phone": member.phone,
             "email": member.email,
             "membership_type": member.membership_type,
-            "status": member.status
+            "status": member.status,
+            "routine": member.routine
         }
     }
 

@@ -20,6 +20,7 @@ class Member(Base):
     
     # Wellness metrics (JSON for flexibility in prototyping)
     wellness_data = Column(JSON, nullable=True) # {hrv: 65, sleep_quality: 0.8, etc}
+    routine = Column(JSON, nullable=True)
     
     payments = relationship("Payment", back_populates="member")
     bookings = relationship("Booking", back_populates="member")
