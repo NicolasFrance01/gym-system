@@ -25,18 +25,16 @@ import uvicorn
 from main import app as fastapi_app
 
 def compute_status(member) -> str:
-    """Calcula el estado según el ciclo mensual desde joined_at. INACTIVO se respeta siempre."""
+    """Calcula el estado según los días transcurridos desde joined_at. INACTIVO se respeta siempre."""
     if member.status == "INACTIVO":
         return "INACTIVO"
     if not member.joined_at:
         return member.status
     today = datetime.datetime.utcnow()
-    days_since = max(0, (today - member.joined_at).days)
-    days_in_cycle = days_since % 30
-    days_remaining = 30 - days_in_cycle
-    if days_since > 0 and days_in_cycle == 0:
+    days_since = (today - member.joined_at).days
+    if days_since >= 30:
         return "DEUDA"
-    if days_remaining <= 7:
+    elif days_since >= 23:
         return "POR VENCER"
     return "ACTIVO"
 
@@ -255,6 +253,44 @@ class GymDesktopKiosk:
                 status = compute_status(member)
                 if status != member.status:
                     member.status = status
+                    db.commit()
+
+                # Calculate plan info
+                plan = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+                days_per_week = plan.days_per_week if plan else 3
+                total_sessions = days_per_week * 4
+
+                today = datetime.datetime.utcnow()
+                days_since = (today - member.joined_at).days if member.joined_at else 0
+                days_left = max(0, 30 - days_since)
+
+                # Count sessions used in current cycle BEFORE registering this check-in
+                cycle_start = member.joined_at.replace(hour=0, minute=0, second=0, microsecond=0) if member.joined_at else today
+                sessions_used = db.query(models.Checkin).filter(
+                    models.Checkin.member_id == member.id,
+                    models.Checkin.checkin_at >= cycle_start
+                ).count()
+
+                # Block conditions
+                if status == "INACTIVO":
+                    sessions_remaining = max(0, total_sessions - sessions_used)
+                    plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} pases disponibles\nSocio Inactivo"
+                    self.cv_engine.set_member_status(member.name, "INACTIVO")
+                    self.root.after(0, lambda: self.render_status_result(member.name, "INACTIVO", dni, plan_info))
+                    return
+
+                if status == "DEUDA":
+                    sessions_remaining = max(0, total_sessions - sessions_used)
+                    plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} de {total_sessions} pases\nSuscripción Vencida"
+                    self.cv_engine.set_member_status(member.name, "DEUDA")
+                    self.root.after(0, lambda: self.render_status_result(member.name, "DEUDA", dni, plan_info))
+                    return
+
+                if sessions_used >= total_sessions:
+                    plan_info = f"{member.membership_type or 'Plan'}\n0 de {total_sessions} pases\nLímite de ingresos alcanzado"
+                    self.cv_engine.set_member_status(member.name, "SIN PASES")
+                    self.root.after(0, lambda: self.render_status_result(member.name, "SIN PASES", dni, plan_info))
+                    return
 
                 # Record check-in
                 now_time = datetime.datetime.utcnow()
@@ -265,25 +301,10 @@ class GymDesktopKiosk:
                 db.add(checkin)
                 db.commit()
 
-                # Calculate plan info
-                plan = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
-                days_per_week = plan.days_per_week if plan else 3
-                total_sessions = days_per_week * 4
-
-                today = datetime.datetime.utcnow()
-                days_since = max(0, (today - member.joined_at).days) if member.joined_at else 0
-                days_in_cycle = days_since % 30
-                days_left = 30 - days_in_cycle
-
-                # Count sessions used in current cycle (including this check-in)
-                cycle_start = (member.joined_at + datetime.timedelta(days=(days_since // 30) * 30)) if member.joined_at else today
-                sessions_used = db.query(models.Checkin).filter(
-                    models.Checkin.member_id == member.id,
-                    models.Checkin.checkin_at >= cycle_start
-                ).count()
+                # Recount checkins including this one
+                sessions_used += 1
                 sessions_remaining = max(0, total_sessions - sessions_used)
-
-                plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} días disponibles\n{days_left}d restantes a renovar"
+                plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} de {total_sessions} pases\n{days_left}d restantes a renovar"
 
                 self.cv_engine.set_member_status(member.name, status)
                 self.root.after(0, lambda: self.render_status_result(member.name, status, dni, plan_info))

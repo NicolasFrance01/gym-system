@@ -16,6 +16,17 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     if member.password != credentials.password:
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
     
+    # Recalculate status from joined_at on login to keep it fresh
+    if member.joined_at and member.status != 'INACTIVO':
+        days_since = (datetime.datetime.utcnow() - member.joined_at).days
+        if days_since >= 30:
+            member.status = 'DEUDA'
+        elif days_since >= 23:
+            member.status = 'POR VENCER'
+        else:
+            member.status = 'ACTIVO'
+        db.commit()
+        
     return {
         "status": "success",
         "member": {

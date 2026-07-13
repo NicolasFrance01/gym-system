@@ -104,12 +104,10 @@ def update_member(member_id: int, member_data: schemas.MemberCreate, db: Session
     # Recalculate status from joined_at so editing the start date reflects correctly
     joined = data['joined_at']
     if joined and data.get('status') != 'INACTIVO':
-        days_since = max(0, (datetime.datetime.utcnow() - joined).days)
-        days_in_cycle = days_since % 30
-        days_remaining = 30 - days_in_cycle
-        if days_since > 0 and days_in_cycle == 0:
+        days_since = (datetime.datetime.utcnow() - joined).days
+        if days_since >= 30:
             data['status'] = 'DEUDA'
-        elif days_remaining <= 7:
+        elif days_since >= 23:
             data['status'] = 'POR VENCER'
         else:
             data['status'] = 'ACTIVO'
@@ -132,8 +130,7 @@ def get_member_checkins(member_id: int, db: Session = Depends(get_db)):
 
     today = datetime.datetime.utcnow()
     if member.joined_at:
-        days_since = max(0, (today - member.joined_at).days)
-        cycle_start = member.joined_at + datetime.timedelta(days=(days_since // 30) * 30)
+        cycle_start = member.joined_at
     else:
         cycle_start = today - datetime.timedelta(days=30)
 
