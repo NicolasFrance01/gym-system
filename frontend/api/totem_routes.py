@@ -14,6 +14,21 @@ def get_totem_member(dni: str, db: Session = Depends(get_db)):
     if not member:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
+    if member.status != "INACTIVO" and member.joined_at:
+        now = datetime.datetime.utcnow()
+        days_since = (now - member.joined_at).days
+        if days_since >= 30:
+            new_status = "DEUDA"
+        elif days_since >= 23:
+            new_status = "POR VENCER"
+        else:
+            new_status = "ACTIVO"
+        
+        if member.status != new_status:
+            member.status = new_status
+            db.commit()
+            db.refresh(member)
+
     wellness = member.wellness_data or {}
     return {
         "id": member.id,

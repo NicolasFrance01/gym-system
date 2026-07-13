@@ -898,7 +898,7 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
     const matchSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.dni.includes(searchQuery);
     const matchStatus = statusFilter === 'TODOS' || m.status === statusFilter;
     return matchSearch && matchStatus;
-  });
+  }).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-4">
@@ -926,22 +926,22 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
           const { daysIn, daysLeft } = memberDaysInfo(m.effective_joined_at || m.joined_at, m.status);
           return (
             <div key={m.id} className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5 transition-all group overflow-hidden" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.15)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor=''}}>
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shrink-0" style={{backgroundColor:'#212C40', color:'#F38E26'}}>{m.name[0]}</div>
-                  <div className="min-w-0">
-                    <p className="font-black text-black dark:text-white text-[10px] uppercase truncate">{m.name}</p>
-                    <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black truncate">{m.membership_type || '—'}</p>
+              <div className="flex items-start gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shrink-0" style={{backgroundColor:'#212C40', color:'#F38E26'}}>{m.name[0]}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-black text-black dark:text-white text-[10px] uppercase break-words leading-tight">{m.name}</p>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black truncate">{m.membership_type || '—'}</span>
+                    <StatusBadge status={m.status} />
                   </div>
                 </div>
-                <StatusBadge status={m.status} />
               </div>
               <div className="mb-3 px-1">
                 <p className="text-[7px] text-gray-400 dark:text-white/20 font-black uppercase">
                   {`Día ${daysIn}/30 · ${daysLeft <= 0 ? '0d restantes' : `${daysLeft}d restantes`}`}
                 </p>
                 <div className="w-full h-1 bg-gray-100 dark:bg-white/5 rounded-full mt-1 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${m.status === 'DEUDA' ? 'bg-red-500' : daysLeft <= 7 ? 'bg-red-500' : daysLeft <= 14 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: m.status === 'DEUDA' ? '100%' : `${Math.min(100, (daysIn / 30) * 100)}%` }} />
+                  <div className={`h-full rounded-full transition-all ${m.status === 'DEUDA' ? 'bg-red-500' : m.status === 'POR VENCER' ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: m.status === 'DEUDA' ? '100%' : `${Math.min(100, (daysIn / 30) * 100)}%` }} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">

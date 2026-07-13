@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 import os
+import datetime
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import asyncio
@@ -46,6 +47,21 @@ def get_member(dni: str, db: Session = Depends(get_db)):
     if not member:
         return {"error": "Member not found"}
     
+    if member.status != "INACTIVO" and member.joined_at:
+        now = datetime.datetime.utcnow()
+        days_since = (now - member.joined_at).days
+        if days_since >= 30:
+            new_status = "DEUDA"
+        elif days_since >= 23:
+            new_status = "POR VENCER"
+        else:
+            new_status = "ACTIVO"
+        
+        if member.status != new_status:
+            member.status = new_status
+            db.commit()
+            db.refresh(member)
+
     # Logic for access control
     cv_engine.set_member_status(member.name, member.status)
     return member

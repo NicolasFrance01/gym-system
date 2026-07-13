@@ -47,6 +47,24 @@ def get_gym_stats(db: Session = Depends(get_db)):
 @router.get("/members", response_model=List[schemas.MemberSchema])
 def get_all_members(db: Session = Depends(get_db)):
     members = db.query(models.Member).all()
+    now = datetime.datetime.utcnow()
+    updated = False
+    for m in members:
+        if m.status != "INACTIVO" and m.joined_at:
+            days_since = (now - m.joined_at).days
+            if days_since >= 30:
+                new_status = "DEUDA"
+            elif days_since >= 23:
+                new_status = "POR VENCER"
+            else:
+                new_status = "ACTIVO"
+            
+            if m.status != new_status:
+                m.status = new_status
+                updated = True
+    if updated:
+        db.commit()
+
     result = []
     for m in members:
         # Convert to dict first to avoid Pydantic mutability constraints
