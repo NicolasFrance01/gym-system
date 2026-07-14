@@ -1,4 +1,4 @@
-import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock } from 'lucide-react';
+import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Tooltip, ResponsiveContainer, CartesianGrid, XAxis, YAxis, LineChart, Line, Legend } from 'recharts';
 
@@ -39,6 +39,30 @@ export default function UserApp() {
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [weekOffset, setWeekOffset] = useState(0);
   const [weekSchedulesMap, setWeekSchedulesMap] = useState<Record<string, any[]>>({});
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   const getWeekDates = (offsetWeeks: number) => {
     const today = new Date();
@@ -235,23 +259,31 @@ export default function UserApp() {
     }
   };
 
-  const handleCancelBooking = async (bookingId: number) => {
-    if (!confirm("¿Cancelar esta reserva?")) return;
-    try {
-      const res = await fetch(`${API_URL}/user/${userData.dni}/bookings/${bookingId}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        alert("Reserva cancelada");
-        fetchUserBookings(userData.dni);
-        if (viewMode === 'week') {
-          fetchWeekSchedules(getWeekDates(weekOffset));
+  const handleCancelBooking = (bookingId: number) => {
+    showConfirm(
+      "¿Cancelar Reserva?",
+      "¿Estás seguro de que deseas cancelar esta reserva de clase?",
+      async () => {
+        try {
+          const res = await fetch(`${API_URL}/user/${userData.dni}/bookings/${bookingId}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            alert("Reserva cancelada");
+            fetchUserBookings(userData.dni);
+            if (viewMode === 'week') {
+              fetchWeekSchedules(getWeekDates(weekOffset));
+            }
+          } else {
+            const data = await res.json();
+            alert(data.detail || "Error al cancelar");
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Error de conexión");
         }
-      } else {
-        const data = await res.json();
-        alert(data.detail || "Error al cancelar");
       }
-    } catch (e) { console.error(e); }
+    );
   };
 
   const todayBooking = bookings.find(b => {
@@ -356,7 +388,7 @@ export default function UserApp() {
       case 'Evolution':
         return (
           <div className="h-full flex flex-col min-h-0 justify-center animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
-             <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 p-5 rounded-3xl shadow-2xl flex flex-col justify-between h-full min-h-0">
+             <div className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col justify-between h-full min-h-0">
                 <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter flex-shrink-0"><TrendingUp className="text-orange-500" size={22}/> Mi Progreso</h3>
                 <div className="flex-1 min-h-0 my-4">
                    <ResponsiveContainer width="100%" height="100%">
@@ -543,11 +575,13 @@ export default function UserApp() {
                                                     key={s.id}
                                                     onClick={async () => {
                                                       if (isAlreadyBooked) {
-                                                        await handleCancelBooking(userBooking.id);
+                                                        handleCancelBooking(userBooking.id);
                                                       } else {
-                                                        if (confirm(`¿Reservar clase de ${s.name} para el ${date.toLocaleDateString('es-AR')} a las ${s.start_time} HS?`)) {
-                                                          await handleBookClassFromWeek(s.id, dateStr);
-                                                        }
+                                                        showConfirm(
+                                                          "Confirmar Reserva",
+                                                          `¿Reservar clase de ${s.name} para el ${date.toLocaleDateString('es-AR')} a las ${s.start_time} HS?`,
+                                                          () => handleBookClassFromWeek(s.id, dateStr)
+                                                        );
                                                       }
                                                     }}
                                                     style={{ backgroundColor: s.color }}
@@ -623,11 +657,13 @@ export default function UserApp() {
                                                     key={s.id}
                                                     onClick={async () => {
                                                       if (isAlreadyBooked) {
-                                                        await handleCancelBooking(userBooking.id);
+                                                        handleCancelBooking(userBooking.id);
                                                       } else {
-                                                        if (confirm(`¿Reservar clase de ${s.name} para el ${date.toLocaleDateString('es-AR')} a las ${s.start_time} HS?`)) {
-                                                          await handleBookClassFromWeek(s.id, dateStr);
-                                                        }
+                                                        showConfirm(
+                                                          "Confirmar Reserva",
+                                                          `¿Reservar clase de ${s.name} para el ${date.toLocaleDateString('es-AR')} a las ${s.start_time} HS?`,
+                                                          () => handleBookClassFromWeek(s.id, dateStr)
+                                                        );
                                                       }
                                                     }}
                                                     style={{ backgroundColor: s.color }}
@@ -735,7 +771,7 @@ export default function UserApp() {
                 <div><h2 className="text-3xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2><p className="text-white/30 text-[10px] font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
                 <div onClick={()=>setActiveTab('Profile')} className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all"><User size={20} className="text-blue-500" /></div>
              </header>
-             <section className="bg-white/[0.04] backdrop-blur-xl p-8 rounded-[35px] border border-white/10 shadow-2xl text-center relative overflow-hidden group">
+             <section className="bg-white/[0.08] backdrop-blur-2xl p-8 rounded-[35px] border border-white/20 border-t-white/35 border-l-white/35 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] text-center relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(243,142,38,0.15),transparent_70%)]" />
                   <p className="text-[10px] uppercase tracking-[0.4em] font-black mb-6 relative z-10 animate-pulse" style={{color:'#F38E26'}}>Racha de Fuego</p>
                   <div className="relative z-10 flex items-center justify-center gap-4 mb-6">
@@ -779,7 +815,11 @@ export default function UserApp() {
                               <button onClick={() => handleCancelBooking(userBooking.id)} className="px-3 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase whitespace-nowrap">Cancelar</button>
                             ) : (
                               <button 
-                                onClick={() => handleBookClass(s.id)} 
+                                onClick={() => showConfirm(
+                                  "Confirmar Reserva",
+                                  `¿Deseas reservar la clase de ${s.name} para el día ${selectedDay} a las ${s.start_time} HS?`,
+                                  () => handleBookClass(s.id)
+                                )}
                                 disabled={s.bookings_count >= s.capacity}
                                 className="px-3 py-2 bg-green-500 text-white rounded-xl text-[8px] font-black uppercase disabled:opacity-50 whitespace-nowrap">
                                 Reservar
@@ -797,15 +837,56 @@ export default function UserApp() {
         </div>
       )}
       <main className="flex-1 w-full max-w-lg mx-auto min-h-0 overflow-hidden">{renderTabContent()}</main>
-       <nav className="fixed bottom-4 left-4 right-4 h-16 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl z-50 flex items-center justify-around px-4 shadow-lg animate-in slide-in-from-bottom-10 duration-1000">
-          <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={22}/>} />
-          <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={22}/>} />
-          <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={22}/>} />
-          <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={22}/>} />
-       </nav>
-     </div>
-   );
- }
+      
+      {/* Brighter Liquid Glass Bottom Navigation Dock */}
+      <nav className="fixed bottom-4 left-4 right-4 h-16 bg-white/[0.1] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 rounded-2xl z-50 flex items-center justify-around px-4 shadow-lg shadow-black/40 animate-in slide-in-from-bottom-10 duration-1000">
+         <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={22}/>} />
+         <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={22}/>} />
+         <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={22}/>} />
+         <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={22}/>} />
+      </nav>
+
+      {/* Premium custom confirm dialog with opaque backdrop blur and bright glass styling */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xs bg-[#1f293d]/90 border border-white/20 border-t-white/35 border-l-white/35 rounded-3xl p-6 shadow-[0_25px_60px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] overflow-hidden">
+            {/* Top orange glow tint */}
+            <div className="absolute -top-10 -left-10 w-24 h-24 bg-[#F38E26]/20 rounded-full blur-2xl pointer-events-none" />
+            
+            {/* Icon */}
+            {confirmModal.title.includes("Cancelar") ? (
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mb-4 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.3)] animate-bounce">
+                <AlertTriangle size={24} strokeWidth={2.5} />
+              </div>
+            ) : (
+              <div className="mx-auto w-12 h-12 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center mb-4 border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-pulse">
+                <Check size={24} strokeWidth={3} />
+              </div>
+            )}
+
+            {/* Content */}
+            <h4 className="text-base font-black text-white text-center uppercase tracking-tight mb-2">{confirmModal.title}</h4>
+            <p className="text-[10px] text-white/70 text-center leading-relaxed mb-6 font-bold">{confirmModal.message}</p>
+            
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} 
+                className="flex-1 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 rounded-xl text-[9px] font-black uppercase text-white transition-all">
+                Cerrar
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm} 
+                className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase text-white shadow-lg active:scale-95 transition-all ${confirmModal.title.includes("Cancelar") ? 'bg-red-500 hover:bg-red-600 shadow-red-500/25' : 'bg-green-500 hover:bg-green-600 shadow-green-500/25'}`}>
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
  
  function NavBtn({ active, onClick, icon }: any) {
    return (
