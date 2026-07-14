@@ -16,7 +16,7 @@ export default function UserApp() {
 
   // User Data State
   const [userData, setUserData] = useState({
-    name: "", dni: "", plan: "Miembro", maxDaysPerWeek: 7, streak: 0,
+    name: "", dni: "", plan: "Miembro", maxDaysPerWeek: 7, streak: 0, streakMessage: "",
     currentRoutine: [
       { id: 1, name: "Press de Banca", sets: "4", reps: "10", weight: 0, completed: false },
       { id: 2, name: "Sentadillas", sets: "3", reps: "12", weight: 0, completed: false },
@@ -146,7 +146,8 @@ export default function UserApp() {
           dni: data.member.dni,
           plan: data.member.membership_type,
           currentRoutine: loadedRoutine,
-          streak: data.member.streak || 0
+          streak: data.member.streak || 0,
+          streakMessage: data.member.streak_message || ""
         }));
         setIsAuthenticated(true);
         fetchUserBookings(data.member.dni);
@@ -778,10 +779,13 @@ export default function UserApp() {
              <section className="bg-white/[0.08] backdrop-blur-2xl p-8 rounded-[35px] border border-white/20 border-t-white/35 border-l-white/35 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] text-center relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(243,142,38,0.15),transparent_70%)]" />
                   <p className="text-[10px] uppercase tracking-[0.4em] font-black mb-6 relative z-10 animate-pulse" style={{color:'#F38E26'}}>Racha de Fuego</p>
-                  <div className="relative z-10 flex items-center justify-center gap-4 mb-6">
+                  <div className="relative z-10 flex items-center justify-center gap-4 mb-2">
                     <div className="p-4 bg-orange-500/10 rounded-full text-orange-500"><Zap size={32} strokeWidth={3} /></div>
                     <span className="text-7xl font-black tracking-tighter text-white">{userData.streak}</span>
                   </div>
+                  <p className="relative z-10 text-[10px] font-black uppercase tracking-wider text-white/70 mb-6 max-w-[280px] mx-auto leading-relaxed">
+                    {userData.streakMessage || "¡Vamos por un nuevo comienzo con todo! ⚡"}
+                  </p>
                   <div onClick={()=>setActiveTab('Evolution')} className="py-3 px-6 rounded-2xl border text-[9px] sm:text-[10px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-2 w-fit" style={{backgroundColor:'rgba(243,142,38,0.05)', borderColor:'rgba(243,142,38,0.15)', color:'#F38E26'}} onMouseEnter={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='#F38E26';(e.currentTarget as HTMLDivElement).style.color='#fff'}} onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='rgba(243,142,38,0.05)';(e.currentTarget as HTMLDivElement).style.color='#F38E26'}}>Explorar Evolución <ArrowUpRight size={14}/></div>
              </section>
           </div>

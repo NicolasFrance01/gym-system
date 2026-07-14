@@ -105,8 +105,17 @@ def update_member(member_id: int, member_data: schemas.MemberCreate, db: Session
 
 @router.get("/members/{member_id}/checkins")
 def get_member_checkins(member_id: int, db: Session = Depends(get_db)):
-    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).order_by(models.Checkin.checkin_at.desc()).all()
-    return [{"id": c.id, "checkin_at": c.checkin_at.strftime("%Y-%m-%d %H:%M")} for c in checkins]
+    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
+    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.strftime("%Y-%m-%d %H:%M"), "type": "Tótem"} for c in checkins]
+    
+    bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member_id,
+        models.Booking.status == "attended"
+    ).all()
+    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.strftime("%Y-%m-%d %H:%M"), "type": b.class_name} for b in bookings]
+    
+    all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
+    return all_attendance
 
 @router.put("/members/{member_id}/status")
 def update_member_status(member_id: int, status: str, db: Session = Depends(get_db)):

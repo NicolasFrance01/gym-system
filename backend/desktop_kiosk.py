@@ -264,12 +264,17 @@ class GymDesktopKiosk:
                 days_since = (today - member.joined_at).days if member.joined_at else 0
                 days_left = max(0, 30 - days_since)
 
-                # Count sessions used in current cycle BEFORE registering this check-in
                 cycle_start = member.joined_at.replace(hour=0, minute=0, second=0, microsecond=0) if member.joined_at else today
-                sessions_used = db.query(models.Checkin).filter(
+                sessions_used_totem = db.query(models.Checkin).filter(
                     models.Checkin.member_id == member.id,
                     models.Checkin.checkin_at >= cycle_start
                 ).count()
+                sessions_used_bookings = db.query(models.Booking).filter(
+                    models.Booking.member_id == member.id,
+                    models.Booking.status == "attended",
+                    models.Booking.start_time >= cycle_start
+                ).count()
+                sessions_used = sessions_used_totem + sessions_used_bookings
 
                 # Block conditions
                 if status == "INACTIVO":
