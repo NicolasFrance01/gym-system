@@ -721,46 +721,50 @@ export default function UserApp() {
         );
       case 'Profile':
         return (
-          <div className="space-y-6 animate-in slide-in-from-bottom-8">
-             <div className="bg-[#141b29] border border-white/5 p-10 rounded-[50px] flex flex-col items-center">
-                <div className="w-32 h-32 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full flex items-center justify-center text-5xl font-black shadow-2xl mb-6 ring-4 ring-white/5">{userData.name[0]}</div>
-                <h2 className="text-3xl font-black text-white mb-2">{userData.name}</h2>
-                <span className="px-4 py-1.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-10">{userData.plan}</span>
-                
-                <div className="w-full space-y-4 pt-10 border-t border-white/5">
-                   <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Dumbbell size={14}/> Historial de Entrenamientos</h4>
-                   <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar text-left w-full">
-                      {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).map((b, i) => {
-                         const dt = new Date(b.start_time);
-                         const dateStr = dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                         return (
-                            <div key={i} className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2">
-                               <p className="font-black text-white text-[10px] uppercase">{b.class_name} • {dateStr}</p>
-                               <div className="space-y-1 pl-2 border-l border-[#F38E26]/50">
-                                  {b.exercises_done.map((ex: any, idx: number) => (
-                                     <p key={idx} className="text-[9px] text-white/55 uppercase font-black">
-                                        {ex.name}: {ex.completed ? `✅ ${ex.sets}x${ex.reps} (${ex.weight}kg)` : '❌ Incompleto'}
-                                     </p>
-                                  ))}
+          <div className="h-full flex flex-col min-h-0 animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
+             <div className="bg-[#141b29] border border-white/5 p-5 sm:p-10 rounded-3xl flex flex-col min-h-0 h-full">
+                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0 space-y-6 flex flex-col items-center">
+                   <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full flex items-center justify-center text-4xl sm:text-5xl font-black shadow-2xl mb-4 ring-4 ring-white/5">{userData.name[0]}</div>
+                   <h2 className="text-2xl sm:text-3xl font-black text-white mb-1 text-center">{userData.name}</h2>
+                   <span className="px-4 py-1.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-6">{userData.plan}</span>
+                   
+                   <div className="w-full space-y-4 pt-6 border-t border-white/5">
+                      <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Dumbbell size={14}/> Historial de Entrenamientos</h4>
+                      <div className="space-y-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar text-left w-full">
+                         {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).map((b, i) => {
+                            const dt = new Date(b.start_time);
+                            const dateStr = dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                            return (
+                               <div key={i} className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2">
+                                  <p className="font-black text-white text-[10px] uppercase">{b.class_name} • {dateStr}</p>
+                                  <div className="space-y-1 pl-2 border-l border-[#F38E26]/50">
+                                     {b.exercises_done.map((ex: any, idx: number) => (
+                                        <p key={idx} className="text-[9px] text-white/55 uppercase font-black">
+                                           {ex.name}: {ex.completed ? `✅ ${ex.sets}x${ex.reps} (${ex.weight}kg)` : '❌ Incompleto'}
+                                        </p>
+                                     ))}
+                                  </div>
                                </div>
-                            </div>
-                         );
-                      })}
-                      {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).length === 0 && (
-                         <p className="text-center text-white/20 italic text-[9px] font-black uppercase py-4">No hay entrenamientos registrados aún</p>
-                      )}
+                            );
+                         })}
+                         {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).length === 0 && (
+                            <p className="text-center text-white/20 italic text-[9px] font-black uppercase py-4">No hay entrenamientos registrados aún</p>
+                         )}
+                      </div>
+                   </div>
+   
+                   <div className="w-full space-y-4 pt-6 border-t border-white/5">
+                      <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
+                      <div className="space-y-3">
+                         <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-5 text-white text-xs outline-none focus:border-blue-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
+                         <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-3 bg-[#6E8AC9] text-white border border-[#F38E26] rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-md disabled:opacity-50 hover:scale-[1.01] transition-all">Actualizar Contraseña</button>
+                      </div>
                    </div>
                 </div>
-
-                <div className="w-full space-y-4 pt-10 border-t border-white/5 mt-10">
-                   <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
-                   <div className="space-y-3">
-                      <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xs outline-none focus:border-blue-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
-                      <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-4 bg-[#6E8AC9] text-white border border-[#F38E26] rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-md disabled:opacity-50 hover:scale-[1.01] transition-all">Actualizar Contraseña</button>
-                   </div>
+                
+                <div className="flex-shrink-0 pt-4 pb-2">
+                  <button onClick={()=>setIsAuthenticated(false)} className="w-full py-3.5 bg-[#212C40] text-white border border-[#F38E26] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-md">Cerrar Sesión</button>
                 </div>
-
-                <button onClick={()=>setIsAuthenticated(false)} className="w-full mt-10 py-4 bg-[#212C40] text-white border border-[#F38E26] rounded-3xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.01] transition-all">Cerrar Sesión</button>
              </div>
           </div>
         );

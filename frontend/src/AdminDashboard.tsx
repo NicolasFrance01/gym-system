@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, Calendar, Clock, Menu } from 'lucide-react';
+import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, Calendar, Clock, Menu, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -1219,6 +1219,30 @@ function AgendaModule({ members, API_URL }: any) {
   const [newClassData, setNewClassData] = useState<{ id?: number, name: string, code: string, day_of_week: number, start_time: string, end_time: string, color: string, capacity: number }>({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: 0, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
   const [isEditingClass, setIsEditingClass] = useState(false);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   const defaultActivities = [
     { name: 'Entrenamiento Funcional', code: 'EF', color: '#3b82f6' },
     { name: 'Pilates en Suelo', code: 'PS', color: '#f97316' },
@@ -1434,15 +1458,20 @@ function AgendaModule({ members, API_URL }: any) {
     } catch (e) { console.error(e); }
   };
 
-  const handleDeleteClass = async (id: number) => {
-    if (!confirm("¿Eliminar este horario de clase de la grilla permanente?")) return;
-    try {
-      const res = await fetch(`${API_URL}/admin/class_schedules/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchSchedules();
-        if (activeSchedule?.id === id) setActiveSchedule(null);
+  const handleDeleteClass = (id: number) => {
+    showConfirm(
+      "¿Eliminar Horario de Clase?",
+      "¿Estás seguro de que deseas eliminar este horario de clase de la grilla permanente?",
+      async () => {
+        try {
+          const res = await fetch(`${API_URL}/admin/class_schedules/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            fetchSchedules();
+            if (activeSchedule?.id === id) setActiveSchedule(null);
+          }
+        } catch (e) { console.error(e); }
       }
-    } catch (e) { console.error(e); }
+    );
   };
 
   const handleSaveHoliday = async () => {
@@ -1912,6 +1941,39 @@ function AgendaModule({ members, API_URL }: any) {
               <button type="submit" className="flex-1 py-3 bg-green-500 text-white rounded-xl text-[9px] font-black uppercase">Crear y Sumar</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Custom confirm modal overlay in AgendaModule */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/75 dark:bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xs bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden text-black dark:text-white">
+            {/* Top orange glow tint */}
+            <div className="absolute -top-10 -left-10 w-24 h-24 bg-[#F38E26]/20 rounded-full blur-2xl pointer-events-none" />
+            
+            {/* Icon */}
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-4 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-bounce">
+              <AlertTriangle size={24} strokeWidth={2.5} />
+            </div>
+
+            {/* Content */}
+            <h4 className="text-base font-black text-center uppercase tracking-tight mb-2">{confirmModal.title}</h4>
+            <p className="text-[10px] text-gray-500 dark:text-white/60 text-center leading-relaxed mb-6 font-bold">{confirmModal.message}</p>
+            
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} 
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 border border-gray-200 dark:border-white/10 dark:hover:bg-white/10 active:scale-95 rounded-xl text-[9px] font-black uppercase transition-all">
+                Cerrar
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm} 
+                className="flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase text-white shadow-lg active:scale-95 transition-all bg-red-500 hover:bg-red-600 shadow-red-500/25">
+                Confirmar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
