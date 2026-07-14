@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, Calendar, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, Calendar, Clock, Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [memberCheckins, setMemberCheckins] = useState<any[]>([]);
   const [checkinStats, setCheckinStats] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 
   useEffect(() => { if (isAuthenticated) refreshData(); }, [isAuthenticated, startDate, endDate]);
@@ -652,48 +653,60 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <aside className="w-40 border-r border-white/5 bg-[#141b29] flex flex-col p-4 shrink-0">
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-[900] bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setIsSidebarOpen(false)} />
+      )}
+      <aside className={`fixed inset-y-0 left-0 z-[1000] w-56 border-r border-white/5 bg-[#141b29] flex flex-col p-4 transition-transform duration-300 shrink-0 md:static md:w-40 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col gap-4 mb-8">
-          <div className="flex justify-center mb-2">
-            <img src="/logo_dark.png" alt="Logo" className="h-28 w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-            <div className="hidden w-24 h-24 rounded-xl flex items-center justify-center border border-[#F38E26]" style={{backgroundColor:'#F38E26'}}><Brain size={36} className="text-white" /></div>
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-center flex-1">
+              <img src="/logo_dark.png" alt="Logo" className="h-20 w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+              <div className="hidden w-16 h-16 rounded-xl flex items-center justify-center border border-[#F38E26]" style={{backgroundColor:'#F38E26'}}><Brain size={24} className="text-white" /></div>
+            </div>
+            <button onClick={() => setIsSidebarOpen(false)} className="text-white/60 hover:text-white md:hidden p-1.5 rounded-lg bg-white/5">
+              <X size={14} />
+            </button>
           </div>
           <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-full flex items-center justify-center gap-2 p-2 bg-white/5 border border-white/10 rounded-xl text-white shadow-sm transition-all hover:scale-[1.02]">
             {isDarkMode ? <Sun size={12}/> : <Moon size={12}/>}
             <span className="text-[9px] font-black uppercase tracking-widest">{isDarkMode ? 'Claro' : 'Oscuro'}</span>
           </button>
-
         </div>
         <nav className="space-y-1 flex-1 overflow-y-auto custom-scrollbar pr-1">
-          <SidebarItem icon={<LayoutDashboard size={14} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => setActiveTab('Resumen')} />
-          <SidebarItem icon={<Calendar size={14} />} label="Agenda / Clases" active={activeTab === 'Agenda'} onClick={() => setActiveTab('Agenda')} />
-          <SidebarItem icon={<User size={14} />} label="Mi Perfil" active={activeTab === 'Mi Perfil'} onClick={() => setActiveTab('Mi Perfil')} />
-          <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
-          <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => setActiveTab('Planes')} />
+          <SidebarItem icon={<LayoutDashboard size={14} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => { setActiveTab('Resumen'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon={<Calendar size={14} />} label="Agenda / Clases" active={activeTab === 'Agenda'} onClick={() => { setActiveTab('Agenda'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon={<User size={14} />} label="Mi Perfil" active={activeTab === 'Mi Perfil'} onClick={() => { setActiveTab('Mi Perfil'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => { setActiveTab('Socios'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => { setActiveTab('Planes'); setIsSidebarOpen(false); }} />
           
           {(userRole === 'gerente' || userRole === 'administracion') && (
             <>
-              <SidebarItem icon={<Receipt size={14} />} label="Facturación" active={activeTab === 'Facturación'} onClick={() => setActiveTab('Facturación')} />
-              <SidebarItem icon={<Briefcase size={14} />} label="Personal" active={activeTab === 'Staff'} onClick={() => setActiveTab('Staff')} />
+              <SidebarItem icon={<Receipt size={14} />} label="Facturación" active={activeTab === 'Facturación'} onClick={() => { setActiveTab('Facturación'); setIsSidebarOpen(false); }} />
+              <SidebarItem icon={<Briefcase size={14} />} label="Personal" active={activeTab === 'Staff'} onClick={() => { setActiveTab('Staff'); setIsSidebarOpen(false); }} />
             </>
           )}
 
           {userRole === 'gerente' && (
             <>
               <div className="h-px bg-white/5 my-4" />
-              <SidebarItem icon={<DollarSign size={14} />} label="Finanzas" active={activeTab === 'Finanzas'} onClick={() => setActiveTab('Finanzas')} />
+              <SidebarItem icon={<DollarSign size={14} />} label="Finanzas" active={activeTab === 'Finanzas'} onClick={() => { setActiveTab('Finanzas'); setIsSidebarOpen(false); }} />
             </>
           )}
         </nav>
-        <button onClick={() => { localStorage.removeItem('gym_session'); localStorage.removeItem('gym_role'); localStorage.removeItem('gym_user'); setIsAuthenticated(false); setLoggedUser(null); }} className="w-full p-2 bg-red-500/10 hover:bg-red-500 rounded-xl text-red-500 hover:text-white text-[9px] font-black uppercase tracking-widest transition-all mt-4">Salir</button>
+        <button onClick={() => { localStorage.removeItem('gym_session'); localStorage.removeItem('gym_role'); localStorage.removeItem('gym_user'); setIsAuthenticated(false); setLoggedUser(null); }} className="w-full p-2 bg-red-500/10 hover:bg-red-500 rounded-xl text-red-500 hover:text-white text-[9px] font-black uppercase tracking-widest transition-all mt-4 shrink-0">Salir</button>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-6 relative bg-[#F5F8FD] dark:bg-[#212C40]">
-        <header className="flex items-center justify-between mb-8 max-w-full gap-4">
-          <div className="min-w-0"><h2 className="text-xl font-black text-black dark:text-white tracking-tighter uppercase truncate">{activeTab}</h2><p className="text-[7px] uppercase font-black tracking-[0.3em]" style={{color:'#6E8AC9'}}>Koach Gym</p></div>
-
-
-
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 relative bg-[#F5F8FD] dark:bg-[#212C40]">
+        <header className="flex items-center justify-between mb-6 sm:mb-8 max-w-full gap-4 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setIsSidebarOpen(true)} className="text-black dark:text-white p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 md:hidden hover:scale-105 transition-all">
+              <Menu size={16} />
+            </button>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-black text-black dark:text-white tracking-tighter uppercase truncate leading-none">{activeTab}</h2>
+              <p className="text-[7px] uppercase font-black tracking-[0.3em] mt-1" style={{color:'#6E8AC9'}}>Koach Gym</p>
+            </div>
+          </div>
           <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[8px] uppercase tracking-widest hover:scale-105 transition-all whitespace-nowrap bg-[#212C40] text-white dark:bg-[#6E8AC9] dark:text-[#212C40] border border-[#F38E26] shadow-sm"><Download size={14}/> Reporte Global</button>
         </header>
         <div className="max-w-full overflow-x-hidden">
@@ -811,7 +824,7 @@ function BillingModule({ members, onDeletePayment }: any) {
          </div>
       </div>
 
-       <div className="grid grid-cols-3 gap-4">
+       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"><p className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase">Cobros Registrados</p><p className="text-xl font-black text-black dark:text-white">${total.toLocaleString()}</p></div>
           <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"><p className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase">Más Usado</p><p className="text-xl font-black truncate" style={{color:'#F38E26'}} title={mostUsedPlan}>{mostUsedPlan}</p></div>
           <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"><p className="text-[9px] font-black text-gray-500 dark:text-white/20 uppercase">Facturas</p><p className="text-xl font-black text-black dark:text-white">{sorted.length}</p></div>
@@ -846,7 +859,7 @@ function SidebarItem({ icon, label, active = false, onClick }: any) {
 
 function SummaryCard({ title, value, icon, onClick, color }: any) {
   const iconColor = color === 'green' ? '#10b981' : color === 'purple' ? '#a855f4' : '#F38E26';
-  return <div onClick={onClick} className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-4 rounded-xl cursor-pointer transition-all flex justify-between items-center" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor=''}}><div className="space-y-1"><p className="text-[7px] font-black text-gray-500 dark:text-white/20 uppercase tracking-widest">{title}</p><p className="text-lg font-black text-black dark:text-white">{value}</p></div><div className="bg-white dark:bg-white/5 p-2 rounded-lg" style={{color: iconColor}}>{icon}</div></div>;
+  return <div onClick={onClick} className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-4 rounded-xl cursor-pointer transition-all flex justify-between items-center" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor=''}}><div className="space-y-1"><p className="text-[7px] font-black text-gray-500 dark:text-white/20 uppercase tracking-widest">{title}</p><p className="text-sm sm:text-lg font-black text-black dark:text-white">{value}</p></div><div className="bg-white dark:bg-white/5 p-2 rounded-lg" style={{color: iconColor}}>{icon}</div></div>;
 }
 
 function memberDaysInfo(joinedAt: string, _status: string): { daysIn: number; daysLeft: number; overdueDays: number } {
@@ -909,7 +922,7 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/20" size={14} />
             <input type="text" placeholder="Buscar por DNI o Nombre..." className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-2 pl-9 pr-4 text-black dark:text-white text-[10px] ou" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             {statusOptions.map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
                 style={statusFilter === s ? {backgroundColor:'#F38E26', color:'#fff'} : {}}
