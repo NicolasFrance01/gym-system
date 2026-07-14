@@ -291,16 +291,22 @@ export default function UserApp() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#212C40] flex flex-col items-center justify-center p-8 font-sans">
-        <div className="w-full max-w-sm bg-black/30 border border-white/10 p-10 rounded-[40px] backdrop-blur-2xl shadow-3xl space-y-10">
+      <div className="min-h-screen bg-[#212C40] flex flex-col items-center justify-center p-4 sm:p-8 font-sans overflow-hidden">
+        <div className="w-full max-w-sm bg-black/30 border border-white/10 p-6 sm:p-10 rounded-[30px] sm:rounded-[40px] backdrop-blur-2xl shadow-3xl space-y-6 sm:space-y-10">
           <div className="text-center">
-            <img src="/logo_dark.png" alt="Koach Gym Logo" className="h-44 w-auto mx-auto object-contain mb-8 filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" />
-            <p className="text-white/20 text-xs font-black uppercase tracking-[0.4em]">Personal Fitness OS</p>
+            <img src="/logo_dark.png" alt="Koach Gym Logo" className="h-28 sm:h-44 w-auto mx-auto object-contain mb-4 sm:mb-8 filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]" />
+            <p className="text-white/20 text-[10px] sm:text-xs font-black uppercase tracking-[0.4em]">Personal Fitness OS</p>
           </div>
-          <form onSubmit={handleLogin} className="space-y-6">
-             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Documento</label><input type="text" className="w-full bg-white/5 border-2 border-[#F38E26] rounded-[2rem] py-5 px-8 text-white outline-none transition-all text-center font-black" value={dni} onChange={e=>setDni(e.target.value)} required /></div>
-             <div className="space-y-2"><label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-6">Password</label><input type="password" placeholder="••••••••" className="w-full bg-white/5 border-2 border-[#F38E26] rounded-[2rem] py-5 px-8 text-white outline-none transition-all text-center font-black" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
-             <button type="submit" disabled={isLoading} className="w-full py-5 text-white bg-[#6E8AC9] border border-[#F38E26] rounded-[2rem] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all text-sm disabled:opacity-50 shadow-md">
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
+             <div className="space-y-1 sm:space-y-2">
+               <label className="text-[9px] sm:text-[10px] font-black text-white/20 uppercase tracking-widest ml-4 sm:ml-6">Documento</label>
+               <input type="text" className="w-full bg-white/5 border-2 border-[#F38E26] rounded-[2rem] py-3 sm:py-5 px-6 sm:px-8 text-white outline-none transition-all text-center font-black text-xs sm:text-sm" value={dni} onChange={e=>setDni(e.target.value)} required />
+             </div>
+             <div className="space-y-1 sm:space-y-2">
+               <label className="text-[9px] sm:text-[10px] font-black text-white/20 uppercase tracking-widest ml-4 sm:ml-6">Password</label>
+               <input type="password" placeholder="••••••••" className="w-full bg-white/5 border-2 border-[#F38E26] rounded-[2rem] py-3 sm:py-5 px-6 sm:px-8 text-white outline-none transition-all text-center font-black text-xs sm:text-sm" value={password} onChange={e=>setPassword(e.target.value)} required />
+             </div>
+             <button type="submit" disabled={isLoading} className="w-full py-3.5 sm:py-5 text-white bg-[#6E8AC9] border border-[#F38E26] rounded-[2rem] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all text-xs sm:text-sm disabled:opacity-50 shadow-md">
                {isLoading ? "Ingresando..." : "Entrar"}
              </button>
           </form>
@@ -765,33 +771,36 @@ export default function UserApp() {
   return (
     <div className="min-h-screen bg-[#212C40] text-white font-sans p-6 pb-32 overflow-x-hidden">
       {isBookingModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-8 animate-in fade-in duration-300">
-           <div className="bg-[#1b2435] border border-white/10 p-10 rounded-[50px] w-full max-w-sm">
-              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl font-black uppercase tracking-tighter">Día {selectedDay}</h3><button onClick={()=>setIsBookingModalOpen(false)}><X size={24} className="text-white/20 hover:text-white"/></button></div>
-              <div className="space-y-6">
-                 <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Clases Disponibles</p>
-                 <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 sm:p-8 animate-in fade-in duration-300">
+           <div className="bg-[#1b2435] border border-white/10 p-6 sm:p-10 rounded-[35px] sm:rounded-[50px] w-full max-w-sm max-h-[90vh] flex flex-col">
+              <div className="flex justify-between items-center mb-6 sm:mb-10 flex-shrink-0">
+                <h3 className="text-2xl font-black uppercase tracking-tighter">Día {selectedDay}</h3>
+                <button onClick={()=>setIsBookingModalOpen(false)}><X size={24} className="text-white/20 hover:text-white"/></button>
+              </div>
+              <div className="space-y-6 flex-1 flex flex-col min-h-0">
+                 <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex-shrink-0">Clases Disponibles</p>
+                 <div className="space-y-3 overflow-y-auto flex-1 pr-1 custom-scrollbar min-h-0">
                     {daySchedules.length > 0 ? daySchedules.map((s) => {
                       const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && new Date(b.start_time).getDate() === selectedDay && b.status !== "cancelled");
                       const userBooking = bookings.find(b => b.class_schedule_id === s.id && new Date(b.start_time).getDate() === selectedDay && b.status !== "cancelled");
                       return (
-                        <div key={s.id} className="p-5 bg-white/5 rounded-3xl border border-white/5 flex justify-between items-center">
-                          <div className="space-y-1">
-                            <div className="flex items-start gap-2">
+                        <div key={s.id} className="p-4 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex items-start gap-2 min-w-0">
                               <span className="px-2 py-0.5 rounded text-[8px] font-black text-white mt-0.5 flex-shrink-0" style={{backgroundColor: s.color}}>{s.code}</span>
-                              <span className="font-black text-white uppercase text-[11px] leading-tight">{s.name}</span>
+                              <span className="font-black text-white uppercase text-[10px] sm:text-[11px] leading-tight break-words flex-1 min-w-0">{s.name}</span>
                             </div>
                             <p className="text-[9px] text-white/30 font-black uppercase tracking-wider">⏰ {s.start_time} A {s.end_time}</p>
                             <p className="text-[9px] text-[#F38E26] font-black uppercase tracking-wider">👥 Confirmados: {s.bookings_count} / {s.capacity}</p>
                           </div>
-                          <div>
+                          <div className="flex-shrink-0">
                             {isAlreadyBooked ? (
-                              <button onClick={() => handleCancelBooking(userBooking.id)} className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase">Cancelar</button>
+                              <button onClick={() => handleCancelBooking(userBooking.id)} className="px-3 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase whitespace-nowrap">Cancelar</button>
                             ) : (
                               <button 
                                 onClick={() => handleBookClass(s.id)} 
                                 disabled={s.bookings_count >= s.capacity}
-                                className="px-4 py-2 bg-green-500 text-white rounded-xl text-[8px] font-black uppercase disabled:opacity-50">
+                                className="px-3 py-2 bg-green-500 text-white rounded-xl text-[8px] font-black uppercase disabled:opacity-50 whitespace-nowrap">
                                 Reservar
                               </button>
                             )}
@@ -801,10 +810,10 @@ export default function UserApp() {
                     }) : (
                       <p className="text-center text-white/20 italic text-[10px] font-black uppercase py-4">No hay clases programadas para este día.</p>
                     )}
-                  </div>
-               </div>
-            </div>
-         </div>
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
       <main className="max-w-lg mx-auto">{renderTabContent()}</main>
       <nav className="fixed bottom-8 left-8 right-8 h-24 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-[50px] z-50 flex items-center justify-around px-8 shadow-3xl animate-in slide-in-from-bottom-10 duration-1000">

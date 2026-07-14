@@ -431,11 +431,11 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#F5F8FD] dark:bg-[#212C40] flex flex-col items-center justify-center p-4 overflow-hidden transition-colors duration-300">
+      <div className="min-h-screen bg-[#F5F8FD] dark:bg-[#212C40] flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden transition-colors duration-300">
         <div className="absolute top-4 right-4"><button onClick={() => setIsDarkMode(!isDarkMode)} className="p-3 bg-[#6E8AC9]/10 dark:bg-white/5 border border-white/20 rounded-full text-black dark:text-white shadow-lg transition-all">{isDarkMode ? <Sun size={18}/> : <Moon size={18}/>}</button></div>
-        <div className="w-full max-w-[380px] bg-white dark:bg-black/30 border border-[#F38E26]/20 dark:border-white/10 p-10 rounded-[40px] backdrop-blur-3xl shadow-2xl animate-in zoom-in duration-500">
-          <div className="flex justify-center mb-8">
-            <img src={isDarkMode ? "/logo_dark.png" : "/logo_light.png"} alt="Koach Gym Logo" className={`${isDarkMode ? "h-52" : "h-[17rem] -my-6"} w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]`} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+        <div className="w-full max-w-[380px] bg-white dark:bg-black/30 border border-[#F38E26]/20 dark:border-white/10 p-6 sm:p-10 rounded-[30px] sm:rounded-[40px] backdrop-blur-3xl shadow-2xl animate-in zoom-in duration-500 space-y-6">
+          <div className="flex justify-center">
+            <img src={isDarkMode ? "/logo_dark.png" : "/logo_light.png"} alt="Koach Gym Logo" className={`${isDarkMode ? "h-32 sm:h-52" : "h-36 sm:h-[17rem] -my-2 sm:-my-6"} w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]`} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
             <div className="hidden p-6 rounded-2xl border border-[#F38E26]" style={{backgroundColor:'#F38E26'}}><ShieldCheck size={48} className="text-white" /></div>
           </div>
           {/* Title removed per request */}
@@ -447,11 +447,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input type="text" placeholder="Usuario" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border-2 border-[#F38E26] rounded-2xl py-4 px-6 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/20" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
-            <input type="password" placeholder="Contraseña" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border-2 border-[#F38E26] rounded-2xl py-4 px-6 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/20" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
+          <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
+            <input type="text" placeholder="Usuario" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border-2 border-[#F38E26] rounded-2xl py-3 sm:py-4 px-5 sm:px-6 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/20" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
+            <input type="password" placeholder="Contraseña" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border-2 border-[#F38E26] rounded-2xl py-3 sm:py-4 px-5 sm:px-6 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/20" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
             
-            <button type="submit" className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all bg-[#212C40] text-white border border-[#F38E26] dark:bg-[#6E8AC9] dark:text-[#212C40] hover:scale-[1.01]">Ingresar</button>
+            <button type="submit" className="w-full py-3.5 sm:py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all bg-[#212C40] text-white border border-[#F38E26] dark:bg-[#6E8AC9] dark:text-[#212C40] hover:scale-[1.01]">Ingresar</button>
           </form>
         </div>
       </div>
