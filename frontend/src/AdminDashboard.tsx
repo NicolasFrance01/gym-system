@@ -431,27 +431,26 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#F5F8FD] dark:bg-[#212C40] flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden transition-colors duration-300">
+      <div className="fixed inset-0 bg-[#F5F8FD] dark:bg-[#212C40] flex flex-col items-center justify-center p-4 overflow-hidden transition-colors duration-300 select-none">
         <div className="absolute top-4 right-4"><button onClick={() => setIsDarkMode(!isDarkMode)} className="p-3 bg-[#6E8AC9]/10 dark:bg-white/5 border border-white/20 rounded-full text-black dark:text-white shadow-lg transition-all">{isDarkMode ? <Sun size={18}/> : <Moon size={18}/>}</button></div>
-        <div className="w-full max-w-[380px] bg-white dark:bg-black/30 border border-[#F38E26]/20 dark:border-white/10 p-6 sm:p-10 rounded-[30px] sm:rounded-[40px] backdrop-blur-3xl shadow-2xl animate-in zoom-in duration-500 space-y-6">
+        <div className="w-full max-w-[340px] bg-white dark:bg-black/30 border border-[#F38E26]/20 dark:border-white/10 p-5 sm:p-8 rounded-3xl backdrop-blur-2xl shadow-2xl animate-in zoom-in duration-500 space-y-4">
           <div className="flex justify-center">
-            <img src={isDarkMode ? "/logo_dark.png" : "/logo_light.png"} alt="Koach Gym Logo" className={`${isDarkMode ? "h-32 sm:h-52" : "h-36 sm:h-[17rem] -my-2 sm:-my-6"} w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]`} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+            <img src={isDarkMode ? "/logo_dark.png" : "/logo_light.png"} alt="Koach Gym Logo" className={`${isDarkMode ? "h-20 sm:h-36" : "h-24 sm:h-[12rem] -my-2"} w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]`} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
             <div className="hidden p-6 rounded-2xl border border-[#F38E26]" style={{backgroundColor:'#F38E26'}}><ShieldCheck size={48} className="text-white" /></div>
           </div>
-          {/* Title removed per request */}
           
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[9px] font-black uppercase mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 p-2 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[9px] font-black uppercase mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
               <XCircle size={14} className="flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
-            <input type="text" placeholder="Usuario" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border-2 border-[#F38E26] rounded-2xl py-3 sm:py-4 px-5 sm:px-6 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/20" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
-            <input type="password" placeholder="Contraseña" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border-2 border-[#F38E26] rounded-2xl py-3 sm:py-4 px-5 sm:px-6 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/20" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
+          <form onSubmit={handleLogin} className="space-y-3">
+            <input type="text" placeholder="Usuario" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border border-[#F38E26]/40 dark:border-white/10 focus:border-[#F38E26] rounded-xl py-2.5 px-4 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/10" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
+            <input type="password" placeholder="Contraseña" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border border-[#F38E26]/40 dark:border-white/10 focus:border-[#F38E26] rounded-xl py-2.5 px-4 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/10" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
             
-            <button type="submit" className="w-full py-3.5 sm:py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all bg-[#212C40] text-white border border-[#F38E26] dark:bg-[#6E8AC9] dark:text-[#212C40] hover:scale-[1.01]">Ingresar</button>
+            <button type="submit" className="w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-[#212C40] text-white border border-[#F38E26] dark:bg-[#6E8AC9] dark:text-[#212C40] hover:scale-[1.01]">Ingresar</button>
           </form>
         </div>
       </div>
