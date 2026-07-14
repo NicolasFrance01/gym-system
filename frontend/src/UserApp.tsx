@@ -122,7 +122,7 @@ export default function UserApp() {
           dni: data.member.dni,
           plan: data.member.membership_type,
           currentRoutine: loadedRoutine,
-          streak: 5
+          streak: data.member.streak || 0
         }));
         setIsAuthenticated(true);
         fetchUserBookings(data.member.dni);
@@ -356,26 +356,26 @@ export default function UserApp() {
         );
       case 'Evolution':
         return (
-          <div className="space-y-8 animate-in slide-in-from-bottom-8">
-             <div className="bg-[#141b29] border border-white/5 p-10 rounded-[50px] shadow-3xl">
-                <h3 className="text-2xl font-black mb-8 flex items-center gap-4 uppercase tracking-tighter"><TrendingUp className="text-orange-500" size={28}/> Mi Progreso</h3>
-                <div className="h-80 mb-10">
+          <div className="space-y-4 animate-in slide-in-from-bottom-8">
+             <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 p-5 sm:p-10 rounded-[30px] sm:rounded-[50px] shadow-2xl">
+                <h3 className="text-xl sm:text-2xl font-black mb-4 sm:mb-8 flex items-center gap-3 uppercase tracking-tighter"><TrendingUp className="text-orange-500" size={22}/> Mi Progreso</h3>
+                <div className="h-52 sm:h-80 mb-6 sm:mb-10">
                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={userData.evolution}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
-                          <XAxis dataKey="date" stroke="#444" fontSize={10} fontStyle="italic" />
-                          <YAxis stroke="#444" fontSize={10} />
-                          <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'20px', padding:'15px'}} />
-                          <Legend wrapperStyle={{fontSize:'10px', textTransform:'uppercase', fontWeight:'900', marginTop:'20px'}} />
-                          <Line type="monotone" dataKey="Press de Banca" stroke="#3b82f6" strokeWidth={4} dot={{r:6, fill:'#3b82f6'}} activeDot={{r:10}} />
-                          <Line type="monotone" dataKey="Sentadillas" stroke="#10b981" strokeWidth={4} dot={{r:6, fill:'#10b981'}} />
-                          <Line type="monotone" dataKey="Jalón al Pecho" stroke="#f59e0b" strokeWidth={4} dot={{r:6, fill:'#f59e0b'}} />
-                      </LineChart>
+                       <LineChart data={userData.evolution}>
+                           <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                           <XAxis dataKey="date" stroke="#666" fontSize={8} />
+                           <YAxis stroke="#666" fontSize={8} />
+                           <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'20px', padding:'10px'}} />
+                           <Legend wrapperStyle={{fontSize:'8px', textTransform:'uppercase', fontWeight:'900', marginTop:'10px'}} />
+                           <Line type="monotone" dataKey="Press de Banca" stroke="#3b82f6" strokeWidth={3} dot={{r:4, fill:'#3b82f6'}} activeDot={{r:8}} />
+                           <Line type="monotone" dataKey="Sentadillas" stroke="#10b981" strokeWidth={3} dot={{r:4, fill:'#10b981'}} />
+                           <Line type="monotone" dataKey="Jalón al Pecho" stroke="#f59e0b" strokeWidth={3} dot={{r:4, fill:'#f59e0b'}} />
+                       </LineChart>
                    </ResponsiveContainer>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="bg-white/5 p-6 rounded-[32px] border border-white/5"><p className="text-[9px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-3xl font-black text-white">+25kg</p><p className="text-[10px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
-                   <div className="bg-white/5 p-6 rounded-[32px] border border-white/5"><p className="text-[9px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-3xl font-black text-white">48</p><p className="text-[10px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                   <div className="bg-white/5 p-3.5 sm:p-6 rounded-[20px] sm:rounded-[32px] border border-white/5"><p className="text-[8px] sm:text-[9px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-xl sm:text-3xl font-black text-white">+25kg</p><p className="text-[9px] sm:text-[10px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
+                   <div className="bg-white/5 p-3.5 sm:p-6 rounded-[20px] sm:rounded-[32px] border border-white/5"><p className="text-[8px] sm:text-[9px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-xl sm:text-3xl font-black text-white">48</p><p className="text-[9px] sm:text-[10px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>
                 </div>
              </div>
           </div>
@@ -501,24 +501,24 @@ export default function UserApp() {
                             Clases por la Mañana
                           </div>
                           <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-xl scrollbar-thin">
-                            <table className="w-full border-collapse text-left">
+                            <table className="w-full border-collapse text-left table-fixed">
                               <thead>
                                 <tr className="bg-white/[0.02] text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
-                                  <th className="p-3 text-center w-20">Hora</th>
-                                  <th className="p-3 text-center">L</th>
-                                  <th className="p-3 text-center">M</th>
-                                  <th className="p-3 text-center">MI</th>
-                                  <th className="p-3 text-center">J</th>
-                                  <th className="p-3 text-center">V</th>
-                                  <th className="p-3 text-center">S</th>
-                                  <th className="p-3 text-center">D</th>
+                                  <th className="p-1 sm:p-3 text-center w-14 sm:w-20 text-[7px]">Hora</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">L</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">M</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">MI</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">J</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">V</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">S</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">D</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {morningSlots.map((slot, rowIndex) => (
                                   <tr key={rowIndex} className="border-b border-white/5">
-                                    <td className="p-2.5 text-center">
-                                      <span className="inline-block px-2 py-1 bg-white/5 text-white/50 font-black rounded-lg border border-white/5 text-[8px] tracking-tight">
+                                    <td className="p-1 text-center">
+                                      <span className="inline-block px-1 sm:px-2 py-0.5 sm:py-1 bg-white/5 text-white/50 font-black rounded-lg border border-white/5 text-[6.5px] sm:text-[8px] tracking-tight">
                                         {slot.start} - {slot.end}
                                       </span>
                                     </td>
@@ -530,10 +530,10 @@ export default function UserApp() {
                                       const cellSchedules = daySchedulesList.filter((s: any) => s.start_time === slot.start && s.end_time === slot.end);
 
                                       return (
-                                        <td key={dayIndex} className="p-1.5 text-center min-w-[55px]">
+                                        <td key={dayIndex} className="p-0.5 sm:p-1.5 text-center min-w-[38px] sm:min-w-[55px]">
                                           <div className="flex flex-col gap-1 items-center justify-center">
                                             {holiday ? (
-                                              <span className="text-[7px] font-black text-red-500/30 uppercase">Feriado</span>
+                                              <span className="text-[6px] sm:text-[7px] font-black text-red-500/30 uppercase">Feriado</span>
                                             ) : cellSchedules.length > 0 ? cellSchedules.map((s: any) => {
                                               const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
                                               const userBooking = bookings.find(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
@@ -551,16 +551,16 @@ export default function UserApp() {
                                                     }
                                                   }}
                                                   style={{ backgroundColor: s.color }}
-                                                  className={`w-12 h-8 rounded-xl text-white font-black text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
-                                                  <span className="leading-none text-[9px]">{s.code}</span>
-                                                  <span className="text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
+                                                  className={`w-9 sm:w-12 h-7 sm:h-8 rounded-lg sm:rounded-xl text-white font-black text-[7.5px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
+                                                  <span className="leading-none text-[7.5px] sm:text-[9px]">{s.code}</span>
+                                                  <span className="text-[5px] sm:text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
                                                   {isAlreadyBooked && (
-                                                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center text-[7px] text-white border border-[#141b29] font-black">✓</span>
+                                                    <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-green-500 rounded-full flex items-center justify-center text-[6px] sm:text-[7px] text-white border border-[#141b29] font-black">✓</span>
                                                   )}
                                                 </button>
                                               );
                                             }) : (
-                                              <div className="w-12 h-8 rounded-xl border border-white/5 bg-transparent flex items-center justify-center opacity-10 text-[9px] font-black text-white">
+                                              <div className="w-9 sm:w-12 h-7 sm:h-8 rounded-lg sm:rounded-xl border border-white/5 bg-transparent flex items-center justify-center opacity-10 text-[7px] sm:text-[9px] font-black text-white">
                                                 -
                                               </div>
                                             )}
@@ -581,24 +581,24 @@ export default function UserApp() {
                             Clases por la Tarde/Noche
                           </div>
                           <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-xl scrollbar-thin">
-                            <table className="w-full border-collapse text-left">
+                            <table className="w-full border-collapse text-left table-fixed">
                               <thead>
                                 <tr className="bg-white/[0.02] text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
-                                  <th className="p-3 text-center w-20">Hora</th>
-                                  <th className="p-3 text-center">L</th>
-                                  <th className="p-3 text-center">M</th>
-                                  <th className="p-3 text-center">MI</th>
-                                  <th className="p-3 text-center">J</th>
-                                  <th className="p-3 text-center">V</th>
-                                  <th className="p-3 text-center">S</th>
-                                  <th className="p-3 text-center">D</th>
+                                  <th className="p-1 sm:p-3 text-center w-14 sm:w-20 text-[7px]">Hora</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">L</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">M</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">MI</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">J</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">V</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">S</th>
+                                  <th className="p-1 sm:p-3 text-center text-[7px]">D</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {eveningSlots.map((slot, rowIndex) => (
                                   <tr key={rowIndex} className="border-b border-white/5">
-                                    <td className="p-2.5 text-center">
-                                      <span className="inline-block px-2 py-1 bg-white/5 text-white/50 font-black rounded-lg border border-white/5 text-[8px] tracking-tight">
+                                    <td className="p-1 text-center">
+                                      <span className="inline-block px-1 sm:px-2 py-0.5 sm:py-1 bg-white/5 text-white/50 font-black rounded-lg border border-white/5 text-[6.5px] sm:text-[8px] tracking-tight">
                                         {slot.start} - {slot.end}
                                       </span>
                                     </td>
@@ -610,10 +610,10 @@ export default function UserApp() {
                                       const cellSchedules = daySchedulesList.filter((s: any) => s.start_time === slot.start && s.end_time === slot.end);
 
                                       return (
-                                        <td key={dayIndex} className="p-1.5 text-center min-w-[55px]">
+                                        <td key={dayIndex} className="p-0.5 sm:p-1.5 text-center min-w-[38px] sm:min-w-[55px]">
                                           <div className="flex flex-col gap-1 items-center justify-center">
                                             {holiday ? (
-                                              <span className="text-[7px] font-black text-red-500/30 uppercase">Feriado</span>
+                                              <span className="text-[6px] sm:text-[7px] font-black text-red-500/30 uppercase">Feriado</span>
                                             ) : cellSchedules.length > 0 ? cellSchedules.map((s: any) => {
                                               const isAlreadyBooked = bookings.some(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
                                               const userBooking = bookings.find(b => b.class_schedule_id === s.id && b.start_time.split('T')[0] === dateStr && b.status !== "cancelled");
@@ -631,16 +631,16 @@ export default function UserApp() {
                                                     }
                                                   }}
                                                   style={{ backgroundColor: s.color }}
-                                                  className={`w-12 h-8 rounded-xl text-white font-black text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
-                                                  <span className="leading-none text-[9px]">{s.code}</span>
-                                                  <span className="text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
+                                                  className={`w-9 sm:w-12 h-7 sm:h-8 rounded-lg sm:rounded-xl text-white font-black text-[7.5px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
+                                                  <span className="leading-none text-[7.5px] sm:text-[9px]">{s.code}</span>
+                                                  <span className="text-[5px] sm:text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
                                                   {isAlreadyBooked && (
-                                                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center text-[7px] text-white border border-[#141b29] font-black">✓</span>
+                                                    <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-green-500 rounded-full flex items-center justify-center text-[6px] sm:text-[7px] text-white border border-[#141b29] font-black">✓</span>
                                                   )}
                                                 </button>
                                               );
                                             }) : (
-                                              <div className="w-12 h-8 rounded-xl border border-white/5 bg-transparent flex items-center justify-center opacity-10 text-[9px] font-black text-white">
+                                              <div className="w-9 sm:w-12 h-7 sm:h-8 rounded-lg sm:rounded-xl border border-white/5 bg-transparent flex items-center justify-center opacity-10 text-[7px] sm:text-[9px] font-black text-white">
                                                 -
                                               </div>
                                             )}
@@ -742,27 +742,20 @@ export default function UserApp() {
         );
       default:
         return (
-          <div className="space-y-10 animate-in fade-in duration-1000">
+          <div className="space-y-6 animate-in fade-in duration-1000">
              <header className="flex items-center justify-between">
-                <div><h2 className="text-4xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2><p className="text-white/30 text-xs font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
-                <div onClick={()=>setActiveTab('Profile')} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all"><User size={24} className="text-blue-500" /></div>
+                <div><h2 className="text-3xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2><p className="text-white/30 text-[10px] font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
+                <div onClick={()=>setActiveTab('Profile')} className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all"><User size={20} className="text-blue-500" /></div>
              </header>
-             <section className="bg-gradient-to-br from-[#141b29] to-black p-12 rounded-[60px] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] text-center relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(110,138,201,0.25),transparent_70%)]" />
-                  <p className="text-xs uppercase tracking-[0.5em] font-black mb-10 relative z-10 animate-pulse" style={{color:'#F38E26'}}>Racha de Fuego</p>
-                <div className="relative z-10 flex items-center justify-center gap-6 mb-10"><div className="p-5 bg-orange-500/10 rounded-full text-orange-500"><Zap size={40} strokeWidth={3} /></div><span className="text-9xl font-black tracking-tighter text-white">{userData.streak}</span></div>
-                  <div onClick={()=>setActiveTab('Evolution')} className="py-5 px-10 rounded-3xl border text-[10px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-3" style={{backgroundColor:'rgba(243,142,38,0.1)', borderColor:'rgba(243,142,38,0.2)', color:'#F38E26'}} onMouseEnter={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='#F38E26';(e.currentTarget as HTMLDivElement).style.color='#fff'}} onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='rgba(243,142,38,0.1)';(e.currentTarget as HTMLDivElement).style.color='#F38E26'}}>Explorar Evolución <ArrowUpRight size={16}/></div>
+             <section className="bg-white/[0.04] backdrop-blur-xl p-8 rounded-[35px] border border-white/10 shadow-2xl text-center relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(243,142,38,0.15),transparent_70%)]" />
+                  <p className="text-[10px] uppercase tracking-[0.4em] font-black mb-6 relative z-10 animate-pulse" style={{color:'#F38E26'}}>Racha de Fuego</p>
+                  <div className="relative z-10 flex items-center justify-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-full text-orange-500"><Zap size={32} strokeWidth={3} /></div>
+                    <span className="text-7xl font-black tracking-tighter text-white">{userData.streak}</span>
+                  </div>
+                  <div onClick={()=>setActiveTab('Evolution')} className="py-3 px-6 rounded-2xl border text-[9px] sm:text-[10px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-2 w-fit" style={{backgroundColor:'rgba(243,142,38,0.05)', borderColor:'rgba(243,142,38,0.15)', color:'#F38E26'}} onMouseEnter={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='#F38E26';(e.currentTarget as HTMLDivElement).style.color='#fff'}} onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='rgba(243,142,38,0.05)';(e.currentTarget as HTMLDivElement).style.color='#F38E26'}}>Explorar Evolución <ArrowUpRight size={14}/></div>
              </section>
-             <div className="grid grid-cols-2 gap-6 pb-10">
-                  <button onClick={()=>setActiveTab('Training')} className="p-8 bg-[#141b29] border border-white/5 rounded-[50px] flex flex-col gap-6 group text-left transition-all" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'}}>
-                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all" style={{backgroundColor:'rgba(243,142,38,0.1)', color:'#F38E26'}} onMouseEnter={e=>{e.currentTarget.style.backgroundColor='#F38E26';e.currentTarget.style.color='#fff'}} onMouseLeave={e=>{e.currentTarget.style.backgroundColor='rgba(243,142,38,0.1)';e.currentTarget.style.color='#F38E26'}}><Dumbbell size={28}/></div>
-                    <div><p className="font-black text-2xl leading-none mb-1 uppercase">Entrenar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">3 Ejercicios hoy</p></div>
-                 </button>
-                  <button onClick={()=>setActiveTab('Calendar')} className="p-8 bg-[#141b29] border border-white/5 rounded-[50px] flex flex-col gap-6 group text-left transition-all" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(110,138,201,0.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'}}>
-                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all" style={{backgroundColor:'rgba(110,138,201,0.1)', color:'#6E8AC9'}} onMouseEnter={e=>{e.currentTarget.style.backgroundColor='#6E8AC9';e.currentTarget.style.color='#fff'}} onMouseLeave={e=>{e.currentTarget.style.backgroundColor='rgba(110,138,201,0.1)';e.currentTarget.style.color='#6E8AC9'}}><Clock size={28}/></div>
-                    <div><p className="font-black text-2xl leading-none mb-1 uppercase">Agendar</p><p className="text-[10px] text-white/20 font-black uppercase tracking-widest">{bookings.filter(b=>b.status !== "cancelled").length} Sesiones</p></div>
-                 </button>
-              </div>
           </div>
         );
     }
@@ -816,21 +809,21 @@ export default function UserApp() {
         </div>
       )}
       <main className="max-w-lg mx-auto">{renderTabContent()}</main>
-      <nav className="fixed bottom-8 left-8 right-8 h-24 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-[50px] z-50 flex items-center justify-around px-8 shadow-3xl animate-in slide-in-from-bottom-10 duration-1000">
-         <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={28}/>} />
-         <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={28}/>} />
-         <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={28}/>} />
-         <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={28}/>} />
-      </nav>
-    </div>
-  );
-}
-
-function NavBtn({ active, onClick, icon }: any) {
-  return (
-    <button onClick={onClick} className={`p-5 rounded-3xl transition-all relative`} style={{color: active ? '#F38E26' : 'rgba(255,255,255,0.1)'}} onMouseEnter={e=>{if(!active)(e.currentTarget as HTMLButtonElement).style.color='rgba(255,255,255,0.3)'}} onMouseLeave={e=>{if(!active)(e.currentTarget as HTMLButtonElement).style.color='rgba(255,255,255,0.1)'}}>
-       {icon}
-       {active && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full" style={{backgroundColor:'#F38E26', boxShadow:'0 0 4px rgba(243,142,38,0.5)'}} />}
-    </button>
-  );
-}
+       <nav className="fixed bottom-4 left-4 right-4 h-16 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl z-50 flex items-center justify-around px-4 shadow-lg animate-in slide-in-from-bottom-10 duration-1000">
+          <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={22}/>} />
+          <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={22}/>} />
+          <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={22}/>} />
+          <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={22}/>} />
+       </nav>
+     </div>
+   );
+ }
+ 
+ function NavBtn({ active, onClick, icon }: any) {
+   return (
+     <button onClick={onClick} className={`p-3 rounded-xl transition-all relative flex items-center justify-center`} style={{color: active ? '#F38E26' : 'rgba(255,255,255,0.2)'}} onMouseEnter={e=>{if(!active)(e.currentTarget as HTMLButtonElement).style.color='rgba(255,255,255,0.5)'}} onMouseLeave={e=>{if(!active)(e.currentTarget as HTMLButtonElement).style.color='rgba(255,255,255,0.2)'}}>
+        {icon}
+        {active && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{backgroundColor:'#F38E26', boxShadow:'0 0 4px rgba(243,142,38,0.8)'}} />}
+     </button>
+   );
+ }

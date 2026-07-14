@@ -7,6 +7,40 @@ import datetime
 
 router = APIRouter(prefix="/user", tags=["User"])
 
+def calculate_member_streak(member_id: int, db: Session) -> int:
+    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
+    checkin_dates = {c.checkin_at.date() for c in checkins}
+    
+    bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member_id,
+        models.Booking.status == "attended"
+    ).all()
+    booking_dates = {b.start_time.date() for b in bookings}
+    
+    all_dates = sorted(list(checkin_dates.union(booking_dates)), reverse=True)
+    if not all_dates:
+        return 0
+        
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+    
+    if all_dates[0] != today and all_dates[0] != yesterday:
+        return 0
+        
+    streak = 1
+    current_date = all_dates[0]
+    
+    for next_date in all_dates[1:]:
+        if (current_date - next_date).days == 1:
+            streak += 1
+            current_date = next_date
+        elif (current_date - next_date).days == 0:
+            continue
+        else:
+            break
+            
+    return streak
+
 @router.post("/login")
 def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == credentials.dni).first()
@@ -37,7 +71,8 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
             "email": member.email,
             "membership_type": member.membership_type,
             "status": member.status,
-            "routine": member.routine
+            "routine": member.routine,
+            "streak": calculate_member_streak(member.id, db)
         }
     }
 

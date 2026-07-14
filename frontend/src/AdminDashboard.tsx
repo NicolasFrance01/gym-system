@@ -1490,9 +1490,9 @@ function AgendaModule({ members, API_URL }: any) {
     return slots.map((slot, rowIndex) => {
       return (
         <tr key={rowIndex} className="border-b border-gray-200 dark:border-white/5">
-          <td className="p-3 text-center">
-            <span className="inline-block px-3 py-1.5 bg-[#6E8AC9]/10 text-gray-700 dark:text-gray-300 font-black rounded-xl border border-gray-200 dark:border-white/10 text-[9px] uppercase tracking-wider">
-              {slot.start} A {slot.end}
+          <td className="p-1 sm:p-3 text-center w-14 sm:w-24">
+            <span className="inline-block px-1.5 sm:px-3 py-1 sm:py-1.5 bg-[#6E8AC9]/10 text-gray-700 dark:text-gray-300 font-black rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 text-[7px] sm:text-[9px] uppercase tracking-tight">
+              {slot.start} - {slot.end}
             </span>
           </td>
           {weekdayShortNames.map((_, dayIndex) => {
@@ -1500,7 +1500,7 @@ function AgendaModule({ members, API_URL }: any) {
             return (
               <td 
                 key={dayIndex} 
-                className="p-2 text-center min-w-[70px] cursor-pointer hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all rounded-xl"
+                className="p-1 sm:p-2 text-center min-w-[38px] sm:min-w-[70px] cursor-pointer hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all rounded-xl"
                 title="Doble click para agregar clase en este horario"
                 onDoubleClick={() => {
                   setNewClassData({
@@ -1532,12 +1532,12 @@ function AgendaModule({ members, API_URL }: any) {
                           fetchClassBookings(s.id);
                         }}
                         style={{ backgroundColor: s.color }}
-                        className={`w-14 h-9 rounded-xl text-white font-black text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md ${isSelected ? 'ring-2 ring-orange-500 scale-105' : 'opacity-90'}`}>
+                        className={`w-9 sm:w-14 h-7 sm:h-9 rounded-lg sm:rounded-xl text-white font-black text-[7px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md ${isSelected ? 'ring-2 ring-orange-500 scale-105' : 'opacity-90'}`}>
                         <span>{s.code}</span>
                       </button>
                     );
                   }) : (
-                    <div className="w-14 h-9 rounded-xl border border-gray-300 dark:border-white/10 bg-transparent flex items-center justify-center opacity-30 text-[9px] font-black text-gray-400">
+                    <div className="w-9 sm:w-14 h-7 sm:h-9 rounded-lg sm:rounded-xl border border-gray-300 dark:border-white/10 bg-transparent flex items-center justify-center opacity-30 text-[7px] sm:text-[9px] font-black text-gray-400">
                       -
                     </div>
                   )}
@@ -1583,17 +1583,17 @@ function AgendaModule({ members, API_URL }: any) {
                 Clases por la Mañana
               </div>
               <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
-                <table className="w-full border-collapse text-left">
+                <table className="w-full border-collapse text-left table-fixed">
                   <thead>
-                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[8px] uppercase tracking-wider font-black">
-                      <th className="p-3 text-center w-24">Hora</th>
-                      <th className="p-3 text-center">L</th>
-                      <th className="p-3 text-center">M</th>
-                      <th className="p-3 text-center">MI</th>
-                      <th className="p-3 text-center">J</th>
-                      <th className="p-3 text-center">V</th>
-                      <th className="p-3 text-center">S</th>
-                      <th className="p-3 text-center">D</th>
+                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
+                      <th className="p-1 sm:p-3 text-center w-14 sm:w-24 text-[7px] sm:text-[8px]">Hora</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">L</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">M</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">MI</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">J</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">V</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">S</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">D</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1609,17 +1609,17 @@ function AgendaModule({ members, API_URL }: any) {
                 Clases por la Tarde/Noche
               </div>
               <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
-                <table className="w-full border-collapse text-left">
+                <table className="w-full border-collapse text-left table-fixed">
                   <thead>
-                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[8px] uppercase tracking-wider font-black">
-                      <th className="p-3 text-center w-24">Hora</th>
-                      <th className="p-3 text-center">L</th>
-                      <th className="p-3 text-center">M</th>
-                      <th className="p-3 text-center">MI</th>
-                      <th className="p-3 text-center">J</th>
-                      <th className="p-3 text-center">V</th>
-                      <th className="p-3 text-center">S</th>
-                      <th className="p-3 text-center">D</th>
+                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
+                      <th className="p-1 sm:p-3 text-center w-14 sm:w-24 text-[7px] sm:text-[8px]">Hora</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">L</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">M</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">MI</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">J</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">V</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">S</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">D</th>
                     </tr>
                   </thead>
                   <tbody>
