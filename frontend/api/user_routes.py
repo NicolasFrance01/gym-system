@@ -8,6 +8,53 @@ import datetime
 
 router = APIRouter(prefix="/user", tags=["User"])
 
+def calculate_member_streak_and_message(member_id: int, db: Session) -> tuple[int, str]:
+    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
+    checkin_dates = {c.checkin_at.date() for c in checkins}
+    
+    bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member_id,
+        models.Booking.status == "attended"
+    ).all()
+    booking_dates = {b.start_time.date() for b in bookings}
+    
+    all_dates = sorted(list(checkin_dates.union(booking_dates)), reverse=True)
+    if not all_dates:
+        return 0, "¡Vamos por un nuevo comienzo con todo! ⚡"
+        
+    today = datetime.date.today()
+    last_attendance = all_dates[0]
+    days_since_last = (today - last_attendance).days
+    
+    # Si pasaron 3 o más días desde la última asistencia, la racha es 0.
+    if days_since_last >= 3:
+        streak = 0
+        message = "¡Vamos por un nuevo comienzo con todo! ⚡"
+    else:
+        # Calcular racha consecutiva partiendo de la última asistencia
+        streak = 1
+        current_date = last_attendance
+        for next_date in all_dates[1:]:
+            if (current_date - next_date).days == 1:
+                streak += 1
+                current_date = next_date
+            elif (current_date - next_date).days == 0:
+                continue
+            else:
+                break
+        
+        # Generar mensaje de acuerdo a los días sin asistir
+        if days_since_last == 0:
+            message = "¡Vas muy bien en racha, sigue así! 🔥"
+        elif days_since_last == 1:
+            message = "Tranqui, un descanso lo toma cualquiera. ¡Volvé pronto! 💪"
+        elif days_since_last == 2:
+            message = "¡Cuidado! Estamos por perder la racha. ¡Te extrañamos! ⚠️"
+        else:
+            message = "¡Vamos por un nuevo comienzo con todo! ⚡"
+            
+    return streak, message
+
 @router.post("/login")
 def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == credentials.dni).first()
@@ -28,6 +75,7 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
             member.status = 'ACTIVO'
         db.commit()
         
+    streak_count, streak_msg = calculate_member_streak_and_message(member.id, db)
     return {
         "status": "success",
         "member": {
@@ -38,7 +86,9 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
             "email": member.email,
             "membership_type": member.membership_type,
             "status": member.status,
-            "routine": member.routine
+            "routine": member.routine,
+            "streak": streak_count,
+            "streak_message": streak_msg
         }
     }
 

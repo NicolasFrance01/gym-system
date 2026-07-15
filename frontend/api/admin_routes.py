@@ -152,17 +152,40 @@ def get_member_checkins(member_id: int, db: Session = Depends(get_db)):
     else:
         cycle_start = today - datetime.timedelta(days=30)
 
-    sessions_used = db.query(models.Checkin).filter(
+    # Count totem checkins in the current cycle
+    sessions_used_totem = db.query(models.Checkin).filter(
         models.Checkin.member_id == member_id,
         models.Checkin.checkin_at >= cycle_start
     ).count()
 
-    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).order_by(models.Checkin.checkin_at.desc()).all()
+    # Count attended bookings in the current cycle
+    sessions_used_bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member_id,
+        models.Booking.status == "attended",
+        models.Booking.start_time >= cycle_start
+    ).count()
+
+    sessions_used = sessions_used_totem + sessions_used_bookings
+
+    # Get totem checkins list
+    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
+    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat() + "Z", "type": "Tótem"} for c in checkins]
+
+    # Get attended bookings list
+    bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member_id,
+        models.Booking.status == "attended"
+    ).all()
+    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat() + "Z", "type": b.class_name} for b in bookings]
+
+    # Combine and sort by date descending
+    all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
+
     return {
         "total_sessions": total_sessions,
         "sessions_used": sessions_used,
         "sessions_remaining": max(0, total_sessions - sessions_used),
-        "checkins": [{"id": c.id, "checkin_at": c.checkin_at.isoformat() + "Z"} for c in checkins]
+        "checkins": all_attendance
     }
 
 @router.put("/members/{member_id}/status")

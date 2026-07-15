@@ -30,6 +30,7 @@ class PaymentSchema(BaseModel):
     amount: float
     currency: str
     status: str
+    method: str
     created_at: datetime
 
     class Config:
