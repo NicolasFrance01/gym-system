@@ -14,21 +14,6 @@ def get_totem_member(dni: str, db: Session = Depends(get_db)):
     if not member:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
-    if member.status != "INACTIVO" and member.joined_at:
-        now = datetime.datetime.utcnow()
-        days_since = (now - member.joined_at).days
-        if days_since >= 30:
-            new_status = "DEUDA"
-        elif days_since >= 23:
-            new_status = "POR VENCER"
-        else:
-            new_status = "ACTIVO"
-        
-        if member.status != new_status:
-            member.status = new_status
-            db.commit()
-            db.refresh(member)
-
     wellness = member.wellness_data or {}
     return {
         "id": member.id,
@@ -65,3 +50,36 @@ def save_evolution_entry(dni: str, entry: dict, db: Session = Depends(get_db)):
     db.commit()
 
     return {"success": True, "evolution": evolution}
+
+@router.post("/{dni}/checkin/adicional")
+def checkin_adicional(dni: str, db: Session = Depends(get_db)):
+    member = db.query(models.Member).filter(models.Member.dni == dni).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Socio no encontrado")
+        
+    now = datetime.datetime.utcnow()
+    # Find any reserved class for this user around current time (e.g. -15 mins to +45 mins)
+    # Tolerance: 15 mins before class, 10 mins after class
+    start_window = now - datetime.timedelta(minutes=10)
+    end_window = now + datetime.timedelta(minutes=15)
+    
+    booking = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == "reserved",
+        models.Booking.start_time >= start_window,
+        models.Booking.start_time <= end_window
+    ).first()
+    
+    if not booking:
+        return {"status": "error", "detail": "No tienes clases reservadas para este horario"}
+        
+    booking.status = "attended"
+    db.commit()
+    
+    return {
+        "status": "success", 
+        "detail": f"Asistencia confirmada para {booking.class_name}",
+        "class_name": booking.class_name,
+        "member_name": member.name
+    }
+

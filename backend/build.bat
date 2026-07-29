@@ -52,6 +52,11 @@ echo  [4/4] Empaquetando con PyInstaller...
 echo  ^(Esto puede tardar entre 3 y 10 minutos segun tu maquina^)
 echo.
 pyinstaller gym_atlas.spec --clean --noconfirm
+echo  [OK] Build Principal completado.
+
+echo.
+echo  [5/5] Empaquetando version Adicional con PyInstaller...
+pyinstaller gym_atlas_adicional.spec --clean --noconfirm
 
 if errorlevel 1 (
     echo.
@@ -65,15 +70,16 @@ echo  ╔═══════════════════════�
 echo  ║           BUILD EXITOSO                 ║
 echo  ╚══════════════════════════════════════════╝
 echo.
-echo  Aplicacion generada en:  dist\GymAtlas\GymAtlas.exe
+echo  Aplicacion Principal en:  dist\FusionFitness\FusionFitness.exe
+echo  Aplicacion Adicional en:  dist\FusionFitnessAdicional\FusionFitnessAdicional.exe
 echo.
 echo  PROXIMOS PASOS:
 echo  ─────────────────────────────────────────
-echo  1. Edita dist\GymAtlas\.env con tu DATABASE_URL
-echo  2. Prueba ejecutando dist\GymAtlas\GymAtlas.exe
+echo  1. Edita dist\FusionFitness\.env con tu DATABASE_URL
+echo  2. Prueba ejecutando dist\FusionFitness\FusionFitness.exe
 echo  3. Para crear el INSTALADOR (.exe de setup):
 echo     - Instala Inno Setup desde https://jrsoftware.org/isinfo.php
 echo     - Abre installer.iss y presiona Compile (F9)
-echo     - El instalador quedara en: Output\GymAtlas_Setup.exe
+echo     - El instalador quedara en: Output\FusionFitness_Setup.exe
 echo.
 pause

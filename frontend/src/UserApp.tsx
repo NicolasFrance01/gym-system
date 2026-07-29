@@ -709,7 +709,12 @@ export default function UserApp() {
                              <p className="text-[10px] text-white/25 font-black uppercase mt-1">Día {dateStr} • {timeStr} HS • Estado: {b.status === 'attended' ? 'ASISTIDO' : 'CONFIRMADO'}</p>
                            </div>
                            {b.status === "reserved" && (
-                             <button onClick={()=>handleCancelBooking(b.id)} className="text-red-500/20 group-hover:text-red-500 transition-colors"><X size={20}/></button>
+                             <div className="flex flex-col items-end gap-2">
+                               <button onClick={()=>handleCancelBooking(b.id)} className="text-red-500/20 group-hover:text-red-500 transition-colors"><X size={20}/></button>
+                               <div className="mt-2 bg-black/40 rounded-xl p-2 border border-orange-500/20">
+                                   <p className="text-[8px] font-black uppercase text-orange-400">Tolerancia de ingreso: -15 mins a +10 mins del inicio.</p>
+                               </div>
+                             </div>
                            )}
                         </div>
                        );
@@ -803,6 +808,11 @@ export default function UserApp() {
                 <button onClick={()=>setIsBookingModalOpen(false)}><X size={24} className="text-white/20 hover:text-white"/></button>
               </div>
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
+                 <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 mb-2 text-center">
+                    <p className="text-[10px] font-black uppercase text-orange-400">
+                        Nota: La tolerancia de ingreso al salón es de 15 mins antes y hasta 10 mins después del horario de inicio.
+                    </p>
+                 </div>
                  <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex-shrink-0">Clases Disponibles</p>
                  <div className="space-y-3 overflow-y-auto flex-1 pr-1 custom-scrollbar min-h-0">
                     {daySchedules.length > 0 ? daySchedules.map((s) => {
