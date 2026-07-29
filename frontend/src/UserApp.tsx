@@ -324,10 +324,10 @@ export default function UserApp() {
 
   if (!isAuthenticated) {
     return (
-      <div className="fixed inset-0 bg-[#212C40] flex flex-col items-center justify-center p-4 font-sans overflow-hidden select-none">
+      <div className="fixed inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center p-4 font-sans overflow-hidden select-none">
         <div className="w-full max-w-sm bg-black/30 border border-white/10 p-5 sm:p-10 rounded-3xl backdrop-blur-2xl shadow-2xl space-y-4 sm:space-y-8">
           <div className="text-center">
-            <img src="/logo_dark.png" alt="Koach Gym Logo" className="h-20 sm:h-32 w-auto mx-auto object-contain mb-3 sm:mb-6 filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]" />
+            <img src="/logo_B.png" alt="Fusion Fitness Logo" className="h-20 sm:h-32 w-auto mx-auto object-contain mb-3 sm:mb-6 filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]" />
             <p className="text-white/20 text-[9px] sm:text-xs font-black uppercase tracking-[0.4em]">Personal Fitness OS</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-3 sm:space-y-5">
@@ -339,7 +339,7 @@ export default function UserApp() {
                <label className="text-[9px] sm:text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Contraseña</label>
                <input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-[#F38E26]/40 focus:border-[#F38E26] rounded-2xl py-2.5 sm:py-4 px-5 text-white outline-none transition-all text-center font-black text-xs sm:text-sm" value={password} onChange={e=>setPassword(e.target.value)} required />
              </div>
-             <button type="submit" disabled={isLoading} className="w-full py-2.5 sm:py-4 text-white bg-[#6E8AC9] border border-[#F38E26]/50 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all text-xs disabled:opacity-50 shadow-md">
+             <button type="submit" disabled={isLoading} className="w-full py-2.5 sm:py-4 text-white bg-[#F38E26] border border-[#F38E26]/50 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all text-xs disabled:opacity-50 shadow-md">
                {isLoading ? "Ingresando..." : "Entrar"}
              </button>
           </form>
@@ -447,7 +447,7 @@ export default function UserApp() {
              <div className="bg-[#141b29] border border-white/5 p-4 sm:p-6 rounded-3xl shadow-2xl flex flex-col min-h-0 h-full max-h-[75vh]">
                 <div className="flex justify-between items-center flex-shrink-0 mb-4">
                    <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3"><Clock className="text-blue-500" size={22}/> Agenda</h3>
-                   <div onClick={()=>setActiveTab('Calendar')} className="px-3 py-1 text-[8px] font-black rounded-xl uppercase shadow-lg bg-blue-500/20 text-[#6E8AC9]">{bookings.filter(b=>b.status !== "cancelled").length} Reservas</div>
+                   <div onClick={()=>setActiveTab('Calendar')} className="px-3 py-1 text-[8px] font-black rounded-xl uppercase shadow-lg bg-blue-500/20 text-[#F38E26]">{bookings.filter(b=>b.status !== "cancelled").length} Reservas</div>
                 </div>
 
                 {/* Vista Toggle Slider */}
@@ -536,7 +536,7 @@ export default function UserApp() {
                             <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-2xl scrollbar-thin">
                               <table className="w-full border-collapse text-left table-fixed">
                                 <thead>
-                                  <tr className="bg-[#6E8AC9]/5 text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
+                                  <tr className="bg-[#F38E26]/5 text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
                                     <th className="p-1 sm:p-3 text-center w-14 sm:w-20 text-[7px]">Hora</th>
                                     <th className="p-1 sm:p-3 text-center text-[7px]">L</th>
                                     <th className="p-1 sm:p-3 text-center text-[7px]">M</th>
@@ -618,7 +618,7 @@ export default function UserApp() {
                             <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-2xl scrollbar-thin">
                               <table className="w-full border-collapse text-left table-fixed">
                                 <thead>
-                                  <tr className="bg-[#6E8AC9]/5 text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
+                                  <tr className="bg-[#F38E26]/5 text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
                                     <th className="p-1 sm:p-3 text-center w-14 sm:w-20 text-[7px]">Hora</th>
                                     <th className="p-1 sm:p-3 text-center text-[7px]">L</th>
                                     <th className="p-1 sm:p-3 text-center text-[7px]">M</th>
@@ -763,13 +763,13 @@ export default function UserApp() {
                       <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
                       <div className="space-y-3">
                          <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-5 text-white text-xs outline-none focus:border-blue-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
-                         <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-3 bg-[#6E8AC9] text-white border border-[#F38E26] rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-md disabled:opacity-50 hover:scale-[1.01] transition-all">Actualizar Contraseña</button>
+                         <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-3 bg-[#F38E26] text-white border border-[#F38E26] rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-md disabled:opacity-50 hover:scale-[1.01] transition-all">Actualizar Contraseña</button>
                       </div>
                    </div>
                 </div>
                 
                 <div className="flex-shrink-0 pt-4 pb-2">
-                  <button onClick={()=>setIsAuthenticated(false)} className="w-full py-3.5 bg-[#212C40] text-white border border-[#F38E26] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-md">Cerrar Sesión</button>
+                  <button onClick={()=>setIsAuthenticated(false)} className="w-full py-3.5 bg-[#0a0a0a] text-white border border-[#F38E26] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-md">Cerrar Sesión</button>
                 </div>
              </div>
           </div>
@@ -799,7 +799,7 @@ export default function UserApp() {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#212C40] text-white font-sans flex flex-col overflow-hidden p-4 pb-24 select-none">
+    <div className="fixed inset-0 bg-[#0a0a0a] text-white font-sans flex flex-col overflow-hidden p-4 pb-24 select-none">
       {isBookingModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 sm:p-8 animate-in fade-in duration-300">
            <div className="bg-[#1b2435] border border-white/10 p-6 sm:p-10 rounded-[35px] sm:rounded-[50px] w-full max-w-sm max-h-[90vh] flex flex-col">

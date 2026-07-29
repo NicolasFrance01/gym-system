@@ -15,12 +15,12 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* ── Koach Gym Brand Colors ── */
+  /* ── Fusion Fitness Brand Colors ── */
   --koach-orange: #F38E26;
   --koach-orange-hover: #e07d18;
   --koach-orange-shadow: rgba(243, 142, 38, 0.25);
-  --koach-blue: #6E8AC9;
-  --koach-navy: #212C40;
+  --koach-blue: #F38E26;
+  --koach-navy: #0a0a0a;
 }
 
 :root.dark {

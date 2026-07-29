@@ -190,7 +190,7 @@ export default function AdminDashboard() {
 
    const handleExportPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(18); doc.text('KOACH GYM: REPORTE OFICIAL', 14, 22);
+    doc.setFontSize(18); doc.text('FUSION FITNESS: REPORTE OFICIAL', 14, 22);
     doc.text('RESUMEN EJECUTIVO', 14, 45);
     autoTable(doc, { startY: 50, head: [['Métrica', 'Valor']], body: [['Ingresos', `$${financeData?.total_revenue || 0}`], ['Socios', members.length]] });
     doc.save(`Reporte_Koach.pdf`);
@@ -301,7 +301,7 @@ export default function AdminDashboard() {
     });
 
     try {
-      const bgImg = await loadImage('/favicon.png');
+      const bgImg = await loadImage('/fusion_fitness.ico');
       const gState = new (doc as any).GState({opacity: 0.10});
       doc.setGState(gState);
       // Dibujar marca de agua centrada
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
 
     doc.setFontSize(22);
     doc.setTextColor(243, 142, 38);
-    doc.text('KOACH GYM', 105, 20, { align: 'center' });
+    doc.text('FUSION FITNESS', 105, 20, { align: 'center' });
     
     doc.setFontSize(14);
     doc.setTextColor(0, 0, 0);
@@ -369,10 +369,10 @@ export default function AdminDashboard() {
     doc.setFontSize(10);
     doc.setTextColor(150);
     doc.text('---------------------------------------------------------', 105, finalY + 20, { align: 'center' });
-    doc.text('Sello Institucional - Koach Gym', 105, finalY + 26, { align: 'center' });
+    doc.text('Sello Institucional - Fusion Fitness', 105, finalY + 26, { align: 'center' });
 
      try {
-      const logo = await loadImage('/logo_dark.png');
+      const logo = await loadImage('/logo_B.png');
       const logoAspect = logo.width / logo.height;
       const logoW = 55;
       const logoH = logoW / logoAspect;
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
     doc.text('ESTE COMPROBANTE ES VÁLIDO COMO CONSTANCIA DE PAGO', 105, finalY + 82, { align: 'center' });
     doc.setTextColor(0, 0, 0);
 
-    doc.save(`KoachGym_Comprobante_${member.name.replace(/\\s+/g, '_')}.pdf`);
+    doc.save(`FusionFitness_Comprobante_${member.name.replace(/\\s+/g, '_')}.pdf`);
   };
 
   const renderContent = () => {
@@ -431,11 +431,11 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="fixed inset-0 bg-[#F5F8FD] dark:bg-[#212C40] flex flex-col items-center justify-center p-4 overflow-hidden transition-colors duration-300 select-none">
-        <div className="absolute top-4 right-4"><button onClick={() => setIsDarkMode(!isDarkMode)} className="p-3 bg-[#6E8AC9]/10 dark:bg-white/5 border border-white/20 rounded-full text-black dark:text-white shadow-lg transition-all">{isDarkMode ? <Sun size={18}/> : <Moon size={18}/>}</button></div>
+      <div className="fixed inset-0 bg-[#F5F8FD] dark:bg-[#0a0a0a] flex flex-col items-center justify-center p-4 overflow-hidden transition-colors duration-300 select-none">
+        <div className="absolute top-4 right-4"><button onClick={() => setIsDarkMode(!isDarkMode)} className="p-3 bg-[#F38E26]/10 dark:bg-white/5 border border-white/20 rounded-full text-black dark:text-white shadow-lg transition-all">{isDarkMode ? <Sun size={18}/> : <Moon size={18}/>}</button></div>
         <div className="w-full max-w-[340px] bg-white dark:bg-black/30 border border-[#F38E26]/20 dark:border-white/10 p-5 sm:p-8 rounded-3xl backdrop-blur-2xl shadow-2xl animate-in zoom-in duration-500 space-y-4">
           <div className="flex justify-center">
-            <img src={isDarkMode ? "/logo_dark.png" : "/logo_light.png"} alt="Koach Gym Logo" className={`${isDarkMode ? "h-20 sm:h-36" : "h-24 sm:h-[12rem] -my-2"} w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]`} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+            <img src={isDarkMode ? "/logo_B.png" : "/logo.png"} alt="Fusion Fitness Logo" className={`${isDarkMode ? "h-20 sm:h-36" : "h-24 sm:h-[12rem] -my-2"} w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]`} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
             <div className="hidden p-6 rounded-2xl border border-[#F38E26]" style={{backgroundColor:'#F38E26'}}><ShieldCheck size={48} className="text-white" /></div>
           </div>
           
@@ -447,10 +447,10 @@ export default function AdminDashboard() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-3">
-            <input type="text" placeholder="Usuario" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border border-[#F38E26]/40 dark:border-white/10 focus:border-[#F38E26] rounded-xl py-2.5 px-4 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/10" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
-            <input type="password" placeholder="Contraseña" className="w-full bg-[#6E8AC9]/5 dark:bg-black/40 border border-[#F38E26]/40 dark:border-white/10 focus:border-[#F38E26] rounded-xl py-2.5 px-4 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/10" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
+            <input type="text" placeholder="Usuario" className="w-full bg-[#F38E26]/5 dark:bg-black/40 border border-[#F38E26]/40 dark:border-white/10 focus:border-[#F38E26] rounded-xl py-2.5 px-4 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/10" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} required />
+            <input type="password" placeholder="Contraseña" className="w-full bg-[#F38E26]/5 dark:bg-black/40 border border-[#F38E26]/40 dark:border-white/10 focus:border-[#F38E26] rounded-xl py-2.5 px-4 text-black dark:text-white outline-none transition-all text-center text-xs placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#F38E26]/10" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} required />
             
-            <button type="submit" className="w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-[#212C40] text-white border border-[#F38E26] dark:bg-[#6E8AC9] dark:text-[#212C40] hover:scale-[1.01]">Ingresar</button>
+            <button type="submit" className="w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-[#0a0a0a] text-white border border-[#F38E26] dark:bg-[#F38E26] dark:text-[#0a0a0a] hover:scale-[1.01]">Ingresar</button>
           </form>
         </div>
       </div>
@@ -458,7 +458,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F8FD] dark:bg-[#212C40] text-black dark:text-[#e0e0e0] font-sans flex overflow-hidden text-[9px] transition-colors duration-300">
+    <div className="min-h-screen bg-[#F5F8FD] dark:bg-[#0a0a0a] text-black dark:text-[#e0e0e0] font-sans flex overflow-hidden text-[9px] transition-colors duration-300">
       {/* Portaled Modals (Centered in Viewport) */}
       {(isModalOpen || isPaymentModalOpen) && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-10 bg-black/50 dark:bg-black/90 backdrop-blur-md overflow-y-auto">
@@ -642,7 +642,7 @@ export default function AdminDashboard() {
                 )}
               </div>
               {modalType !== 'history' && (
-                <div className="flex gap-4 mt-8 border-t border-gray-200 dark:border-white/5 pt-6"><button className="flex-1 py-3 text-gray-600 dark:text-white/40 font-black uppercase text-[10px]" onClick={() => setIsModalOpen(false)}>Cancelar</button><button className="flex-1 py-3 bg-[#212C40] dark:bg-[#6E8AC9] text-white dark:text-[#212C40] border border-[#F38E26] rounded-xl font-black uppercase text-[10px] tracking-widest hover:scale-[1.02] transition-all" onClick={() => { if(modalType==='plan') handleSavePlan(); else if(modalType==='member') handleSaveMember(); else if(modalType==='staff') handleSaveStaff(); }}>Guardar</button></div>
+                <div className="flex gap-4 mt-8 border-t border-gray-200 dark:border-white/5 pt-6"><button className="flex-1 py-3 text-gray-600 dark:text-white/40 font-black uppercase text-[10px]" onClick={() => setIsModalOpen(false)}>Cancelar</button><button className="flex-1 py-3 bg-[#0a0a0a] dark:bg-[#F38E26] text-white dark:text-[#0a0a0a] border border-[#F38E26] rounded-xl font-black uppercase text-[10px] tracking-widest hover:scale-[1.02] transition-all" onClick={() => { if(modalType==='plan') handleSavePlan(); else if(modalType==='member') handleSaveMember(); else if(modalType==='staff') handleSaveStaff(); }}>Guardar</button></div>
               )}
             </div>
           )}
@@ -659,7 +659,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex justify-between items-center mb-2">
             <div className="flex justify-center flex-1">
-              <img src="/logo_dark.png" alt="Logo" className="h-20 w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+              <img src="/logo_B.png" alt="Logo" className="h-20 w-auto object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)]" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
               <div className="hidden w-16 h-16 rounded-xl flex items-center justify-center border border-[#F38E26]" style={{backgroundColor:'#F38E26'}}><Brain size={24} className="text-white" /></div>
             </div>
             <button onClick={() => setIsSidebarOpen(false)} className="text-white/60 hover:text-white md:hidden p-1.5 rounded-lg bg-white/5">
@@ -695,7 +695,7 @@ export default function AdminDashboard() {
         <button onClick={() => { localStorage.removeItem('gym_session'); localStorage.removeItem('gym_role'); localStorage.removeItem('gym_user'); setIsAuthenticated(false); setLoggedUser(null); }} className="w-full p-2 bg-red-500/10 hover:bg-red-500 rounded-xl text-red-500 hover:text-white text-[9px] font-black uppercase tracking-widest transition-all mt-4 shrink-0">Salir</button>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 relative bg-[#F5F8FD] dark:bg-[#212C40]">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 relative bg-[#F5F8FD] dark:bg-[#0a0a0a]">
         <header className="flex items-center justify-between mb-6 sm:mb-8 max-w-full gap-4 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => setIsSidebarOpen(true)} className="text-black dark:text-white p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 md:hidden hover:scale-105 transition-all">
@@ -703,10 +703,10 @@ export default function AdminDashboard() {
             </button>
             <div className="min-w-0">
               <h2 className="text-lg sm:text-xl font-black text-black dark:text-white tracking-tighter uppercase truncate leading-none">{activeTab}</h2>
-              <p className="text-[7px] uppercase font-black tracking-[0.3em] mt-1" style={{color:'#6E8AC9'}}>Koach Gym</p>
+              <p className="text-[7px] uppercase font-black tracking-[0.3em] mt-1" style={{color:'#F38E26'}}>Fusion Fitness</p>
             </div>
           </div>
-          <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[8px] uppercase tracking-widest hover:scale-105 transition-all whitespace-nowrap bg-[#212C40] text-white dark:bg-[#6E8AC9] dark:text-[#212C40] border border-[#F38E26] shadow-sm"><Download size={14}/> Reporte Global</button>
+          <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[8px] uppercase tracking-widest hover:scale-105 transition-all whitespace-nowrap bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26] shadow-sm"><Download size={14}/> Reporte Global</button>
         </header>
         <div className="max-w-full overflow-x-hidden">
         {error && (
@@ -748,7 +748,7 @@ function PaymentModal({ plans, member, onPay, onClose }: any) {
             </div>
          </div>
 
-         <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-white/5"><button className="flex-1 py-4 text-gray-600 dark:text-white/40 font-black uppercase text-[10px]" onClick={onClose}>Cancelar</button><button className="flex-1 py-4 bg-[#212C40] dark:bg-[#6E8AC9] text-white dark:text-[#212C40] border border-[#F38E26] rounded-2xl font-black uppercase text-[10px]" onClick={()=>onPay(amount, method)}>Generar Pago</button></div>
+         <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-white/5"><button className="flex-1 py-4 text-gray-600 dark:text-white/40 font-black uppercase text-[10px]" onClick={onClose}>Cancelar</button><button className="flex-1 py-4 bg-[#0a0a0a] dark:bg-[#F38E26] text-white dark:text-[#0a0a0a] border border-[#F38E26] rounded-2xl font-black uppercase text-[10px]" onClick={()=>onPay(amount, method)}>Generar Pago</button></div>
       </div>
     </div>
   );
@@ -930,7 +930,7 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
               </button>
             ))}
           </div>
-          <button onClick={onAddClick} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#212C40] text-white dark:bg-[#6E8AC9] dark:text-[#212C40] border border-[#F38E26] whitespace-nowrap">+ Nuevo Socio</button>
+          <button onClick={onAddClick} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26] whitespace-nowrap">+ Nuevo Socio</button>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -939,7 +939,7 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
           return (
             <div key={m.id} className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5 transition-all group overflow-hidden" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.15)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor=''}}>
               <div className="flex items-start gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shrink-0" style={{backgroundColor:'#212C40', color:'#F38E26'}}>{m.name[0]}</div>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shrink-0" style={{backgroundColor:'#0a0a0a', color:'#F38E26'}}>{m.name[0]}</div>
                 <div className="min-w-0 flex-1">
                   <p className="font-black text-black dark:text-white text-[10px] uppercase break-words leading-tight">{m.name}</p>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -973,7 +973,7 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
 function PlansModule({ plans, onEdit, onDelete, onAddClick }: any) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Planes</h3><button onClick={onAddClick} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#212C40] text-white dark:bg-[#6E8AC9] dark:text-[#212C40] border border-[#F38E26]">+ Nuevo</button></div>
+      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Planes</h3><button onClick={onAddClick} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26]">+ Nuevo</button></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
          {plans.map((p: any) => (
            <div key={p.id} className="p-6 bg-white dark:bg-white/5 rounded-3xl border border-gray-200 dark:border-white/5 relative group">
@@ -994,7 +994,7 @@ function PlansModule({ plans, onEdit, onDelete, onAddClick }: any) {
 function StaffModule({ staff, onEdit, onDelete, onAddClick }: any) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Personal</h3><button onClick={onAddClick} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#212C40] text-white dark:bg-[#6E8AC9] dark:text-[#212C40] border border-[#F38E26]">+ Nuevo</button></div>
+      <div className="flex justify-between items-center"><h3 className="font-black text-lg uppercase">Personal</h3><button onClick={onAddClick} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26]">+ Nuevo</button></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
          {staff.map((s: any) => (
            <div key={s.id} className="p-6 bg-white dark:bg-white/5 rounded-3xl border border-gray-200 dark:border-white/5 group transition-all" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.2)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor=''}}>
@@ -1193,7 +1193,7 @@ function ProfileModule({ user, onSave }: any) {
             <label className="text-[9px] text-gray-500 dark:text-white/20 uppercase font-black px-2">Nueva Contraseña</label>
             <input type="text" placeholder="Ingresa tu nueva clave..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={password} onChange={e=>setPassword(e.target.value)} />
          </div>
-         <button className="w-full py-4 rounded-xl font-black text-xs uppercase transition-all mt-4 bg-[#212C40] text-white border border-[#F38E26] dark:bg-[#6E8AC9] dark:text-[#212C40] hover:scale-[1.01]" onClick={() => onSave(password)}>Guardar Cambios</button>
+         <button className="w-full py-4 rounded-xl font-black text-xs uppercase transition-all mt-4 bg-[#0a0a0a] text-white border border-[#F38E26] dark:bg-[#F38E26] dark:text-[#0a0a0a] hover:scale-[1.01]" onClick={() => onSave(password)}>Guardar Cambios</button>
       </div>
     </div>
   );
@@ -1519,7 +1519,7 @@ function AgendaModule({ members, API_URL }: any) {
       return (
         <tr key={rowIndex} className="border-b border-gray-200 dark:border-white/5">
           <td className="p-1 sm:p-3 text-center w-14 sm:w-24">
-            <span className="inline-block px-1.5 sm:px-3 py-1 sm:py-1.5 bg-[#6E8AC9]/10 text-gray-700 dark:text-gray-300 font-black rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 text-[7px] sm:text-[9px] uppercase tracking-tight">
+            <span className="inline-block px-1.5 sm:px-3 py-1 sm:py-1.5 bg-[#F38E26]/10 text-gray-700 dark:text-gray-300 font-black rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 text-[7px] sm:text-[9px] uppercase tracking-tight">
               {slot.start} - {slot.end}
             </span>
           </td>
@@ -1588,7 +1588,7 @@ function AgendaModule({ members, API_URL }: any) {
             setNewClassData({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: selectedWeekday, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
             setIsEditingClass(false);
             setIsClassModalOpen(true);
-          }} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#212C40] text-white dark:bg-[#6E8AC9] dark:text-[#212C40] border border-[#F38E26] whitespace-nowrap">+ Agregar Clase Fija</button>
+          }} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26] whitespace-nowrap">+ Agregar Clase Fija</button>
           <button onClick={() => setIsHolidayModalOpen(true)} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">+ Configurar Feriado</button>
         </div>
       </div>
@@ -1613,7 +1613,7 @@ function AgendaModule({ members, API_URL }: any) {
               <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
                 <table className="w-full border-collapse text-left table-fixed">
                   <thead>
-                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
+                    <tr className="bg-[#F38E26]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
                       <th className="p-1 sm:p-3 text-center w-14 sm:w-24 text-[7px] sm:text-[8px]">Hora</th>
                       <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">L</th>
                       <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">M</th>
@@ -1639,7 +1639,7 @@ function AgendaModule({ members, API_URL }: any) {
               <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
                 <table className="w-full border-collapse text-left table-fixed">
                   <thead>
-                    <tr className="bg-[#6E8AC9]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
+                    <tr className="bg-[#F38E26]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
                       <th className="p-1 sm:p-3 text-center w-14 sm:w-24 text-[7px] sm:text-[8px]">Hora</th>
                       <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">L</th>
                       <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">M</th>
@@ -1906,7 +1906,7 @@ function AgendaModule({ members, API_URL }: any) {
               </div>
               <div className="flex gap-3 pt-4">
                 <button onClick={() => setIsClassModalOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
-                <button onClick={handleSaveClass} className="flex-1 py-3 bg-[#212C40] text-white rounded-xl text-[9px] font-black uppercase border border-[#F38E26]">Guardar</button>
+                <button onClick={handleSaveClass} className="flex-1 py-3 bg-[#0a0a0a] text-white rounded-xl text-[9px] font-black uppercase border border-[#F38E26]">Guardar</button>
               </div>
             </div>
           </div>

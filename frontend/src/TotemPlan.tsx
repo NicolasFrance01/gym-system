@@ -58,7 +58,7 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string; bor
   INACTIVO:    { label: 'Inactivo',    color: 'text-gray-400',   bg: 'bg-gray-400/10',   border: 'border-gray-400/30',   Icon: AlertCircle },
 };
 
-const CHART_COLORS = ['#F38E26','#6E8AC9','#10b981','#a855f7','#f43f5e','#eab308','#06b6d4'];
+const CHART_COLORS = ['#F38E26','#F38E26','#10b981','#a855f7','#f43f5e','#eab308','#06b6d4'];
 
 const todayISO = () => new Date().toISOString().split('T')[0];
 
@@ -118,7 +118,7 @@ function NumPad({ value, onChange, onSubmit, loading, error, isDark }:
         disabled={value.length < 4 || loading}
         className={`w-full h-16 rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed
           text-xl font-black tracking-wide transition-all active:scale-95 shadow-lg border border-[#F38E26]
-          ${isDark ? 'bg-[#6E8AC9] text-[#212C40]' : 'bg-[#212C40] text-white'}`}
+          ${isDark ? 'bg-[#F38E26] text-[#0a0a0a]' : 'bg-[#0a0a0a] text-white'}`}
       >
         {loading ? 'Buscando...' : 'INGRESAR →'}
       </button>
@@ -355,8 +355,8 @@ export default function TotemPlan() {
   const statusCfg = member ? (STATUS_CFG[member.status] ?? STATUS_CFG['INACTIVO']) : null;
 
   // ─── Theme classes ────────────────────────────────────────────────────────
-  const bg    = isDark ? 'bg-[#212C40]'         : 'bg-[#6E8AC9]';
-  const card  = isDark ? 'bg-black/30 border-white/10' : 'bg-white border-[#6E8AC9]/30 text-gray-900 shadow-sm';
+  const bg    = isDark ? 'bg-[#0a0a0a]'         : 'bg-[#F38E26]';
+  const card  = isDark ? 'bg-black/30 border-white/10' : 'bg-white border-[#F38E26]/30 text-gray-900 shadow-sm';
   const text  = isDark ? 'text-white'            : 'text-white';
   const muted = isDark ? 'text-white/50'         : 'text-white/70';
 
@@ -394,9 +394,9 @@ export default function TotemPlan() {
               transition={{ delay: 0.1 }}
               className="mb-8 flex flex-col items-center gap-4"
             >
-              <img src={isDark ? '/logo_dark.png' : '/logo_light.png'} alt="Koach Gym Logo" className={`${isDark ? "w-44 h-44" : "w-[14.5rem] h-[14.5rem] -my-6"} object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]`} />
+              <img src={isDark ? '/logo_B.png' : '/logo.png'} alt="Fusion Fitness Logo" className={`${isDark ? "w-44 h-44" : "w-[14.5rem] h-[14.5rem] -my-6"} object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.7)] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]`} />
               <div className="text-center">
-                <h1 className="text-3xl font-black tracking-tight" style={{color:'#F38E26'}}>KOACH GYM</h1>
+                <h1 className="text-3xl font-black tracking-tight" style={{color:'#F38E26'}}>FUSION FITNESS</h1>
                 <p className={`text-sm font-semibold tracking-[0.2em] uppercase mt-1 ${muted}`}>Totem de Entrenamiento</p>
               </div>
             </motion.div>
@@ -434,7 +434,7 @@ export default function TotemPlan() {
             <header className={`sticky top-0 z-40 border-b px-6 py-4 flex items-center justify-between backdrop-blur-sm
               ${isDark ? 'bg-[#141b29]/95 border-white/10' : 'bg-white/90 border-gray-200'}`}>
               <div className="flex items-center gap-4">
-                <img src={isDark ? '/logo_dark.png' : '/logo_light.png'} alt="Logo" className="w-9 h-9 object-contain" />
+                <img src={isDark ? '/logo_B.png' : '/logo.png'} alt="Logo" className="w-9 h-9 object-contain" />
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-wider ${muted}`}>Bienvenido/a</p>
                   <h2 className="text-lg font-black leading-tight">{member.name}</h2>
@@ -537,7 +537,7 @@ export default function TotemPlan() {
                             onClick={handleSave}
                             disabled={saving}
                             whileTap={{ scale: 0.95 }}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg border border-[#F38E26] ${saveOk ? 'bg-[#10b981] border-green-500 text-white' : isDark ? 'bg-[#6E8AC9] text-[#212C40]' : 'bg-[#212C40] text-white'}`}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg border border-[#F38E26] ${saveOk ? 'bg-[#10b981] border-green-500 text-white' : isDark ? 'bg-[#F38E26] text-[#0a0a0a]' : 'bg-[#0a0a0a] text-white'}`}
                           >
                             {saving ? <Spinner /> : saveOk ? <CheckCircle size={16} /> : <Save size={16} />}
                             {saving ? 'Guardando…' : saveOk ? '¡Guardado!' : 'Guardar'}
