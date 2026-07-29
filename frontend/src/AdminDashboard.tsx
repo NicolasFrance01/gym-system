@@ -924,22 +924,21 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
           <div className="flex items-center gap-1 flex-wrap">
             {statusOptions.map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
-                style={statusFilter === s ? {backgroundColor:'#F38E26', color:'#fff'} : {}}
-                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${statusFilter === s ? '' : 'bg-white dark:bg-white/5 text-gray-500 dark:text-white/30 hover:text-black dark:hover:text-white'}`}>
+                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${statusFilter === s ? 'bg-orange-500 text-black' : 'bg-white dark:bg-white/5 text-gray-500 dark:text-white/30 hover:text-black dark:hover:text-white'}`}>
                 {s === 'TODOS' ? `Todos (${members.length})` : s === 'ACTIVO' ? `Al día (${members.filter((m:any)=>m.status==='ACTIVO'||m.status==='AL DIA').length})` : s === 'POR VENCER' ? `Por vencer (${members.filter((m:any)=>m.status==='POR VENCER').length})` : s === 'DEUDA' ? `Deuda (${members.filter((m:any)=>m.status==='DEUDA').length})` : `Inactivo (${members.filter((m:any)=>m.status==='INACTIVO').length})`}
               </button>
             ))}
           </div>
-          <button onClick={onAddClick} className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26] whitespace-nowrap">+ Nuevo Socio</button>
+          <button onClick={onAddClick} className="bg-orange-500 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 whitespace-nowrap">+ Nuevo Socio</button>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {filteredMembers.map((m: any) => {
           const { daysIn, daysLeft } = memberDaysInfo(m.effective_joined_at || m.joined_at, m.status);
           return (
-            <div key={m.id} className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5 transition-all group overflow-hidden" onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(243,142,38,0.15)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor=''}}>
+            <div key={m.id} className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5 hover:border-orange-500/10 transition-all group overflow-hidden">
               <div className="flex items-start gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shrink-0" style={{backgroundColor:'#0a0a0a', color:'#F38E26'}}>{m.name[0]}</div>
+                <div className="w-10 h-10 bg-neutral-800 rounded-xl flex items-center justify-center font-black text-orange-500 text-sm shrink-0">{m.name[0]}</div>
                 <div className="min-w-0 flex-1">
                   <p className="font-black text-black dark:text-white text-[10px] uppercase break-words leading-tight">{m.name}</p>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -957,9 +956,9 @@ function MembersModule({ members, onEdit, onDelete, onAddClick, onPayClick, onHi
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => onPayClick(m)} className="col-span-2 py-2 bg-green-500/10 text-green-500 rounded-lg text-[8px] font-black uppercase hover:bg-green-500 hover:text-white transition-all">Cobrar</button>
+                <button onClick={() => onPayClick(m)} className="col-span-2 py-2 bg-green-500/10 text-green-500 rounded-lg text-[8px] font-black uppercase hover:bg-green-500 hover:text-black dark:text-white transition-all">Cobrar</button>
                 <button onClick={() => onEdit(m)} className="py-2 bg-white dark:bg-white/5 text-gray-600 dark:text-white/40 rounded-lg text-[8px] font-black uppercase">Editar</button>
-                <button onClick={() => onHistory(m)} className="py-2 rounded-lg text-[8px] font-black uppercase" style={{color:'#F38E26', backgroundColor:'rgba(243,142,38,0.08)'}}>Historial</button>
+                <button onClick={() => onHistory(m)} className="py-2 bg-white dark:bg-white/5 text-orange-400 rounded-lg text-[8px] font-black uppercase">Historial</button>
                 <button onClick={() => onDelete(m.id)} className="col-span-2 py-2 bg-red-500/10 text-red-500 rounded-lg text-[8px] font-black uppercase opacity-0 group-hover:opacity-100 transition-all">Dar de Baja</button>
               </div>
             </div>
