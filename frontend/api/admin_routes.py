@@ -520,3 +520,21 @@ def delete_exercise(ex_id: int, db: Session = Depends(get_db)):
     db.delete(ex)
     db.commit()
     return {"status": "success"}
+
+@router.put("/exercises/{ex_id}", response_model=schemas.ExerciseSchema)
+def update_exercise(ex_id: int, ex: schemas.ExerciseSchema, db: Session = Depends(get_db)):
+    db_ex = db.query(models.Exercise).filter(models.Exercise.id == ex_id).first()
+    if not db_ex:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    
+    update_data = ex.model_dump(exclude_unset=True)
+    if "id" in update_data:
+        del update_data["id"]
+        
+    for key, value in update_data.items():
+        setattr(db_ex, key, value)
+        
+    db.commit()
+    db.refresh(db_ex)
+    return db_ex
+

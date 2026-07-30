@@ -109,4 +109,9 @@ class Exercise(Base):
     segment = Column(String)       # Ej: Tren superior
     zone = Column(String)          # Ej: Pecho
     muscle_group = Column(String)  # Ej: Pectoral mayor
-
+    mechanics = Column(String, nullable=True) # Ej: Compuesto
+    equipment = Column(String, nullable=True) # Ej: Barra
+    video_url = Column(String, nullable=True)
+    instructions = Column(String, nullable=True)
+    rpe = Column(String, nullable=True)
+    rir = Column(String, nullable=True)

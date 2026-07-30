@@ -145,6 +145,12 @@ class ExerciseSchema(BaseModel):
     segment: Optional[str] = None
     zone: Optional[str] = None
     muscle_group: Optional[str] = None
+    mechanics: Optional[str] = None
+    equipment: Optional[str] = None
+    video_url: Optional[str] = None
+    instructions: Optional[str] = None
+    rpe: Optional[str] = None
+    rir: Optional[str] = None
 
     class Config:
         from_attributes = True

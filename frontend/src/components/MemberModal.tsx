@@ -68,10 +68,13 @@ export default function MemberModal({ member, plans, API_URL, onSave, onClose }:
     onSave({ ...formData, routine });
   };
 
-  const filteredExercises = exercises.filter(e => 
-    e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (e.muscle_group && e.muscle_group.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredExercises = exercises.filter((e:any) => {
+    const matchSearch = e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       (e.muscle_group && e.muscle_group.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchSegment = selectedSegment === 'Todos' || e.segment === selectedSegment;
+    const matchZone = selectedZone === 'Todas' || e.zone === selectedZone;
+    return matchSearch && matchSegment && matchZone;
+  });
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
