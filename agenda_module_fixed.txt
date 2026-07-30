@@ -1,0 +1,777 @@
+function AgendaModule({ members, API_URL }: any) {
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [activeSchedule, setActiveSchedule] = useState<any | null>(null);
+  const [classBookings, setClassBookings] = useState<any[]>([]);
+  const [walkInQuery, setWalkInQuery] = useState('');
+  const [isNewMemberOpen, setIsNewMemberOpen] = useState(false);
+  const [newMemberData, setNewMemberData] = useState({ name: '', dni: '', phone: '', email: '', membership_type: 'Basic' });
+  const [holidayDate, setHolidayDate] = useState('');
+  const [holidayDesc, setHolidayDesc] = useState('');
+  const [isHolidayModalOpen, setIsHolidayModalOpen] = useState(false);
+  const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+  const [newClassData, setNewClassData] = useState<{ id?: number, name: string, code: string, day_of_week: number, start_time: string, end_time: string, color: string, capacity: number }>({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: 0, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
+  const [isEditingClass, setIsEditingClass] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  const defaultActivities = [
+    { name: 'Entrenamiento Funcional', code: 'EF', color: '#3b82f6' },
+    { name: 'Pilates en Suelo', code: 'PS', color: '#f97316' },
+    { name: 'Entrenamiento Personalizado', code: 'EP', color: '#ec4899' },
+    { name: 'Salsa y Bachata', code: 'SB', color: '#eab308' },
+    { name: 'Zumba', code: 'ZB', color: '#ef4444' },
+    { name: 'Reguetón Juvenil', code: 'RJ', color: '#06b6d4' }
+  ];
+
+  const [activities, setActivities] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem('gym_activities');
+      return stored ? JSON.parse(stored) : defaultActivities;
+    } catch {
+      return defaultActivities;
+    }
+  });
+
+  const [isAddingNewActivity, setIsAddingNewActivity] = useState(false);
+  const [newActivityData, setNewActivityData] = useState({ name: '', code: '', color: '#3b82f6' });
+
+  const handleAddNewActivity = () => {
+    if (!newActivityData.name || !newActivityData.code) {
+      alert("Por favor completa el nombre y código de la actividad.");
+      return;
+    }
+    const codeUpper = newActivityData.code.substring(0, 2).toUpperCase();
+    const updated = [...activities, { name: newActivityData.name, code: codeUpper, color: newActivityData.color }];
+    setActivities(updated);
+    localStorage.setItem('gym_activities', JSON.stringify(updated));
+    
+    // Auto-select this newly created activity in the new class form
+    setNewClassData(prev => ({
+      ...prev,
+      name: newActivityData.name,
+      code: codeUpper,
+      color: newActivityData.color
+    }));
+    
+    setNewActivityData({ name: '', code: '', color: '#3b82f6' });
+    setIsAddingNewActivity(false);
+  };
+
+  const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+  const getDayOfWeek = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    let day = d.getDay();
+    return day === 0 ? 6 : day - 1;
+  };
+
+  const getWeekDatesForDate = (dateStr: string) => {
+    const baseDate = new Date(dateStr + 'T00:00:00');
+    const day = baseDate.getDay();
+    const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(baseDate.setDate(diff));
+    
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  };
+
+  const getUniqueSlots = (allSchedules: any[]) => {
+    const slotsMap = new Map<string, { start: string, end: string }>();
+    
+    const defaultSlots = [
+      { start: "08:30", end: "09:30" },
+      { start: "08:50", end: "09:50" },
+      { start: "10:00", end: "11:00" },
+      { start: "17:30", end: "18:30" },
+      { start: "18:15", end: "19:15" },
+      { start: "18:30", end: "19:30" },
+      { start: "19:30", end: "20:30" }
+    ];
+    defaultSlots.forEach(s => {
+      slotsMap.set(`${s.start}-${s.end}`, s);
+    });
+
+    allSchedules.forEach(s => {
+      const key = `${s.start_time}-${s.end_time}`;
+      if (!slotsMap.has(key)) {
+        slotsMap.set(key, { start: s.start_time, end: s.end_time });
+      }
+    });
+
+    const sortedSlots = Array.from(slotsMap.values()).sort((a, b) => a.start.localeCompare(b.start));
+    
+    const morning = sortedSlots.filter(s => {
+      const hour = parseInt(s.start.split(":")[0]);
+      return hour < 12;
+    });
+    
+    const evening = sortedSlots.filter(s => {
+      const hour = parseInt(s.start.split(":")[0]);
+      return hour >= 12;
+    });
+
+    return { morning, evening };
+  };
+
+  const fetchSchedules = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/class_schedules`);
+      if (res.ok) setSchedules(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchHolidays = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/holidays`);
+      if (res.ok) setHolidays(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchHolidays();
+  }, []);
+
+  const selectedWeekday = getDayOfWeek(selectedDate);
+  const isHoliday = holidays.find(h => h.date === selectedDate);
+
+  const fetchClassBookings = async (scheduleId: number) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/class_schedules/${scheduleId}/bookings?date=${selectedDate}`);
+      if (res.ok) setClassBookings(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const handleToggleAttendance = async (bookingId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'attended' ? 'reserved' : 'attended';
+    try {
+      const res = await fetch(`${API_URL}/admin/bookings/${bookingId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        fetchClassBookings(activeSchedule.id);
+        fetchSchedules();
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleAddWalkIn = async (member: any) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/bookings/walk-in`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dni: member.dni,
+          class_schedule_id: activeSchedule.id,
+          date: selectedDate
+        })
+      });
+      if (res.ok) {
+        setWalkInQuery('');
+        fetchClassBookings(activeSchedule.id);
+        fetchSchedules();
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Error al agregar socio espontáneo");
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleCreateNewMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemberData.name || !newMemberData.dni) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newMemberData,
+          password: '123',
+          photo_url: `https://i.pravatar.cc/300?u=${newMemberData.dni}`
+        })
+      });
+      if (res.ok) {
+        const createdMember = await res.json();
+        await handleAddWalkIn(createdMember);
+        setIsNewMemberOpen(false);
+        setNewMemberData({ name: '', dni: '', phone: '', email: '', membership_type: 'Basic' });
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Error al crear socio");
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleSaveClass = async () => {
+    try {
+      const method = isEditingClass ? 'PUT' : 'POST';
+      const url = isEditingClass 
+        ? `${API_URL}/admin/class_schedules/${newClassData.id}` 
+        : `${API_URL}/admin/class_schedules`;
+        
+      const res = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClassData)
+      });
+      if (res.ok) {
+        fetchSchedules();
+        setIsClassModalOpen(false);
+        setIsEditingClass(false);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteClass = (id: number) => {
+    showConfirm(
+      "¿Eliminar Horario de Clase?",
+      "¿Estás seguro de que deseas eliminar este horario de clase de la grilla permanente?",
+      async () => {
+        try {
+          const res = await fetch(`${API_URL}/admin/class_schedules/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            fetchSchedules();
+            if (activeSchedule?.id === id) setActiveSchedule(null);
+          }
+        } catch (e) { console.error(e); }
+      }
+    );
+  };
+
+  const handleSaveHoliday = async () => {
+    if (!holidayDate || !holidayDesc) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/holidays`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: holidayDate, description: holidayDesc })
+      });
+      if (res.ok) {
+        fetchHolidays();
+        setHolidayDate('');
+        setHolidayDesc('');
+        setIsHolidayModalOpen(false);
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Error al registrar feriado");
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteHoliday = async (id: number) => {
+    if (!confirm("¿Eliminar este feriado?")) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/holidays/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchHolidays();
+    } catch (e) { console.error(e); }
+  };
+
+  const filteredMembersSearch = walkInQuery.trim() === '' ? [] : members.filter((m: any) => {
+    const query = walkInQuery.toLowerCase();
+    const matchesDni = m.dni.includes(query);
+    const matchesName = m.name.toLowerCase().includes(query);
+    const alreadyBooked = classBookings.some(b => b.member.id === m.id);
+    return (matchesDni || matchesName) && !alreadyBooked;
+  }).slice(0, 5);
+
+  const { morning: morningSlots, evening: eveningSlots } = getUniqueSlots(schedules);
+  const weekDates = getWeekDatesForDate(selectedDate);
+  const weekdayShortNames = ["L", "M", "MI", "J", "V", "S", "D"];
+
+  const renderSlotRows = (slots: typeof morningSlots) => {
+    return slots.map((slot, rowIndex) => {
+      return (
+        <tr key={rowIndex} className="border-b border-gray-200 dark:border-white/5">
+          <td className="p-1 sm:p-3 text-center w-14 sm:w-24">
+            <span className="inline-block px-1.5 sm:px-3 py-1 sm:py-1.5 bg-[#F38E26]/10 text-gray-700 dark:text-gray-300 font-black rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 text-[7px] sm:text-[9px] uppercase tracking-tight">
+              {slot.start} - {slot.end}
+            </span>
+          </td>
+          {weekdayShortNames.map((_, dayIndex) => {
+            const cellSchedules = schedules.filter(s => s.day_of_week === dayIndex && s.start_time === slot.start && s.end_time === slot.end);
+            return (
+              <td 
+                key={dayIndex} 
+                className="p-1 sm:p-2 text-center min-w-[38px] sm:min-w-[70px] cursor-pointer hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all rounded-xl"
+                title="Doble click para agregar clase en este horario"
+                onDoubleClick={() => {
+                  setNewClassData({
+                    name: 'Entrenamiento Funcional',
+                    code: 'EF',
+                    day_of_week: dayIndex,
+                    start_time: slot.start,
+                    end_time: slot.end,
+                    color: '#3b82f6',
+                    capacity: 15
+                  });
+                  setIsEditingClass(false);
+                  setIsClassModalOpen(true);
+                }}
+              >
+                <div className="flex flex-col gap-1 items-center justify-center">
+                  {cellSchedules.length > 0 ? cellSchedules.map(s => {
+                    const isSelected = activeSchedule?.id === s.id && getDayOfWeek(selectedDate) === dayIndex;
+                    return (
+                      <button
+                        key={s.id}
+                        onDoubleClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const targetDate = weekDates[dayIndex];
+                          const targetDateStr = targetDate.toISOString().split('T')[0];
+                          setSelectedDate(targetDateStr);
+                          setActiveSchedule(s);
+                          fetchClassBookings(s.id);
+                        }}
+                        style={{ backgroundColor: s.color }}
+                        className={`w-9 sm:w-14 h-7 sm:h-9 rounded-lg sm:rounded-xl text-white font-black text-[7px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md ${isSelected ? 'ring-2 ring-orange-500 scale-105' : 'opacity-90'}`}>
+                        <span>{s.code}</span>
+                      </button>
+                    );
+                  }) : (
+                    <div className="w-9 sm:w-14 h-7 sm:h-9 rounded-lg sm:rounded-xl border border-gray-300 dark:border-white/10 bg-transparent flex items-center justify-center opacity-30 text-[7px] sm:text-[9px] font-black text-gray-400">
+                      -
+                    </div>
+                  )}
+                </div>
+              </td>
+            );
+          })}
+        </tr>
+      );
+    });
+  };
+
+  return (
+    <div className="space-y-6 text-black dark:text-[#e0e0e0]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="font-black text-lg uppercase text-black dark:text-white">Agenda y Horarios de Clases</h3>
+        <div className="flex items-center gap-3 flex-wrap">
+          <input type="date" className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-2.5 text-black dark:text-white text-[10px] outline-none" value={selectedDate} onChange={e=>{ setSelectedDate(e.target.value); setActiveSchedule(null); }} />
+          <button onClick={() => { 
+            setNewClassData({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: selectedWeekday, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
+            setIsEditingClass(false);
+            setIsClassModalOpen(true);
+          }} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26] whitespace-nowrap">+ Agregar Clase Fija</button>
+          <button onClick={() => setIsHolidayModalOpen(true)} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">+ Configurar Feriado</button>
+        </div>
+      </div>
+
+      {isHoliday && (
+        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider">⚠️ DÍA NO LABORABLE: {isHoliday.description}</p>
+          <button onClick={() => handleDeleteHoliday(isHoliday.id)} className="text-[8px] font-black uppercase tracking-widest bg-red-500 text-white px-3 py-1 rounded-lg">Eliminar Feriado</button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Grilla Semanal */}
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px] space-y-6">
+            
+            {/* Clases por la Mañana */}
+            <div>
+              <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl">
+                Clases por la Mañana
+              </div>
+              <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
+                <table className="w-full border-collapse text-left table-fixed">
+                  <thead>
+                    <tr className="bg-[#F38E26]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
+                      <th className="p-1 sm:p-3 text-center w-14 sm:w-24 text-[7px] sm:text-[8px]">Hora</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">L</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">M</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">MI</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">J</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">V</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">S</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">D</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderSlotRows(morningSlots)}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Clases por la Tarde / Noche */}
+            <div>
+              <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl">
+                Clases por la Tarde/Noche
+              </div>
+              <div className="overflow-x-auto border-x border-b border-gray-200 dark:border-white/5 rounded-b-2xl">
+                <table className="w-full border-collapse text-left table-fixed">
+                  <thead>
+                    <tr className="bg-[#F38E26]/5 text-gray-400 dark:text-white/20 border-b border-gray-200 dark:border-white/5 text-[7px] sm:text-[8px] uppercase tracking-wider font-black">
+                      <th className="p-1 sm:p-3 text-center w-14 sm:w-24 text-[7px] sm:text-[8px]">Hora</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">L</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">M</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">MI</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">J</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">V</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">S</th>
+                      <th className="p-1 sm:p-3 text-center text-[7px] sm:text-[8px]">D</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderSlotRows(eveningSlots)}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Actividades Leyenda */}
+            <div className="pt-4 border-t border-gray-200 dark:border-white/5 text-center">
+              <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-white/20 block mb-3">Actividades</span>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center text-[8px] font-black uppercase">
+                <span className="text-[#3b82f6]">● Entrenamiento Funcional (EF)</span>
+                <span className="text-[#f97316]">● Pilates en Suelo (PS)</span>
+                <span className="text-[#ec4899]">● Entrenamiento Personalizado (EP)</span>
+                <span className="text-[#eab308]">● Salsa y Bachata (SB)</span>
+                <span className="text-[#ef4444]">● Zumba (ZB)</span>
+                <span className="text-[#06b6d4]">● Reguetón Juvenil (RJ)</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Feriados */}
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px]">
+            <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest mb-4">Feriados Registrados en el Sistema</h4>
+            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+              {holidays.length > 0 ? holidays.map(h => (
+                <div key={h.id} className="flex justify-between items-center bg-white dark:bg-[#141b29]/40 p-3 rounded-xl border border-gray-200 dark:border-white/5">
+                  <div>
+                    <p className="font-black text-black dark:text-white text-[9px] uppercase">{h.description}</p>
+                    <p className="text-[8px] text-gray-400 dark:text-white/20 font-black">{new Date(h.date + 'T00:00:00').toLocaleDateString('es-AR')}</p>
+                  </div>
+                  <button onClick={() => handleDeleteHoliday(h.id)} className="text-[8px] font-black text-red-500 bg-red-500/10 px-3 py-1.5 rounded-lg hover:bg-red-500 hover:text-white transition-all">Eliminar</button>
+                </div>
+              )) : (
+                <p className="text-center text-gray-400 dark:text-white/10 italic text-[9px] font-black uppercase py-6">No hay feriados agendados</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {activeSchedule ? (
+            <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-6 rounded-[35px] space-y-6">
+              <div className="flex justify-between items-start gap-2">
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/30 tracking-widest">
+                    Control de Asistencia
+                  </h4>
+                  <p className="text-sm font-black text-black dark:text-white uppercase leading-tight mt-1">
+                    {activeSchedule.name}
+                  </p>
+                  <p className="text-[8px] text-orange-400 font-black uppercase tracking-widest mt-1">
+                    📅 {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-AR')} • {activeSchedule.start_time} hs
+                  </p>
+                  <p className="text-[10px] font-black text-black dark:text-white mt-2">
+                    Confirmados: <span className="text-orange-500">{classBookings.length} / {activeSchedule.capacity}</span>
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => {
+                    setNewClassData(activeSchedule);
+                    setIsEditingClass(true);
+                    setIsClassModalOpen(true);
+                  }} className="text-[8px] font-black text-gray-500 dark:text-white/30 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded">Editar</button>
+                  <button onClick={() => {
+                    handleDeleteClass(activeSchedule.id);
+                  }} className="text-[8px] font-black text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded">Eliminar</button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Registrar Asistencia Espontánea (Walk-In)</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/20" size={12} />
+                    <input type="text" placeholder="Buscar por Nombre o DNI..." className="w-full bg-[#141b29]/40 border border-white/10 dark:border-white/10 rounded-xl py-2 pl-8 pr-3 text-black dark:text-white text-[10px] outline-none" value={walkInQuery} onChange={e=>setWalkInQuery(e.target.value)} />
+                    {filteredMembersSearch.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 bg-[#1b2435] border border-white/10 rounded-xl mt-1 overflow-hidden shadow-2xl">
+                        {filteredMembersSearch.map((m: any) => (
+                          <div key={m.id} onClick={() => handleAddWalkIn(m)} className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-b-0 text-[10px] uppercase font-black flex justify-between items-center text-white">
+                            <span>{m.name} <span className="text-white/40 font-normal">({m.dni})</span></span>
+                            <span className="text-[8px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-black uppercase">Añadir</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setIsNewMemberOpen(true)} className="px-3 bg-green-500/10 text-green-500 border border-green-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all">+ Socio</button>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-white/5">
+                <p className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black">Listado de Confirmados</p>
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+                  {classBookings.length > 0 ? classBookings.map((b) => (
+                    <div key={b.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#141b29]/40 rounded-xl border border-gray-200 dark:border-white/5">
+                      <div className="min-w-0">
+                        <p className="font-black text-black dark:text-white text-[10px] uppercase truncate">{b.member.name}</p>
+                        <p className="text-[8px] text-gray-400 dark:text-white/20 font-black">DNI: {b.member.dni}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={b.status === 'attended'} onChange={() => handleToggleAttendance(b.id, b.status)} className="w-4 h-4 accent-green-500 rounded border-white/10" />
+                          <span className={`text-[8px] font-black uppercase ${b.status === 'attended' ? 'text-green-500' : 'text-gray-400'}`}>Asistió</span>
+                        </label>
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-center text-gray-400 dark:text-white/10 italic text-[9px] font-black uppercase py-8">
+                      Nadie reservó esta clase para hoy aún.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 p-8 rounded-[35px] text-center py-20 flex flex-col items-center justify-center">
+              <Clock className="text-gray-400 dark:text-white/10 mb-4" size={40} />
+              <p className="text-[10px] font-black uppercase text-gray-500 dark:text-white/20 tracking-wider">
+                Selecciona una clase de la grilla para ver confirmados y tomar asistencia.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isHolidayModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="text-sm font-black uppercase text-red-500">Configurar Feriado</h4>
+              <button onClick={() => setIsHolidayModalOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Fecha Feriado</label>
+                <input type="date" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-red-500" value={holidayDate} onChange={e=>setHolidayDate(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Motivo / Descripción</label>
+                <input type="text" placeholder="Ej: Navidad, Feriado Puente..." className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-red-500" value={holidayDesc} onChange={e=>setHolidayDesc(e.target.value)} />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setIsHolidayModalOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
+                <button onClick={handleSaveHoliday} className="flex-1 py-3 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase">Registrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isClassModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="text-sm font-black uppercase text-orange-500">{isEditingClass ? 'Editar Clase Fija' : 'Añadir Clase Fija'}</h4>
+              <button onClick={() => setIsClassModalOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Seleccionar Actividad</label>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" 
+                    value={newClassData.name} 
+                    onChange={e => {
+                      const selected = activities.find(act => act.name === e.target.value);
+                      if (selected) {
+                        setNewClassData(prev => ({
+                          ...prev,
+                          name: selected.name,
+                          code: selected.code,
+                          color: selected.color
+                        }));
+                      }
+                    }}>
+                    <option value="">-- Seleccionar Actividad --</option>
+                    {activities.map((act, i) => (
+                      <option key={i} value={act.name}>{act.name} ({act.code})</option>
+                    ))}
+                  </select>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsAddingNewActivity(!isAddingNewActivity)} 
+                    className="px-3 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-xl text-[9px] font-black uppercase hover:bg-orange-500 hover:text-white transition-all whitespace-nowrap">
+                    {isAddingNewActivity ? "Cerrar" : "+ Nueva"}
+                  </button>
+                </div>
+              </div>
+
+              {isAddingNewActivity && (
+                <div className="p-4 bg-[#141b29]/60 dark:bg-black/40 border border-orange-500/20 rounded-2xl space-y-3">
+                  <p className="text-[9px] font-black uppercase text-orange-500">Nueva Actividad Personalizada</p>
+                  <div className="space-y-1">
+                    <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Nombre de Actividad</label>
+                    <input type="text" placeholder="Ej: Spinning, Yoga..." className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newActivityData.name} onChange={e=>setNewActivityData({...newActivityData, name: e.target.value})} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Código (2 letras)</label>
+                      <input type="text" maxLength={2} placeholder="Ej: SP" className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500 uppercase text-center font-bold" value={newActivityData.code} onChange={e=>setNewActivityData({...newActivityData, code: e.target.value.toUpperCase()})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Color</label>
+                      <div className="flex gap-2 items-center">
+                        <input type="color" className="w-10 h-10 p-0 bg-transparent border-0 outline-none cursor-pointer rounded-xl flex-shrink-0" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                        <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-black dark:text-white text-[10px] outline-none focus:border-orange-500" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" onClick={handleAddNewActivity} className="w-full py-2 bg-orange-500 text-white rounded-xl text-[9px] font-black uppercase hover:scale-[1.01] transition-all">Guardar Actividad</button>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Actividad / Nombre</label>
+                <input type="text" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.name} onChange={e=>setNewClassData({...newClassData, name: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Código (2 letras)</label>
+                  <input type="text" maxLength={2} className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500 text-center uppercase" value={newClassData.code} onChange={e=>setNewClassData({...newClassData, code: e.target.value.toUpperCase()})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Día</label>
+                  <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.day_of_week} onChange={e=>setNewClassData({...newClassData, day_of_week: parseInt(e.target.value)})}>
+                    {weekdayNames.map((n, i) => <option key={i} value={i}>{n}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Inicio</label>
+                  <input type="time" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500 text-center" value={newClassData.start_time} onChange={e=>setNewClassData({...newClassData, start_time: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Fin</label>
+                  <input type="time" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500 text-center" value={newClassData.end_time} onChange={e=>setNewClassData({...newClassData, end_time: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Capacidad</label>
+                  <input type="number" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.capacity} onChange={e=>setNewClassData({...newClassData, capacity: parseInt(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Color</label>
+                  <div className="flex gap-2 items-center">
+                    <input type="color" className="w-10 h-10 bg-transparent border-0 outline-none cursor-pointer rounded-xl flex-shrink-0" value={newClassData.color} onChange={e=>setNewClassData({...newClassData, color: e.target.value})} />
+                    <input type="text" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.color} onChange={e=>setNewClassData({...newClassData, color: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setIsClassModalOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
+                <button onClick={handleSaveClass} className="flex-1 py-3 bg-[#0a0a0a] text-white rounded-xl text-[9px] font-black uppercase border border-[#F38E26]">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isNewMemberOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <form onSubmit={handleCreateNewMember} className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="text-sm font-black uppercase text-green-500">Crear y Agregar Nuevo Socio</h4>
+              <button type="button" onClick={() => setIsNewMemberOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input type="text" placeholder="Nombre Completo" required className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.name} onChange={e=>setNewMemberData({...newMemberData, name: e.target.value})} />
+              <input type="text" placeholder="DNI" required className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.dni} onChange={e=>setNewMemberData({...newMemberData, dni: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input type="text" placeholder="WhatsApp / Celular" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.phone} onChange={e=>setNewMemberData({...newMemberData, phone: e.target.value})} />
+              <input type="email" placeholder="Correo" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.email} onChange={e=>setNewMemberData({...newMemberData, email: e.target.value})} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Membresía</label>
+              <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none" value={newMemberData.membership_type} onChange={e=>setNewMemberData({...newMemberData, membership_type: e.target.value})}>
+                <option value="Basic">Basic (3 días)</option>
+                <option value="Premium">Premium (5 días)</option>
+                <option value="Elite">Elite (7 días)</option>
+              </select>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button type="button" onClick={() => setIsNewMemberOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
+              <button type="submit" className="flex-1 py-3 bg-green-500 text-white rounded-xl text-[9px] font-black uppercase">Crear y Sumar</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Custom confirm modal overlay in AgendaModule */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/75 dark:bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xs bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden text-black dark:text-white">
+            {/* Top orange glow tint */}
+            <div className="absolute -top-10 -left-10 w-24 h-24 bg-[#F38E26]/20 rounded-full blur-2xl pointer-events-none" />
+            
+            {/* Icon */}
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-4 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-bounce">
+              <AlertTriangle size={24} strokeWidth={2.5} />
+            </div>
+
+            {/* Content */}
+            <h4 className="text-base font-black text-center uppercase tracking-tight mb-2">{confirmModal.title}</h4>
+            <p className="text-[10px] text-gray-500 dark:text-white/60 text-center leading-relaxed mb-6 font-bold">{confirmModal.message}</p>
+            
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} 
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 border border-gray-200 dark:border-white/10 dark:hover:bg-white/10 active:scale-95 rounded-xl text-[9px] font-black uppercase transition-all">
+                Cerrar
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm} 
+                className="flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase text-white shadow-lg active:scale-95 transition-all bg-red-500 hover:bg-red-600 shadow-red-500/25">
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

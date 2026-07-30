@@ -6,6 +6,7 @@ export interface Member {
   name: string;
   status: 'AL DIA' | 'POR VENCER' | 'DEUDA';
   photo_url: string | null;
+  message?: string;
 }
 
 interface GymStore {

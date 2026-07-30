@@ -7,6 +7,7 @@ export default function CheckInPanel({ className = '' }: { className?: string })
   const [dni, setDni] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mode, setMode] = useState<'libre' | 'clases'>('libre');
   const inputRef = useRef<HTMLInputElement>(null);
   
   const { currentMember, setCurrentMember } = useGymStore();
@@ -19,15 +20,34 @@ export default function CheckInPanel({ className = '' }: { className?: string })
     setError('');
     
     try {
-      const res = await fetch(`/api/members/${dni}`);
-      const data = await res.json();
-      
-      if (res.ok && !data.error) {
-        setCurrentMember(data);
-        setDni('');
+      if (mode === 'libre') {
+        const res = await fetch(`/api/members/${dni}`);
+        const data = await res.json();
+        
+        if (res.ok && !data.error) {
+          setCurrentMember(data);
+          setDni('');
+        } else {
+          setError('Socio no encontrado');
+          setCurrentMember(null);
+        }
       } else {
-        setError('Socio no encontrado');
-        setCurrentMember(null);
+        const res = await fetch(`/api/totem/${dni}/checkin/adicional`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (res.ok && data.status === 'success') {
+          setCurrentMember({
+            dni,
+            name: data.member_name,
+            status: 'AL DIA',
+            photo_url: '',
+            message: data.detail
+          } as any);
+          setDni('');
+        } else {
+          setError(data.detail || 'Error al registrar clase');
+          setCurrentMember(null);
+        }
       }
     } catch (err) {
       setError('Error de conexión');
@@ -59,11 +79,19 @@ export default function CheckInPanel({ className = '' }: { className?: string })
   return (
     <div className={`p-6 flex flex-col ${className}`}>
       <div className="mb-8">
-        <div className="inline-flex items-center justify-center p-2 rounded-xl mb-4 ring-1 ring-white/10" style={{backgroundColor:'rgba(243,142,38,0.2)'}}>
-          <Search style={{color:'#F38E26'}} size={20} />
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="inline-flex items-center justify-center p-2 rounded-xl mb-4 ring-1 ring-white/10" style={{backgroundColor:'rgba(243,142,38,0.2)'}}>
+              <Search style={{color:'#F38E26'}} size={20} />
+            </div>
+            <h1 className="text-3xl font-black mb-1 tracking-tight bg-gradient-to-br from-white to-neutral-500 bg-clip-text text-transparent">Access Control</h1>
+            <p className="text-neutral-400 text-sm font-medium">Ingrese su DNI para acceder</p>
+          </div>
+          <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5">
+             <button onClick={()=>setMode('libre')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${mode === 'libre' ? 'bg-[#F38E26] text-white shadow-lg shadow-orange-500/20' : 'text-white/40 hover:text-white'}`}>Libre</button>
+             <button onClick={()=>setMode('clases')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${mode === 'clases' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-white/40 hover:text-white'}`}>Clases</button>
+          </div>
         </div>
-        <h1 className="text-3xl font-black mb-1 tracking-tight bg-gradient-to-br from-white to-neutral-500 bg-clip-text text-transparent">Access Control</h1>
-        <p className="text-neutral-400 text-sm font-medium">Ingrese su DNI para acceder</p>
       </div>
 
       <form onSubmit={handleCheckIn} className="mb-8 relative w-full group">
@@ -125,11 +153,17 @@ export default function CheckInPanel({ className = '' }: { className?: string })
               <h2 className="text-2xl font-bold mb-1">{currentMember.name}</h2>
               <p className="text-sm text-neutral-400 mb-3">DNI: {currentMember.dni}</p>
               
-              <div className="mt-2 px-4 py-1.5 rounded-full bg-black/50 border border-neutral-700/50">
+              <div className="mt-2 px-4 py-1.5 rounded-full bg-black/50 border border-neutral-700/50 mb-2">
                 <span className={`text-base font-bold ${getStatusText(currentMember.status)}`}>
                   {currentMember.status}
                 </span>
               </div>
+              
+              {currentMember.message && (
+                <div className="mt-2 text-sm font-black text-indigo-400 bg-indigo-500/10 px-4 py-2 rounded-xl border border-indigo-500/20">
+                  {currentMember.message}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
