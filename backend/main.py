@@ -7,7 +7,6 @@ import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import models
 from database import engine, get_db
-from cv_engine import CVEngine
 
 import admin_routes
 import user_routes
@@ -15,7 +14,18 @@ import totem_routes
 
 models.Base.metadata.create_all(bind=engine)
 
-cv_engine = CVEngine()
+# Mock CVEngine for Vercel/Serverless environments where OpenCV fails to load
+try:
+    from cv_engine import CVEngine
+    cv_engine = CVEngine()
+except ImportError as e:
+    print(f"Warning: CVEngine could not be loaded ({e}). Mocking it for serverless.")
+    class MockCVEngine:
+        is_alarm_active = False
+        def set_member_status(self, *args, **kwargs): pass
+        def start(self): pass
+        def get_frame(self): return None
+    cv_engine = MockCVEngine()
 
 # Start camera only if explicitly requested or in local environments
 if os.getenv("LOCAL_CAMERA", "false").lower() == "true":
