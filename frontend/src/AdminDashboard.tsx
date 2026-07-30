@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, AlertTriangle , Calendar, Clock, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, AlertTriangle , Calendar, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -67,7 +67,7 @@ function AgendaModule({ members, API_URL }: any) {
     }
   });
 
-  const [isAddingNewsetIsAddingNewActivity] = useState(false);
+  const [isAddingNewActivity, setIsAddingNewActivity] = useState(false);
   const [newActivityData, setNewActivityData] = useState({ name: '', code: '', color: '#3b82f6' });
 
   const handleAddNewActivity = () => {
