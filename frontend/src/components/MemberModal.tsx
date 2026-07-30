@@ -9,6 +9,16 @@ export default function MemberModal({ member, plans, API_URL, onSave, onClose }:
   const [routine, setRoutine] = useState<any[]>(member?.routine || []);
   const [exercises, setExercises] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSegment, setSelectedSegment] = useState<string>('Todos');
+  const [selectedZone, setSelectedZone] = useState<string>('Todas');
+
+  const segments = ['Todos', 'Tren superior', 'Tren medio / core', 'Tren inferior', 'Cuerpo completo'];
+  const availableZones = selectedSegment === 'Todos' ? [] : Array.from(new Set(exercises.filter((e:any) => e.segment === selectedSegment).map((e:any) => e.zone)));
+
+  useEffect(() => {
+    setSelectedZone('Todas');
+  }, [selectedSegment]);
+
   
   const [newClassMode, setNewClassMode] = useState(false);
   const [newClassName, setNewClassName] = useState('');
@@ -158,7 +168,28 @@ export default function MemberModal({ member, plans, API_URL, onSave, onClose }:
               {routine.length > 0 && (
                 <div className="w-full md:w-64 flex flex-col border-t md:border-t-0 md:border-l border-gray-200 dark:border-white/10 pt-4 md:pt-0 md:pl-6">
                   <h3 className="text-xs font-black uppercase text-gray-400 mb-2">Agregar Ejercicio</h3>
-                  <input type="text" placeholder="Buscar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-2 text-[10px] text-black dark:text-white mb-4" />
+                  <input type="text" placeholder="Buscar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-2 text-[10px] text-black dark:text-white mb-2" />
+                  
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {segments.map(seg => (
+                      <button key={seg} onClick={() => setSelectedSegment(seg)} className={`px-2 py-1 rounded-md text-[8px] font-black uppercase transition-all ${selectedSegment === seg ? 'bg-orange-500 text-black' : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:bg-gray-200'}`}>
+                        {seg}
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedSegment !== 'Todos' && availableZones.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      <button onClick={() => setSelectedZone('Todas')} className={`px-2 py-1 rounded-md text-[8px] font-bold uppercase transition-all ${selectedZone === 'Todas' ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:bg-gray-200'}`}>
+                        Todas las Zonas
+                      </button>
+                      {availableZones.map((z: any) => (
+                        <button key={z} onClick={() => setSelectedZone(z)} className={`px-2 py-1 rounded-md text-[8px] font-bold uppercase transition-all ${selectedZone === z ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:bg-gray-200'}`}>
+                          {z}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   
                   <div className="flex-1 overflow-y-auto space-y-2 max-h-64 custom-scrollbar pr-1">
                     {filteredExercises.map(ex => (

@@ -6,6 +6,9 @@ export default function EntrenamientosModule({ API_URL }: any) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
+  const [selectedSegment, setSelectedSegment] = useState<string>('Todos');
+  const [selectedZone, setSelectedZone] = useState<string>('Todas');
+
   const [formData, setFormData] = useState({
     name: '',
     segment: 'Tren superior',
@@ -58,10 +61,21 @@ export default function EntrenamientosModule({ API_URL }: any) {
     }
   };
 
-  const filtered = exercises.filter(e => 
-    e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (e.muscle_group && e.muscle_group.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const segments = ['Todos', 'Tren superior', 'Tren medio / core', 'Tren inferior', 'Cuerpo completo'];
+  const availableZones = selectedSegment === 'Todos' ? [] : Array.from(new Set(exercises.filter(e => e.segment === selectedSegment).map(e => e.zone)));
+
+  // Reset zone when segment changes
+  useEffect(() => {
+    setSelectedZone('Todas');
+  }, [selectedSegment]);
+
+  const filtered = exercises.filter(e => {
+    const matchSearch = e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       (e.muscle_group && e.muscle_group.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchSegment = selectedSegment === 'Todos' || e.segment === selectedSegment;
+    const matchZone = selectedZone === 'Todas' || e.zone === selectedZone;
+    return matchSearch && matchSegment && matchZone;
+  });
 
   return (
     <div className="space-y-6">
@@ -84,6 +98,50 @@ export default function EntrenamientosModule({ API_URL }: any) {
           />
         </div>
 
+        <div className="flex flex-wrap gap-2 mb-4">
+          {segments.map(seg => (
+            <button 
+              key={seg} 
+              onClick={() => setSelectedSegment(seg)}
+              className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all ${
+                selectedSegment === seg 
+                  ? 'bg-orange-500 text-black shadow-md' 
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:bg-gray-200 dark:hover:bg-white/10'
+              }`}
+            >
+              {seg}
+            </button>
+          ))}
+        </div>
+
+        {selectedSegment !== 'Todos' && availableZones.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button 
+              onClick={() => setSelectedZone('Todas')}
+              className={`px-3 py-1.5 rounded-full text-[9px] font-bold uppercase transition-all ${
+                selectedZone === 'Todas' 
+                  ? 'bg-black dark:bg-white text-white dark:text-black' 
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:bg-gray-200 dark:hover:bg-white/10'
+              }`}
+            >
+              Todas las Zonas
+            </button>
+            {availableZones.map((z: any) => (
+              <button 
+                key={z} 
+                onClick={() => setSelectedZone(z)}
+                className={`px-3 py-1.5 rounded-full text-[9px] font-bold uppercase transition-all ${
+                  selectedZone === z 
+                    ? 'bg-black dark:bg-white text-white dark:text-black' 
+                    : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:bg-gray-200 dark:hover:bg-white/10'
+                }`}
+              >
+                {z}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map(ex => (
             <div key={ex.id} className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 p-4 rounded-2xl relative group">
@@ -98,6 +156,12 @@ export default function EntrenamientosModule({ API_URL }: any) {
               </button>
             </div>
           ))}
+          
+          {filtered.length === 0 && (
+            <div className="col-span-full py-8 text-center text-gray-400 text-xs font-bold uppercase">
+              No se encontraron ejercicios
+            </div>
+          )}
         </div>
       </div>
 

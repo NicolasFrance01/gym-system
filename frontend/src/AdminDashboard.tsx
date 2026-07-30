@@ -67,7 +67,7 @@ function AgendaModule({ members, API_URL }: any) {
     }
   });
 
-  const [isAddingNewActivity, setIsAddingNewActivity] = useState(false);
+  const [isAddingNewsetIsAddingNewActivity] = useState(false);
   const [newActivityData, setNewActivityData] = useState({ name: '', code: '', color: '#3b82f6' });
 
   const handleAddNewActivity = () => {
@@ -1637,7 +1637,7 @@ export default function AdminDashboard() {
           <SidebarItem icon={<User size={14} />} label="Mi Perfil" active={activeTab === 'Mi Perfil'} onClick={() => setActiveTab('Mi Perfil')} />
           <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
           <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => setActiveTab('Planes')} />
-          <SidebarItem icon={<Activity size={14} />} label="Entrenamientos" active={activeTab === 'Entrenamientos'} onClick={() => setActiveTab('Entrenamientos')} />
+          <SidebarItem icon={<span className="text-sm leading-none -mt-[2px]">💪🏻</span>} label="Entrenamientos" active={activeTab === 'Entrenamientos'} onClick={() => setActiveTab('Entrenamientos')} />
           <SidebarItem icon={<Calendar size={14} />} label="Agenda" active={activeTab === 'Agenda'} onClick={() => setActiveTab('Agenda')} />
           
           {(userRole === 'gerente' || userRole === 'administracion') && (
