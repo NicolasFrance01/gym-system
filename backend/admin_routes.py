@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db
-import models
-import schemas
+from .database import get_db
+from . import models
+from . import schemas
 from typing import List
 import datetime
 from sqlalchemy import func
@@ -18,11 +18,26 @@ def get_gym_stats(db: Session = Depends(get_db)):
     churn_risk = db.query(models.Member).filter(models.Member.status == "DEUDA").count()
     por_vencer = db.query(models.Member).filter(models.Member.status == "POR VENCER").count()
     
+    # Calculate real monthly growth for the last 4 months
+    monthly_stats = []
+    now = datetime.datetime.utcnow()
+    for i in range(4):
+        month_date = now - datetime.timedelta(days=30*i)
+        month_label = month_date.strftime("%b")
+        month_val = db.query(models.Payment).filter(
+            models.Payment.status == "paid",
+            func.extract('month', models.Payment.created_at) == month_date.month,
+            func.extract('year', models.Payment.created_at) == month_date.year
+        ).count()
+        monthly_stats.append({"month": month_label, "v": month_val})
+    monthly_stats.reverse()
+
     return {
         "active_members": active_members,
         "total_revenue": total_revenue,
         "churn_risk_count": churn_risk,
         "por_vencer_count": por_vencer,
+        "monthly_growth": monthly_stats,
         "alerts": [
             {"type": "churn", "message": f"{churn_risk} members are in debt and at risk of cancellation."},
             {"type": "renewal", "message": f"{por_vencer} memberships are expiring soon."}
@@ -49,7 +64,24 @@ def get_all_members(db: Session = Depends(get_db)):
                 updated = True
     if updated:
         db.commit()
-    return members
+
+    result = []
+    for m in members:
+        # Convert to dict first to avoid Pydantic mutability constraints
+        m_dict = schemas.MemberSchema.from_orm(m).dict()
+        m_dict["billing_history"] = [
+            {
+                "id": p.id,
+                "date": p.created_at.strftime("%Y-%m-%d"),
+                "amount": p.amount,
+                "plan": m.membership_type or "Musculación",
+                "method": p.method,
+                "processed_by": p.stripe_id or "—",
+                "status": "PAGADO"
+            } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
+        ]
+        result.append(m_dict)
+    return result
 
 @router.post("/members", response_model=schemas.MemberSchema)
 def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
@@ -61,6 +93,7 @@ def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
         data['phone'] = None
     if not data.get('joined_at'):
         data['joined_at'] = datetime.datetime.utcnow()
+    data['status'] = 'ACTIVO'  # new members always start active
     db_member = models.Member(**data)
     db.add(db_member)
     try:
@@ -105,17 +138,55 @@ def update_member(member_id: int, member_data: schemas.MemberCreate, db: Session
 
 @router.get("/members/{member_id}/checkins")
 def get_member_checkins(member_id: int, db: Session = Depends(get_db)):
+    member = db.query(models.Member).filter(models.Member.id == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    plan = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    days_per_week = plan.days_per_week if plan else 3
+    total_sessions = days_per_week * 4
+
+    today = datetime.datetime.utcnow()
+    if member.joined_at:
+        cycle_start = member.joined_at
+    else:
+        cycle_start = today - datetime.timedelta(days=30)
+
+    # Count totem checkins in the current cycle
+    sessions_used_totem = db.query(models.Checkin).filter(
+        models.Checkin.member_id == member_id,
+        models.Checkin.checkin_at >= cycle_start
+    ).count()
+
+    # Count attended bookings in the current cycle
+    sessions_used_bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member_id,
+        models.Booking.status == "attended",
+        models.Booking.start_time >= cycle_start
+    ).count()
+
+    sessions_used = sessions_used_totem + sessions_used_bookings
+
+    # Get totem checkins list
     checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
-    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.strftime("%Y-%m-%d %H:%M"), "type": "Tótem"} for c in checkins]
-    
+    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat() + "Z", "type": "Tótem"} for c in checkins]
+
+    # Get attended bookings list
     bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member_id,
         models.Booking.status == "attended"
     ).all()
-    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.strftime("%Y-%m-%d %H:%M"), "type": b.class_name} for b in bookings]
-    
+    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat() + "Z", "type": b.class_name} for b in bookings]
+
+    # Combine and sort by date descending
     all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
-    return all_attendance
+
+    return {
+        "total_sessions": total_sessions,
+        "sessions_used": sessions_used,
+        "sessions_remaining": max(0, total_sessions - sessions_used),
+        "checkins": all_attendance
+    }
 
 @router.put("/members/{member_id}/status")
 def update_member_status(member_id: int, status: str, db: Session = Depends(get_db)):
@@ -127,9 +198,9 @@ def update_member_status(member_id: int, status: str, db: Session = Depends(get_
     return {"status": "updated", "new_status": status}
 
 @router.post("/payments")
-def record_payment(member_id: int, amount: float, method: str = "card", db: Session = Depends(get_db)):
+def record_payment(member_id: int, amount: float, method: str = "card", processed_by: str = "", db: Session = Depends(get_db)):
     now = datetime.datetime.utcnow()
-    payment = models.Payment(member_id=member_id, amount=amount, status="paid", method=method, created_at=now)
+    payment = models.Payment(member_id=member_id, amount=amount, status="paid", method=method, stripe_id=processed_by or None, created_at=now)
     db.add(payment)
     member = db.query(models.Member).get(member_id)
     if member:
@@ -137,6 +208,15 @@ def record_payment(member_id: int, amount: float, method: str = "card", db: Sess
         member.joined_at = now  # restart 30-day cycle from today
     db.commit()
     return {"status": "payment recorded"}
+
+@router.delete("/payments/{payment_id}")
+def delete_payment(payment_id: int, db: Session = Depends(get_db)):
+    payment = db.query(models.Payment).filter(models.Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    db.delete(payment)
+    db.commit()
+    return {"status": "deleted"}
 
 @router.get("/pricing/dynamic")
 def calculate_dynamic_price(db: Session = Depends(get_db)):
@@ -211,6 +291,38 @@ def delete_staff(staff_id: int, db: Session = Depends(get_db)):
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     db.delete(staff)
+    db.commit()
+    return {"status": "deleted"}
+
+@router.get("/plans", response_model=List[schemas.PlanSchema])
+def get_plans(db: Session = Depends(get_db)):
+    return db.query(models.Plan).filter(models.Plan.is_active == True).all()
+
+@router.post("/plans", response_model=schemas.PlanSchema)
+def create_plan(plan: schemas.PlanCreate, db: Session = Depends(get_db)):
+    db_plan = models.Plan(**plan.dict())
+    db.add(db_plan)
+    db.commit()
+    db.refresh(db_plan)
+    return db_plan
+
+@router.put("/plans/{plan_id}", response_model=schemas.PlanSchema)
+def update_plan(plan_id: int, plan: schemas.PlanCreate, db: Session = Depends(get_db)):
+    db_plan = db.query(models.Plan).filter(models.Plan.id == plan_id).first()
+    if not db_plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    for key, value in plan.dict().items():
+        setattr(db_plan, key, value)
+    db.commit()
+    db.refresh(db_plan)
+    return db_plan
+
+@router.delete("/plans/{plan_id}")
+def delete_plan(plan_id: int, db: Session = Depends(get_db)):
+    db_plan = db.query(models.Plan).filter(models.Plan.id == plan_id).first()
+    if not db_plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    db_plan.is_active = False
     db.commit()
     return {"status": "deleted"}
 
@@ -387,3 +499,24 @@ def create_walk_in_booking(payload: dict, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_booking)
     return {"status": "success", "booking_id": new_booking.id}
+
+@router.get("/exercises", response_model=List[schemas.ExerciseSchema])
+def get_exercises(db: Session = Depends(get_db)):
+    return db.query(models.Exercise).all()
+
+@router.post("/exercises", response_model=schemas.ExerciseSchema)
+def create_exercise(ex: schemas.ExerciseSchema, db: Session = Depends(get_db)):
+    db_ex = models.Exercise(**ex.model_dump(exclude_unset=True))
+    db.add(db_ex)
+    db.commit()
+    db.refresh(db_ex)
+    return db_ex
+
+@router.delete("/exercises/{ex_id}")
+def delete_exercise(ex_id: int, db: Session = Depends(get_db)):
+    ex = db.query(models.Exercise).filter(models.Exercise.id == ex_id).first()
+    if not ex:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    db.delete(ex)
+    db.commit()
+    return {"status": "success"}

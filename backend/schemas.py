@@ -1,6 +1,33 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from datetime import datetime
+
+class PaymentBase(BaseModel):
+    amount: float
+    method: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class MemberPaymentSchema(BaseModel):
+    date: str = Field(alias="created_at")
+    amount: float
+    plan: str = "Premium" # Placeholder or derived
+    method: str
+    status: str = "PAGADO"
+
+    @classmethod
+    def from_orm(cls, obj):
+        # Custom mapping for the frontend format
+        return {
+            "date": obj.created_at.strftime("%Y-%m-%d"),
+            "amount": obj.amount,
+            "plan": "Premium", # In a real app, you'd store the plan name in the payment
+            "method": obj.method,
+            "status": "PAGADO" if obj.status == "paid" else obj.status
+        }
 
 class MemberBase(BaseModel):
     dni: str
@@ -14,16 +41,33 @@ class MemberBase(BaseModel):
     wellness_data: Optional[Dict] = None
     routine: Optional[List[Dict]] = None
 
-class MemberCreate(MemberBase):
+class MemberCreate(BaseModel):
+    dni: str
+    name: str
+    email: Optional[str] = None
+    status: str = "ACTIVO"
+    photo_url: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = "123"
+    membership_type: Optional[str] = None
     joined_at: Optional[datetime] = None
+    routine: Optional[List[Dict]] = None
 
 class MemberSchema(MemberBase):
     id: int
     joined_at: datetime
     last_checkin: Optional[datetime] = None
+    billing_history: List[Dict] = [] # We'll populate this manually in the route for now
 
     class Config:
         from_attributes = True
+
+class UserLogin(BaseModel):
+    dni: str
+    password: str
+
+class PasswordChange(BaseModel):
+    new_password: str
 
 class PaymentSchema(BaseModel):
     id: int
@@ -80,6 +124,31 @@ class HolidaySchema(HolidayBase):
     class Config:
         from_attributes = True
 
+class PlanBase(BaseModel):
+    name: str
+    price: float
+    days_per_week: int = 3
+    classes: List = []
+    is_active: bool = True
+
+class PlanCreate(PlanBase):
+    pass
+
+class PlanSchema(PlanBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class ExerciseSchema(BaseModel):
+    id: Optional[int] = None
+    name: str
+    segment: Optional[str] = None
+    zone: Optional[str] = None
+    muscle_group: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class CheckinSchema(BaseModel):
     id: int
     member_id: int
@@ -102,10 +171,3 @@ class StaffSchema(StaffBase):
 
     class Config:
         from_attributes = True
-
-class UserLogin(BaseModel):
-    dni: str
-    password: str
-
-class PasswordChange(BaseModel):
-    new_password: str

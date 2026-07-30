@@ -499,3 +499,24 @@ def create_walk_in_booking(payload: dict, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_booking)
     return {"status": "success", "booking_id": new_booking.id}
+
+@router.get("/exercises", response_model=List[schemas.ExerciseSchema])
+def get_exercises(db: Session = Depends(get_db)):
+    return db.query(models.Exercise).all()
+
+@router.post("/exercises", response_model=schemas.ExerciseSchema)
+def create_exercise(ex: schemas.ExerciseSchema, db: Session = Depends(get_db)):
+    db_ex = models.Exercise(**ex.model_dump(exclude_unset=True))
+    db.add(db_ex)
+    db.commit()
+    db.refresh(db_ex)
+    return db_ex
+
+@router.delete("/exercises/{ex_id}")
+def delete_exercise(ex_id: int, db: Session = Depends(get_db)):
+    ex = db.query(models.Exercise).filter(models.Exercise.id == ex_id).first()
+    if not ex:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    db.delete(ex)
+    db.commit()
+    return {"status": "success"}

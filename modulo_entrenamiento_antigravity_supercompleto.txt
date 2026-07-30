@@ -1,0 +1,1498 @@
+
+================================================================================
+PROMPT MAESTRO PARA ANTIGRAVITY
+MÓDULO DE ENTRENAMIENTO, BIBLIOTECA DE EJERCICIOS Y CREACIÓN DE RUTINAS
+================================================================================
+
+OBJETIVO GENERAL
+Construir e integrar en el sistema de gestión del gimnasio un módulo profesional
+de entrenamiento que permita administrar una biblioteca jerárquica de ejercicios,
+crear planes y rutinas, asignarlos a socios, registrar su ejecución, hacer
+seguimiento de progresos y mantener información técnica, visual y preventiva
+sobre cada ejercicio.
+
+La estructura principal debe respetar esta jerarquía:
+
+SEGMENTO CORPORAL
+  └── ZONA CORPORAL
+       └── GRUPO MUSCULAR O FUNCIÓN
+            └── EJERCICIO
+                 └── FICHA TÉCNICA COMPLETA
+
+SEGMENTOS CORPORALES PRINCIPALES
+1. Tren superior
+2. Tren medio / core
+3. Tren inferior
+4. Cuerpo completo
+
+IMPORTANTE
+- Un ejercicio puede pertenecer a un segmento y zona principales, pero también
+  relacionarse con múltiples músculos secundarios y otras zonas.
+- No duplicar ejercicios por cada músculo involucrado. Utilizar relaciones
+  muchos-a-muchos.
+- Permitir ejercicios globales, cardiovasculares, de movilidad, rehabilitación,
+  calentamiento y vuelta a la calma.
+- Toda recomendación de series, repeticiones, cargas o descansos debe ser
+  configurable y no interpretarse como prescripción médica.
+- Las contraindicaciones son orientativas. El sistema debe indicar que las
+  personas con lesiones, dolor, embarazo o condiciones médicas deben consultar
+  a un profesional habilitado.
+
+================================================================================
+1. MÓDULOS FUNCIONALES
+================================================================================
+
+1. Biblioteca de ejercicios
+2. Segmentos corporales
+3. Zonas corporales
+4. Grupos musculares
+5. Equipamientos
+6. Objetivos de entrenamiento
+7. Patrones de movimiento
+8. Métodos y técnicas de entrenamiento
+9. Plantillas de rutinas
+10. Planes de entrenamiento
+11. Sesiones o días de entrenamiento
+12. Asignación de rutinas a socios
+13. Registro de ejecución
+14. Progresión de cargas
+15. Evaluaciones físicas
+16. Historial y estadísticas
+17. Multimedia
+18. Alertas, observaciones y restricciones
+19. Importación y exportación
+20. Auditoría y permisos
+
+================================================================================
+2. JERARQUÍA DE CLASIFICACIÓN
+================================================================================
+
+A. Segmento corporal
+- Tren superior
+- Tren medio / core
+- Tren inferior
+- Cuerpo completo
+
+B. Zona corporal
+Ejemplos:
+- Pecho
+- Espalda
+- Hombros
+- Brazos
+- Abdomen
+- Zona lumbar
+- Estabilidad del core
+- Glúteos
+- Cuádriceps
+- Isquiotibiales
+- Aductores
+- Pantorrilla y pierna inferior
+- Fuerza global
+- Funcional y acondicionamiento
+- Movilidad global
+
+C. Grupo muscular o función
+Debe poder representar:
+- Un músculo específico.
+- Una porción de un músculo.
+- Un conjunto muscular.
+- Una función biomecánica.
+- Un patrón de estabilidad.
+
+D. Ejercicio
+Cada ejercicio debe tener una ficha técnica completa y relaciones con:
+- Músculo principal.
+- Músculos secundarios.
+- Articulaciones involucradas.
+- Patrón de movimiento.
+- Equipamiento.
+- Objetivos.
+- Nivel.
+- Variantes, progresiones, regresiones y sustitutos.
+
+================================================================================
+3. FICHA TÉCNICA SUPERCOMPLETA DEL EJERCICIO
+================================================================================
+
+3.1 Identificación
+- id
+- código interno único
+- slug
+- nombre
+- nombre alternativo
+- nombre en inglés
+- descripción corta
+- descripción completa
+- estado: borrador, activo, inactivo, archivado
+- destacado: sí/no
+- ejercicio personalizado del gimnasio: sí/no
+- fecha de creación
+- fecha de actualización
+- creado por
+- actualizado por
+- versión de la ficha
+
+3.2 Clasificación anatómica
+- segmento corporal principal
+- zona corporal principal
+- grupo muscular principal
+- músculos secundarios
+- músculos estabilizadores
+- lado corporal: derecho, izquierdo, bilateral, alternado
+- articulaciones principales
+- articulaciones secundarias
+- plano de movimiento: sagital, frontal, transversal, multiplanar
+- cadena muscular o cinética
+- cadena cinética abierta, cerrada o mixta
+
+3.3 Clasificación del movimiento
+- patrón principal:
+  empuje horizontal
+  empuje vertical
+  tirón horizontal
+  tirón vertical
+  dominante de rodilla
+  dominante de cadera
+  locomoción
+  rotación
+  anti-rotación
+  anti-extensión
+  anti-flexión lateral
+  flexión de tronco
+  extensión de tronco
+  abducción
+  aducción
+  flexión
+  extensión
+  estabilización
+  transporte de carga
+  salto
+  lanzamiento
+  movilidad
+- tipo: compuesto, aislado, correctivo, movilidad, activación, cardio, pliométrico
+- modalidad: fuerza, hipertrofia, resistencia, potencia, movilidad, técnica, recuperación
+- lateralidad: unilateral, bilateral, alternado
+- tipo de contracción predominante: concéntrica, excéntrica, isométrica, mixta
+- impacto: sin impacto, bajo, medio, alto
+- complejidad coordinativa: baja, media, alta
+- demanda cardiovascular: baja, media, alta
+- nivel técnico: principiante, intermedio, avanzado
+- riesgo técnico: bajo, medio, alto
+- requiere supervisión: sí/no
+- requiere compañero o spotter: no, opcional, recomendado, obligatorio
+
+3.4 Objetivos
+- objetivo principal
+- objetivos secundarios
+- fuerza máxima
+- hipertrofia
+- resistencia muscular
+- potencia
+- capacidad aeróbica
+- capacidad anaeróbica
+- movilidad
+- estabilidad
+- coordinación
+- equilibrio
+- velocidad
+- técnica
+- rehabilitación o readaptación
+- prevención de lesiones
+- pérdida de grasa
+- acondicionamiento general
+- deporte específico
+- calentamiento
+- vuelta a la calma
+
+3.5 Equipamiento y entorno
+- equipamiento principal
+- equipamientos secundarios
+- accesorios
+- peso corporal
+- barra
+- barra EZ
+- mancuernas
+- kettlebell
+- discos
+- banco
+- rack
+- polea
+- máquina selectorizada
+- máquina de discos
+- bandas elásticas
+- TRX o suspensión
+- fitball
+- bosu
+- cajón
+- balón medicinal
+- trineo
+- cuerda
+- colchoneta
+- remo
+- bicicleta
+- cinta
+- elíptico
+- assault bike
+- ski erg
+- espacio requerido: mínimo, pequeño, medio, amplio
+- superficie recomendada
+- altura mínima necesaria
+- puede hacerse en casa
+- puede hacerse al aire libre
+- alternativa sin equipamiento
+- máquina equivalente
+- equipamiento obligatorio
+- equipamiento opcional
+
+3.6 Ejecución técnica
+- posición inicial
+- preparación
+- agarre
+- ancho de agarre
+- posición de pies
+- ancho de pies
+- alineación corporal
+- recorrido
+- fase excéntrica
+- fase de transición
+- fase concéntrica
+- posición final
+- instrucciones paso a paso
+- cantidad de pasos
+- claves técnicas o cues
+- respiración
+- brace abdominal
+- tempo sugerido
+- pausa sugerida
+- rango de movimiento
+- rango reducido permitido
+- velocidad de ejecución
+- mirada
+- posición escapular
+- posición de columna
+- posición de pelvis
+- posición de rodillas
+- posición de codos
+- posición de muñecas
+- contacto con apoyos
+- criterio para finalizar una serie
+- criterio de repetición válida
+- criterio de repetición inválida
+
+3.7 Prescripción configurable
+- tipo de métrica:
+  repeticiones
+  tiempo
+  distancia
+  calorías
+  vueltas
+  pasos
+- series mínimas sugeridas
+- series máximas sugeridas
+- repeticiones mínimas
+- repeticiones máximas
+- duración mínima
+- duración máxima
+- distancia mínima
+- distancia máxima
+- descanso mínimo
+- descanso máximo
+- RPE mínimo y máximo
+- RIR mínimo y máximo
+- porcentaje de 1RM mínimo y máximo
+- zona de frecuencia cardíaca
+- carga inicial orientativa
+- incremento de carga sugerido
+- frecuencia semanal sugerida
+- volumen semanal orientativo
+- orden recomendado dentro de la sesión
+- tiempo bajo tensión
+- tempo por defecto
+- calentamiento específico
+- series de aproximación
+- series efectivas
+- límite de fatiga técnica
+- método recomendado
+- notas de programación
+
+3.8 Métodos compatibles
+- series tradicionales
+- circuito
+- superserie
+- biserie
+- triserie
+- serie gigante
+- drop set
+- rest-pause
+- cluster
+- pirámide ascendente
+- pirámide descendente
+- pirámide doble
+- tempo controlado
+- pausa isométrica
+- excéntricas lentas
+- AMRAP
+- EMOM
+- intervalos
+- Tabata
+- densidad
+- repeticiones parciales
+- myo-reps
+- preagotamiento
+- postagotamiento
+
+3.9 Seguridad
+- contraindicaciones generales
+- precauciones
+- lesiones relacionadas
+- zonas de dolor que obligan a detener
+- compensaciones frecuentes
+- requiere autorización médica
+- apto para embarazo: no definido, sí con adaptación, no recomendado
+- apto para adulto mayor
+- apto para menores
+- apto para principiantes
+- apto para obesidad
+- apto para hipertensión
+- apto para dolor lumbar
+- apto para lesión de rodilla
+- apto para lesión de hombro
+- observaciones preventivas
+- señal de advertencia visible
+- nivel de advertencia
+- disclaimer profesional
+
+3.10 Errores y correcciones
+- errores comunes
+- causa probable de cada error
+- corrección sugerida
+- cue verbal
+- regresión recomendada
+- reducción de carga recomendada
+- ajuste de rango
+- ajuste de postura
+- video de corrección
+- observación del entrenador
+
+3.11 Variantes y relaciones
+- variantes equivalentes
+- variante más fácil
+- variante más difícil
+- variante unilateral
+- variante bilateral
+- variante con peso corporal
+- variante con máquina
+- variante con barra
+- variante con mancuernas
+- progresiones
+- regresiones
+- ejercicios sustitutos
+- ejercicios complementarios
+- ejercicios incompatibles en superserie
+- ejercicios sugeridos para superserie
+- versión para casa
+- versión para movilidad reducida
+
+3.12 Multimedia
+- imagen principal
+- imagen de posición inicial
+- imagen de posición final
+- galería
+- video demostrativo
+- video corto
+- video interno subido
+- URL externa
+- miniatura
+- código QR
+- modelo 3D opcional
+- músculos resaltados
+- alt text
+- subtítulos
+- duración del video
+- autor o fuente
+- licencia
+- consentimiento de uso
+- estado de moderación
+
+3.13 Metadatos operativos
+- etiquetas
+- sinónimos de búsqueda
+- palabras clave
+- popularidad
+- cantidad de usos
+- valoración de entrenadores
+- comentarios internos
+- gimnasio o sede propietaria
+- visible para socios
+- visible para entrenadores
+- visible para administradores
+- orden manual
+- favorito
+- fecha de revisión técnica
+- revisado por
+- próxima revisión
+- notas de auditoría
+
+================================================================================
+4. ENTIDADES Y TABLAS RECOMENDADAS
+================================================================================
+
+Tabla: body_segments
+- id UUID
+- name VARCHAR
+- slug VARCHAR UNIQUE
+- description TEXT
+- display_order INT
+- icon VARCHAR
+- color VARCHAR opcional
+- is_active BOOLEAN
+- created_at
+- updated_at
+
+Tabla: body_zones
+- id UUID
+- segment_id FK
+- name
+- slug
+- description
+- display_order
+- image_url
+- is_active
+- created_at
+- updated_at
+
+Tabla: muscle_groups
+- id UUID
+- zone_id FK
+- name
+- scientific_name
+- short_description
+- detailed_description
+- function_description
+- image_url
+- display_order
+- is_active
+- created_at
+- updated_at
+
+Tabla: exercises
+Debe contener los campos centrales de identificación, clasificación, ejecución,
+prescripción, seguridad y visibilidad. Los campos repetibles deben resolverse
+con tablas relacionadas y no con textos separados por comas.
+
+Tablas relacionadas:
+- exercise_muscles
+  exercise_id, muscle_group_id, role: primary/secondary/stabilizer, activation_level
+- joints
+- exercise_joints
+- movement_patterns
+- exercise_movement_patterns
+- equipment
+- exercise_equipment
+- goals
+- exercise_goals
+- exercise_variants
+- exercise_substitutions
+- exercise_progressions
+- exercise_regressions
+- exercise_methods
+- exercise_media
+- exercise_tags
+- tags
+- exercise_errors
+- exercise_safety_notes
+- exercise_adaptations
+- exercise_prescription_defaults
+- exercise_reviews
+- exercise_audit_log
+
+Rutinas:
+- workout_templates
+- workout_template_days
+- workout_template_blocks
+- workout_template_exercises
+- training_plans
+- training_plan_weeks
+- training_plan_sessions
+- training_plan_exercises
+- member_training_assignments
+- member_exercise_logs
+- member_body_measurements
+- member_fitness_assessments
+- personal_records
+- progression_rules
+- coach_notes
+
+================================================================================
+5. MODELO DE RUTINAS
+================================================================================
+
+Plan de entrenamiento
+- nombre
+- socio
+- entrenador
+- objetivo
+- nivel
+- fecha inicio
+- fecha fin
+- cantidad de semanas
+- cantidad de días por semana
+- estado
+- observaciones
+- restricciones
+- versión
+
+Semana
+- número
+- enfoque
+- volumen objetivo
+- intensidad objetivo
+- notas
+
+Sesión o día
+- nombre
+- día de semana
+- objetivo
+- duración estimada
+- calentamiento
+- bloque principal
+- accesorios
+- cardio
+- movilidad
+- vuelta a la calma
+- observaciones
+
+Bloque
+- tipo: calentamiento, fuerza, hipertrofia, circuito, cardio, movilidad
+- orden
+- cantidad de rondas
+- descanso entre ejercicios
+- descanso entre rondas
+- límite de tiempo
+- notas
+
+Ejercicio asignado
+- ejercicio
+- orden
+- series
+- repeticiones
+- duración
+- distancia
+- carga
+- unidad de carga
+- RPE
+- RIR
+- tempo
+- descanso
+- lado
+- método
+- notas del entrenador
+- video específico
+- sustitución permitida
+- obligatorio
+- criterio de progreso
+
+================================================================================
+6. REGISTRO DE EJECUCIÓN Y PROGRESO
+================================================================================
+
+Por cada serie realizada:
+- fecha y hora
+- ejercicio
+- serie número
+- repeticiones objetivo
+- repeticiones realizadas
+- carga objetivo
+- carga realizada
+- duración
+- distancia
+- RPE real
+- RIR real
+- completada
+- dolor: 0 a 10
+- técnica percibida
+- comentario del socio
+- comentario del entrenador
+- video opcional
+- motivo de omisión
+- sustitución utilizada
+
+Métricas:
+- volumen total
+- tonelaje
+- repeticiones totales
+- tiempo total
+- distancia total
+- frecuencia
+- adherencia
+- récord personal
+- mejor serie
+- mejor 1RM estimado
+- tendencia de carga
+- tendencia de RPE
+- evolución por grupo muscular
+- evolución por ejercicio
+- comparación semanal y mensual
+
+================================================================================
+7. REGLAS DE PROGRESIÓN
+================================================================================
+
+Permitir configurar:
+- progresión lineal por carga
+- progresión por repeticiones
+- doble progresión
+- progresión por tiempo
+- progresión por distancia
+- progresión por densidad
+- progresión por RPE
+- descarga programada
+- semana de adaptación
+- mantenimiento
+- retroceso automático por dolor o incumplimiento
+
+Ejemplo de doble progresión:
+Cuando el socio complete el máximo del rango de repeticiones en todas las series,
+con RPE menor o igual al límite definido y técnica correcta, sugerir aumentar la
+carga en el siguiente entrenamiento.
+
+El sistema no debe cambiar automáticamente una rutina clínica o de readaptación
+sin aprobación del entrenador.
+
+================================================================================
+8. EXPERIENCIA DE USUARIO
+================================================================================
+
+Vista Biblioteca:
+- Buscador por nombre, sinónimo o código.
+- Filtros por segmento, zona, músculo, objetivo, nivel, equipo, patrón, impacto.
+- Vista tarjetas y tabla.
+- Imagen, nombre, músculos, nivel, equipo y estado.
+- Acciones: ver, editar, duplicar, archivar, agregar a rutina.
+
+Navegación jerárquica:
+Entrenamientos
+  > Tren superior
+    > Pecho
+      > Pectoral mayor
+        > Press de banca plano
+
+Ficha de ejercicio:
+- Encabezado visual.
+- Músculo principal y secundarios.
+- Video.
+- Técnica paso a paso.
+- Parámetros sugeridos.
+- Errores comunes.
+- Seguridad.
+- Variantes.
+- Historial de uso.
+
+Constructor de rutinas:
+- Drag and drop.
+- Selección por filtros.
+- Duplicar día.
+- Duplicar semana.
+- Reordenar ejercicios.
+- Crear superseries y circuitos.
+- Calcular duración estimada.
+- Detectar volumen excesivo.
+- Detectar repetición innecesaria de patrones.
+- Mostrar músculos trabajados.
+- Guardar como plantilla.
+- Vista previa para celular.
+- Exportar PDF.
+- Compartir por enlace o QR.
+
+Vista del socio:
+- Rutina del día.
+- Video e instrucciones.
+- Carga anterior.
+- Objetivo actual.
+- Registro rápido por serie.
+- Cronómetro de descanso.
+- Botón completar.
+- Botón reportar dolor o dificultad.
+- Historial.
+- Progreso.
+- Sustitutos autorizados.
+
+================================================================================
+9. ROLES Y PERMISOS
+================================================================================
+
+Administrador:
+- CRUD total.
+- Configuración global.
+- Auditoría.
+- Importación/exportación.
+- Gestión de catálogos.
+
+Entrenador:
+- Ver biblioteca.
+- Crear y editar ejercicios autorizados.
+- Crear rutinas.
+- Asignar socios.
+- Ver progreso.
+- Agregar notas.
+- Aprobar progresiones.
+
+Recepción:
+- Consultar rutina asignada y estado.
+- Sin acceso a notas sensibles.
+- No modificar prescripción.
+
+Socio:
+- Ver su rutina.
+- Registrar ejecución.
+- Ver videos.
+- Reportar dolor.
+- Consultar progreso.
+- No modificar prescripción central.
+
+================================================================================
+10. VALIDACIONES
+================================================================================
+
+- Código de ejercicio único.
+- Nombre obligatorio.
+- Segmento, zona y grupo principal obligatorios.
+- No permitir series o repeticiones negativas.
+- Descansos en segundos.
+- RPE entre 1 y 10.
+- RIR dentro del rango configurado.
+- Porcentaje de 1RM entre 0 y 100.
+- Archivar en vez de eliminar ejercicios usados.
+- Mantener versiones históricas de rutinas asignadas.
+- Registrar quién hizo cada cambio.
+- Sanitizar URLs y archivos.
+- Validar tipo y tamaño de multimedia.
+- Evitar duplicados por nombre y sinónimos.
+- Confirmar cambios masivos.
+- Las recomendaciones automáticas requieren aprobación del entrenador.
+
+================================================================================
+11. IMPORTACIÓN Y EXPORTACIÓN
+================================================================================
+
+Importar:
+- CSV
+- XLSX
+- JSON
+- catálogo inicial del sistema
+
+Exportar:
+- Biblioteca de ejercicios
+- Rutinas
+- Historial de un socio
+- Evolución
+- PDF imprimible
+- CSV de analítica
+- JSON para respaldo
+
+Campos mínimos de importación:
+code, name, segment, zone, primary_muscle, type, level, equipment, description
+
+================================================================================
+12. NOTIFICACIONES
+================================================================================
+
+- Nueva rutina asignada.
+- Rutina actualizada.
+- Entrenamiento pendiente.
+- Entrenamiento completado.
+- Nuevo récord.
+- Progresión sugerida.
+- Dolor reportado.
+- Plan próximo a vencer.
+- Evaluación física pendiente.
+- Revisión técnica de ejercicio pendiente.
+
+================================================================================
+13. ANALÍTICAS
+================================================================================
+
+Dashboard de entrenador:
+- Socios activos con rutina.
+- Adherencia semanal.
+- Entrenamientos completados.
+- Dolor reportado.
+- Rutinas por vencer.
+- Volumen por grupo muscular.
+- Ejercicios más utilizados.
+- Progresiones pendientes.
+- Récords recientes.
+
+Dashboard del socio:
+- Entrenamientos del mes.
+- Adherencia.
+- Volumen.
+- Cargas.
+- Récords.
+- Evolución corporal.
+- Grupos más trabajados.
+- Comparación con período anterior.
+
+================================================================================
+14. CATÁLOGO INICIAL DE EJERCICIOS
+================================================================================
+
+## TREN SUPERIOR
+
+
+### ZONA: Pecho
+
+
+GRUPO MUSCULAR / FUNCIÓN: Pectoral mayor - porción esternal
+
+- EJ-0001: Press de banca plano con barra
+- EJ-0002: Press de banca plano con mancuernas
+- EJ-0003: Press de pecho en máquina
+- EJ-0004: Flexiones tradicionales
+- EJ-0005: Fondos inclinados para pecho
+- EJ-0006: Aperturas planas con mancuernas
+- EJ-0007: Cruce de poleas a media altura
+
+GRUPO MUSCULAR / FUNCIÓN: Pectoral mayor - porción clavicular
+
+- EJ-0008: Press inclinado con barra
+- EJ-0009: Press inclinado con mancuernas
+- EJ-0010: Press inclinado en máquina
+- EJ-0011: Flexiones con pies elevados
+- EJ-0012: Aperturas inclinadas
+- EJ-0013: Cruce de poleas de abajo hacia arriba
+
+GRUPO MUSCULAR / FUNCIÓN: Pectoral mayor - fibras inferiores
+
+- EJ-0014: Press declinado con barra
+- EJ-0015: Press declinado con mancuernas
+- EJ-0016: Cruce de poleas de arriba hacia abajo
+- EJ-0017: Fondos en paralelas para pecho
+
+GRUPO MUSCULAR / FUNCIÓN: Pectoral menor y serrato anterior
+
+- EJ-0018: Pullover con mancuerna
+- EJ-0019: Pullover en polea
+- EJ-0020: Push-up plus
+- EJ-0021: Protracción escapular en polea
+- EJ-0022: Serratus wall slide
+
+### ZONA: Espalda
+
+
+GRUPO MUSCULAR / FUNCIÓN: Dorsal ancho
+
+- EJ-0023: Dominadas pronas
+- EJ-0024: Dominadas supinas
+- EJ-0025: Jalón al pecho agarre ancho
+- EJ-0026: Jalón al pecho agarre neutro
+- EJ-0027: Jalón unilateral en polea
+- EJ-0028: Pullover en polea alta
+- EJ-0029: Remo con mancuerna a una mano
+
+GRUPO MUSCULAR / FUNCIÓN: Romboides y trapecio medio
+
+- EJ-0030: Remo con barra
+- EJ-0031: Remo sentado en polea
+- EJ-0032: Remo en máquina convergente
+- EJ-0033: Remo pecho apoyado
+- EJ-0034: Remo en barra T
+- EJ-0035: Face pull
+- EJ-0036: Aperturas inversas en máquina
+
+GRUPO MUSCULAR / FUNCIÓN: Trapecio superior
+
+- EJ-0037: Encogimientos con barra
+- EJ-0038: Encogimientos con mancuernas
+- EJ-0039: Farmer walk
+- EJ-0040: Encogimientos en máquina
+
+GRUPO MUSCULAR / FUNCIÓN: Trapecio inferior y estabilizadores escapulares
+
+- EJ-0041: Elevación en Y
+- EJ-0042: Trap-3 raise
+- EJ-0043: Wall slide
+- EJ-0044: Depresión escapular en polea
+- EJ-0045: Dominada escapular
+
+GRUPO MUSCULAR / FUNCIÓN: Erectores espinales
+
+- EJ-0046: Peso muerto convencional
+- EJ-0047: Peso muerto rack pull
+- EJ-0048: Hiperextensiones de espalda
+- EJ-0049: Buenos días con barra
+
+### ZONA: Hombros
+
+
+GRUPO MUSCULAR / FUNCIÓN: Deltoides anterior
+
+- EJ-0050: Press militar con barra
+- EJ-0051: Press de hombros con mancuernas
+- EJ-0052: Press Arnold
+- EJ-0053: Elevación frontal con mancuernas
+- EJ-0054: Elevación frontal con disco
+- EJ-0055: Landmine press
+
+GRUPO MUSCULAR / FUNCIÓN: Deltoides medio
+
+- EJ-0056: Elevaciones laterales con mancuernas
+- EJ-0057: Elevación lateral unilateral en polea
+- EJ-0058: Elevación lateral en máquina
+- EJ-0059: Press militar sentado
+- EJ-0060: Remo vertical con agarre amplio
+
+GRUPO MUSCULAR / FUNCIÓN: Deltoides posterior
+
+- EJ-0061: Pájaros con mancuernas
+- EJ-0062: Reverse peck deck
+- EJ-0063: Face pull con cuerda
+- EJ-0064: Apertura posterior en polea
+- EJ-0065: Remo alto con codos abiertos
+
+GRUPO MUSCULAR / FUNCIÓN: Manguito rotador
+
+- EJ-0066: Rotación externa con banda
+- EJ-0067: Rotación externa en polea
+- EJ-0068: Rotación interna con banda
+- EJ-0069: Cuban press liviano
+- EJ-0070: Scaption con mancuernas
+
+### ZONA: Brazos
+
+
+GRUPO MUSCULAR / FUNCIÓN: Bíceps braquial
+
+- EJ-0071: Curl con barra recta
+- EJ-0072: Curl con barra EZ
+- EJ-0073: Curl alternado con mancuernas
+- EJ-0074: Curl inclinado
+- EJ-0075: Curl predicador
+- EJ-0076: Curl concentrado
+- EJ-0077: Curl spider
+- EJ-0078: Curl en polea baja
+
+GRUPO MUSCULAR / FUNCIÓN: Braquial anterior y braquiorradial
+
+- EJ-0079: Curl martillo
+- EJ-0080: Curl martillo cruzado
+- EJ-0081: Curl con cuerda
+- EJ-0082: Curl inverso con barra EZ
+- EJ-0083: Curl Zottman
+
+GRUPO MUSCULAR / FUNCIÓN: Tríceps - cabeza larga
+
+- EJ-0084: Extensión por encima de la cabeza con mancuerna
+- EJ-0085: Extensión por encima de la cabeza en polea
+- EJ-0086: Press francés con barra EZ
+- EJ-0087: Rompecráneos con mancuernas
+
+GRUPO MUSCULAR / FUNCIÓN: Tríceps - cabeza lateral y medial
+
+- EJ-0088: Jalón de tríceps con cuerda
+- EJ-0089: Jalón con barra recta
+- EJ-0090: Press de banca agarre cerrado
+- EJ-0091: Fondos en banco
+- EJ-0092: Fondos en paralelas
+- EJ-0093: Patada de tríceps
+
+GRUPO MUSCULAR / FUNCIÓN: Antebrazo y agarre
+
+- EJ-0094: Curl de muñeca
+- EJ-0095: Curl de muñeca inverso
+- EJ-0096: Farmer hold
+- EJ-0097: Dead hang
+- EJ-0098: Wrist roller
+- EJ-0099: Pinch grip con discos
+
+## TREN MEDIO / CORE
+
+
+### ZONA: Abdomen
+
+
+GRUPO MUSCULAR / FUNCIÓN: Recto abdominal
+
+- EJ-0100: Crunch abdominal
+- EJ-0101: Crunch en máquina
+- EJ-0102: Crunch en polea alta
+- EJ-0103: Crunch en fitball
+- EJ-0104: Sit-up controlado
+- EJ-0105: Elevación de piernas
+- EJ-0106: Elevación de rodillas colgado
+- EJ-0107: Toes to bar
+
+GRUPO MUSCULAR / FUNCIÓN: Oblicuos
+
+- EJ-0108: Plancha lateral
+- EJ-0109: Russian twist
+- EJ-0110: Wood chop alto-bajo
+- EJ-0111: Wood chop bajo-alto
+- EJ-0112: Flexión lateral con mancuerna
+- EJ-0113: Elevación lateral de rodillas colgado
+
+GRUPO MUSCULAR / FUNCIÓN: Transverso abdominal
+
+- EJ-0114: Plancha frontal
+- EJ-0115: Dead bug
+- EJ-0116: Hollow hold
+- EJ-0117: Body saw
+- EJ-0118: Ab wheel
+- EJ-0119: Bear plank
+
+### ZONA: Zona lumbar
+
+
+GRUPO MUSCULAR / FUNCIÓN: Erectores espinales
+
+- EJ-0120: Hiperextensión lumbar
+- EJ-0121: Superman
+- EJ-0122: Bird dog
+- EJ-0123: Buenos días liviano
+- EJ-0124: Peso muerto rumano técnico
+
+GRUPO MUSCULAR / FUNCIÓN: Cuadrado lumbar y estabilidad lateral
+
+- EJ-0125: Suitcase carry
+- EJ-0126: Plancha lateral con carga
+- EJ-0127: Hip hike
+- EJ-0128: Pallof press unilateral
+
+GRUPO MUSCULAR / FUNCIÓN: Multífidos y control segmentario
+
+- EJ-0129: Bird dog con pausa
+- EJ-0130: Dead bug contralateral
+- EJ-0131: Puente de glúteos con marcha
+- EJ-0132: McGill curl-up
+
+### ZONA: Estabilidad y anti-movimiento
+
+
+GRUPO MUSCULAR / FUNCIÓN: Anti-extensión
+
+- EJ-0133: Plancha frontal
+- EJ-0134: Ab wheel rollout
+- EJ-0135: Body saw
+- EJ-0136: Dead bug con banda
+
+GRUPO MUSCULAR / FUNCIÓN: Anti-rotación
+
+- EJ-0137: Pallof press
+- EJ-0138: Pallof hold
+- EJ-0139: Bear crawl
+- EJ-0140: Renegade row
+
+GRUPO MUSCULAR / FUNCIÓN: Anti-flexión lateral
+
+- EJ-0141: Suitcase carry
+- EJ-0142: Farmer walk unilateral
+- EJ-0143: Plancha lateral
+- EJ-0144: Overhead carry unilateral
+
+GRUPO MUSCULAR / FUNCIÓN: Rotación controlada
+
+- EJ-0145: Cable chop
+- EJ-0146: Cable lift
+- EJ-0147: Landmine rotation
+- EJ-0148: Russian twist controlado
+
+## TREN INFERIOR
+
+
+### ZONA: Glúteos
+
+
+GRUPO MUSCULAR / FUNCIÓN: Glúteo mayor
+
+- EJ-0149: Hip thrust con barra
+- EJ-0150: Puente de glúteos
+- EJ-0151: Sentadilla profunda
+- EJ-0152: Peso muerto sumo
+- EJ-0153: Patada de glúteo en polea
+- EJ-0154: Step-up alto
+- EJ-0155: Zancada larga
+- EJ-0156: Pull-through en polea
+
+GRUPO MUSCULAR / FUNCIÓN: Glúteo medio y menor
+
+- EJ-0157: Abducción en máquina
+- EJ-0158: Abducción en polea
+- EJ-0159: Caminata lateral con banda
+- EJ-0160: Monster walk
+- EJ-0161: Clamshell
+- EJ-0162: Step-down lateral
+- EJ-0163: Plancha lateral con abducción
+
+### ZONA: Cuádriceps
+
+
+GRUPO MUSCULAR / FUNCIÓN: Recto femoral
+
+- EJ-0164: Extensión de rodilla en máquina
+- EJ-0165: Sissy squat asistida
+- EJ-0166: Sentadilla frontal
+- EJ-0167: Zancada corta
+
+GRUPO MUSCULAR / FUNCIÓN: Vastos medial, lateral e intermedio
+
+- EJ-0168: Sentadilla trasera
+- EJ-0169: Prensa de piernas
+- EJ-0170: Hack squat
+- EJ-0171: Sentadilla goblet
+- EJ-0172: Split squat
+- EJ-0173: Sentadilla búlgara
+- EJ-0174: Step-up
+- EJ-0175: Wall sit
+
+### ZONA: Isquiotibiales
+
+
+GRUPO MUSCULAR / FUNCIÓN: Bíceps femoral
+
+- EJ-0176: Curl femoral acostado
+- EJ-0177: Curl femoral sentado
+- EJ-0178: Peso muerto rumano
+- EJ-0179: Peso muerto a una pierna
+- EJ-0180: Nordic curl
+
+GRUPO MUSCULAR / FUNCIÓN: Semitendinoso y semimembranoso
+
+- EJ-0181: Curl femoral con fitball
+- EJ-0182: Glute-ham raise
+- EJ-0183: Buenos días
+- EJ-0184: Sliding leg curl
+- EJ-0185: Peso muerto rumano con mancuernas
+
+### ZONA: Aductores
+
+
+GRUPO MUSCULAR / FUNCIÓN: Aductor mayor, largo y corto
+
+- EJ-0186: Máquina de aductores
+- EJ-0187: Sentadilla sumo
+- EJ-0188: Zancada lateral
+- EJ-0189: Copenhagen plank
+- EJ-0190: Deslizamiento lateral
+
+GRUPO MUSCULAR / FUNCIÓN: Grácil y pectíneo
+
+- EJ-0191: Aducción en polea
+- EJ-0192: Copenhagen plank corta
+- EJ-0193: Isométrico con pelota entre rodillas
+
+### ZONA: Pantorrilla y pierna inferior
+
+
+GRUPO MUSCULAR / FUNCIÓN: Gastrocnemio
+
+- EJ-0194: Elevación de talones de pie
+- EJ-0195: Elevación de talones en prensa
+- EJ-0196: Donkey calf raise
+- EJ-0197: Elevación unilateral de pie
+
+GRUPO MUSCULAR / FUNCIÓN: Sóleo
+
+- EJ-0198: Elevación de talones sentado
+- EJ-0199: Elevación de talones con rodillas flexionadas
+- EJ-0200: Isométrico de sóleo
+
+GRUPO MUSCULAR / FUNCIÓN: Tibial anterior
+
+- EJ-0201: Tibialis raise
+- EJ-0202: Dorsiflexión con banda
+- EJ-0203: Caminata sobre talones
+
+GRUPO MUSCULAR / FUNCIÓN: Peroneos y estabilizadores de tobillo
+
+- EJ-0204: Eversión con banda
+- EJ-0205: Balance unipodal
+- EJ-0206: Caminata lateral con banda en pies
+
+## CUERPO COMPLETO
+
+
+### ZONA: Fuerza global
+
+
+GRUPO MUSCULAR / FUNCIÓN: Patrones combinados
+
+- EJ-0207: Peso muerto convencional
+- EJ-0208: Sentadilla trasera
+- EJ-0209: Sentadilla frontal
+- EJ-0210: Thruster
+- EJ-0211: Clean and press
+- EJ-0212: Hang clean
+- EJ-0213: Power clean
+- EJ-0214: Power snatch
+- EJ-0215: Push press
+- EJ-0216: Turkish get-up
+
+### ZONA: Funcional y acondicionamiento
+
+
+GRUPO MUSCULAR / FUNCIÓN: Potencia y coordinación
+
+- EJ-0217: Kettlebell swing
+- EJ-0218: Wall ball
+- EJ-0219: Box jump
+- EJ-0220: Battle ropes
+- EJ-0221: Slam ball
+- EJ-0222: Burpee
+- EJ-0223: Bear crawl
+- EJ-0224: Farmer walk
+
+GRUPO MUSCULAR / FUNCIÓN: Cardio global
+
+- EJ-0225: Remo ergómetro
+- EJ-0226: Assault bike
+- EJ-0227: Ski erg
+- EJ-0228: Saltar la soga
+- EJ-0229: Mountain climber
+- EJ-0230: Burpee over bar
+- EJ-0231: Shuttle run
+
+### ZONA: Movilidad global
+
+
+GRUPO MUSCULAR / FUNCIÓN: Flujos integrados
+
+- EJ-0232: World's greatest stretch
+- EJ-0233: Inchworm
+- EJ-0234: Deep squat pry
+- EJ-0235: Cossack squat
+- EJ-0236: Turkish get-up técnico
+- EJ-0237: Animal flow básico
+
+================================================================================
+15. PLANTILLA COMPLETA DE UN EJERCICIO
+================================================================================
+
+EJEMPLO: PRESS DE BANCA PLANO CON BARRA
+
+Identificación
+- Código: EJ-0001
+- Nombre: Press de banca plano con barra
+- Nombre alternativo: Press banca
+- Inglés: Barbell Bench Press
+- Estado: Activo
+
+Clasificación
+- Segmento: Tren superior
+- Zona: Pecho
+- Grupo principal: Pectoral mayor, porción esternal
+- Secundarios: Tríceps braquial, deltoides anterior
+- Estabilizadores: Manguito rotador, serrato anterior, musculatura del core
+- Patrón: Empuje horizontal
+- Tipo: Compuesto
+- Modalidad: Fuerza e hipertrofia
+- Lateralidad: Bilateral
+- Cadena cinética: Abierta
+- Plano: Principalmente transversal
+- Nivel: Intermedio
+- Impacto: Bajo
+- Riesgo técnico: Medio
+- Spotter: Recomendado con cargas altas
+
+Equipamiento
+- Barra olímpica
+- Discos
+- Banco plano
+- Rack
+- Seguros
+- Alternativa: Press con mancuernas
+- Alternativa sin equipo: Flexiones
+
+Objetivos
+- Hipertrofia de pecho
+- Fuerza de empuje
+- Desarrollo de tríceps
+- Técnica de empuje horizontal
+
+Posición inicial
+- Acostarse con ojos aproximadamente debajo de la barra.
+- Apoyar cabeza, parte superior de espalda y glúteos.
+- Mantener los pies firmes.
+- Retraer y deprimir las escápulas.
+- Tomar la barra con agarre simétrico.
+- Mantener muñecas alineadas.
+
+Ejecución
+1. Destrabar la barra de manera controlada.
+2. Posicionarla sobre la línea del pecho.
+3. Inspirar y generar tensión abdominal.
+4. Descender de forma controlada hacia el esternón.
+5. Mantener antebrazos cercanos a la vertical.
+6. Evitar que los codos se abran excesivamente.
+7. Tocar suavemente el pecho sin rebotar.
+8. Empujar la barra hacia arriba y ligeramente hacia atrás.
+9. Exhalar al superar la parte más difícil.
+10. Finalizar con codos extendidos sin perder control escapular.
+
+Respiración
+- Inspirar antes o durante el descenso.
+- Mantener presión durante la transición.
+- Exhalar durante el ascenso.
+
+Tempo sugerido
+- 3-1-1-0 para aprendizaje técnico.
+- 2-0-1-0 para trabajo general.
+
+Series y repeticiones orientativas
+- Técnica: 2 a 4 series de 8 a 12.
+- Hipertrofia: 3 a 5 series de 6 a 12.
+- Fuerza: 3 a 6 series de 1 a 6.
+- Descanso: 60 a 180 segundos según objetivo.
+- RPE general: 6 a 9.
+Todos estos valores deben poder editarse.
+
+Errores comunes
+- Rebotar la barra.
+- Levantar los glúteos.
+- Perder tensión escapular.
+- Flexionar excesivamente las muñecas.
+- Descender demasiado alto hacia el cuello.
+- Asimetría en el agarre.
+- Pies inestables.
+- Cargar más peso del que permite la técnica.
+
+Correcciones
+- Reducir carga.
+- Marcar visualmente el agarre.
+- Usar pausa en el pecho.
+- Practicar con mancuernas o máquina.
+- Ajustar la altura del banco o soportes.
+- Usar spotter.
+
+Seguridad
+- Utilizar seguros.
+- No entrenar al fallo sin spotter.
+- Detener ante dolor agudo de hombro, pecho, codo o muñeca.
+- Adaptar en caso de lesión.
+- La ficha no sustituye evaluación profesional.
+
+Variantes
+- Press con mancuernas.
+- Press inclinado.
+- Press declinado.
+- Press con pausa.
+- Press agarre cerrado.
+- Press en máquina.
+- Floor press.
+
+Progresión
+- Aumentar repeticiones dentro del rango.
+- Luego aumentar carga de forma gradual.
+- Mantener técnica y RPE objetivo.
+
+Regresión
+- Flexiones inclinadas.
+- Press en máquina.
+- Mancuernas livianas.
+- Rango parcial controlado.
+
+================================================================================
+16. ESTRUCTURA JSON SUGERIDA
+================================================================================
+
+{
+  "code": "EJ-0001",
+  "name": "Press de banca plano con barra",
+  "englishName": "Barbell Bench Press",
+  "status": "active",
+  "classification": {
+    "segment": "Tren superior",
+    "zone": "Pecho",
+    "primaryMuscle": "Pectoral mayor - porción esternal",
+    "secondaryMuscles": ["Tríceps braquial", "Deltoides anterior"],
+    "stabilizers": ["Manguito rotador", "Serrato anterior", "Core"],
+    "movementPattern": "Empuje horizontal",
+    "exerciseType": "Compuesto",
+    "level": "Intermedio",
+    "laterality": "Bilateral",
+    "impact": "Bajo"
+  },
+  "equipment": {
+    "required": ["Barra", "Discos", "Banco", "Rack"],
+    "optional": ["Seguros", "Spotter"],
+    "homeAlternative": "Flexiones"
+  },
+  "execution": {
+    "startingPosition": "",
+    "steps": [],
+    "breathing": "",
+    "tempo": "3-1-1-0",
+    "cues": [],
+    "commonErrors": [],
+    "corrections": []
+  },
+  "prescription": {
+    "setsMin": 3,
+    "setsMax": 5,
+    "repsMin": 6,
+    "repsMax": 12,
+    "restMinSeconds": 60,
+    "restMaxSeconds": 180,
+    "rpeMin": 6,
+    "rpeMax": 9
+  },
+  "safety": {
+    "riskLevel": "Medio",
+    "spotter": "Recomendado",
+    "contraindications": [],
+    "precautions": [],
+    "stopSignals": []
+  },
+  "media": {
+    "coverImage": "",
+    "startImage": "",
+    "endImage": "",
+    "videoUrl": "",
+    "qrUrl": ""
+  },
+  "relations": {
+    "variants": [],
+    "progressions": [],
+    "regressions": [],
+    "substitutions": []
+  }
+}
+
+================================================================================
+17. CRITERIOS DE ACEPTACIÓN PARA ANTIGRAVITY
+================================================================================
+
+1. Debe existir CRUD de segmentos, zonas, grupos y ejercicios.
+2. La navegación debe respetar la jerarquía.
+3. Un ejercicio debe admitir múltiples músculos y equipos.
+4. Los ejercicios usados no se eliminan físicamente: se archivan.
+5. Debe existir buscador y filtros combinables.
+6. Debe poder crearse una rutina mediante drag and drop.
+7. Deben poder agruparse ejercicios en superseries y circuitos.
+8. Las rutinas deben asignarse a socios con fecha de vigencia.
+9. El socio debe registrar cada serie.
+10. El entrenador debe ver historial y progresión.
+11. Debe existir control de permisos por rol.
+12. Toda modificación debe quedar auditada.
+13. Debe ser responsive.
+14. Debe permitir imagen, video y QR.
+15. Debe generar PDF de rutina.
+16. Debe permitir duplicar ejercicios, días, semanas y planes.
+17. Debe mantener versiones históricas.
+18. Debe incluir advertencias de seguridad.
+19. Debe soportar importación CSV/XLSX/JSON.
+20. Debe incluir el catálogo inicial de este documento.
+
+================================================================================
+18. INSTRUCCIÓN FINAL PARA ANTIGRAVITY
+================================================================================
+
+Implementar este módulo siguiendo la arquitectura, tablas, relaciones, campos,
+pantallas, validaciones, permisos y catálogo inicial definidos en este archivo.
+No reducir la jerarquía ni guardar relaciones múltiples como texto plano.
+Priorizar una interfaz clara para entrenadores y una experiencia simple para
+socios desde celular. Generar migraciones, seed de datos, endpoints, servicios,
+componentes, validaciones y pruebas. Adaptar nombres y tecnología al proyecto
+existente sin romper funcionalidades actuales.
+
+FIN DEL DOCUMENTO
+================================================================================

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, JSON
 from sqlalchemy.orm import relationship
-from database import Base
+from .database import Base
 import datetime
 
 class Member(Base):
@@ -85,6 +85,14 @@ class Checkin(Base):
     checkin_at = Column(DateTime, default=datetime.datetime.utcnow)
     member = relationship("Member", back_populates="checkins")
 
+class Product(Base):
+    __tablename__ = "products"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    price = Column(Float)
+    stock = Column(Integer)
+    category = Column(String) # Supplements, Drinks, Merch
+
 class Plan(Base):
     __tablename__ = "plans"
     id = Column(Integer, primary_key=True, index=True)
@@ -94,10 +102,11 @@ class Plan(Base):
     classes = Column(JSON, default=[])
     is_active = Column(Boolean, default=True)
 
-class Product(Base):
-    __tablename__ = "products"
+class Exercise(Base):
+    __tablename__ = "exercises"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    price = Column(Float)
-    stock = Column(Integer)
-    category = Column(String) # Supplements, Drinks, Merch
+    name = Column(String, index=True)
+    segment = Column(String)       # Ej: Tren superior
+    zone = Column(String)          # Ej: Pecho
+    muscle_group = Column(String)  # Ej: Pectoral mayor
+

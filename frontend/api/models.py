@@ -101,3 +101,12 @@ class Plan(Base):
     days_per_week = Column(Integer, default=3)
     classes = Column(JSON, default=[])
     is_active = Column(Boolean, default=True)
+
+class Exercise(Base):
+    __tablename__ = "exercises"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    segment = Column(String)       # Ej: Tren superior
+    zone = Column(String)          # Ej: Pecho
+    muscle_group = Column(String)  # Ej: Pectoral mayor
+

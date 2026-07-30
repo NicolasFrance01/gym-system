@@ -1,9 +1,11 @@
-import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, AlertTriangle , Calendar, Clock} from 'lucide-react';
+import { LayoutDashboard, Users, User, Brain, DollarSign, Lock, ShieldCheck, Briefcase, Download, CheckCircle, XCircle, Trash2, X, Settings, Receipt, CreditCard, Smartphone, Banknote, Search, Moon, Sun, AlertTriangle , Calendar, Clock, Activity } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
+import MemberModal from "./components/MemberModal";
+import EntrenamientosModule from './components/EntrenamientosModule';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -1208,15 +1210,15 @@ export default function AdminDashboard() {
       setIsModalOpen(false);
     } catch (e) { console.error(e); }
   };
-  const handleSaveMember = async () => {
+  const handleSaveMember = async (formData = formData) => {
     try {
       if (isEditMode) {
-        const res = await fetch(`${API_URL}/admin/members/${selectedItem.id}`, {
+        const res = await fetch(`${API_URL}/admin/members/${formData.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...selectedItem,
-            password: selectedItem.password || '123'
+            ...formData,
+            password: formData.password || '123'
           })
         });
         if (res.ok) refreshData();
@@ -1226,15 +1228,15 @@ export default function AdminDashboard() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...selectedItem,
+            ...formData,
             password: '123',
-            photo_url: `https://i.pravatar.cc/300?u=${selectedItem.dni}`
+            photo_url: `https://i.pravatar.cc/300?u=${formData.dni}`
           })
         });
         if (res.ok) refreshData();
         else alert("Error al crear socio. Verifique si el DNI ya existe.");
       }
-      setIsModalOpen(false);
+      setIsModalOpen(false);  setIsModalOpen(false);
     } catch (e) { console.error(e); }
   };
 
@@ -1373,6 +1375,7 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{ setSelectedItem(m); setMemberCheckins([]); setCheckinStats(null); setModalType('history'); setIsModalOpen(true); fetch(`${API_URL}/admin/members/${m.id}/checkins`).then(r=>r.json()).then(data=>{ const checkinsList = Array.isArray(data) ? data : (data.checkins || []); const planName = m.membership_type || 'Básico'; const plan = plans.find((p:any) => p.name === planName); const daysPerWeek = plan ? (plan.daysPerWeek ?? plan.days_per_week ?? 3) : 3; const totalSessions = daysPerWeek * 4; const today = new Date(); let cycleStart = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); const joinedStr = m.joined_at; if(joinedStr){ const joined = new Date(joinedStr); cycleStart = new Date(joined.getFullYear(), joined.getMonth(), joined.getDate()); } const sessionsUsed = checkinsList.filter((c:any) => { const checkinDate = new Date(c.checkin_at.replace(' ', 'T')); return checkinDate >= cycleStart; }).length; const sessionsRemaining = Math.max(0, totalSessions - sessionsUsed); setMemberCheckins(checkinsList); setCheckinStats({ total: totalSessions, used: sessionsUsed, remaining: sessionsRemaining }); }).catch(()=>{}); }} onEdit={(m: any) => { const validPlan = plans.find((p:any) => p.name === m.membership_type)?.name || plans[0]?.name || ''; setSelectedItem({...m, membership_type: validPlan}); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={async (id:any)=>{ if(!confirm('¿Eliminar plan?')) return; const res = await fetch(`${API_URL}/admin/plans/${id}`,{method:'DELETE'}); if(res.ok) refreshData(); }} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
+      case 'Entrenamientos': return <EntrenamientosModule API_URL={API_URL} />;
       case 'Agenda': return <AgendaModule members={members} API_URL={API_URL} setConfirmModal={setConfirmModal} />;
       case 'Mi Perfil': return <ProfileModule user={loggedUser} onSave={async (newPassword: string) => {
         if (!newPassword) { alert('Ingresá una nueva contraseña'); return; }
@@ -1546,27 +1549,13 @@ export default function AdminDashboard() {
                   </div>
                 )}
                 {modalType === 'member' && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                       <input type="text" placeholder="Nombre Completo" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
-                       <input type="text" placeholder="DNI" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.dni} onChange={e => setSelectedItem({...selectedItem, dni: e.target.value})} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                       <input type="text" placeholder="WhatsApp / Número" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.phone} onChange={e => setSelectedItem({...selectedItem, phone: e.target.value})} />
-                       <input type="email" placeholder="Correo Electrónico" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.email} onChange={e => setSelectedItem({...selectedItem, email: e.target.value})} />
-                    </div>
-                    <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.membership_type || plans[0]?.name || ''} onChange={e => setSelectedItem({...selectedItem, membership_type: e.target.value})}>
-                       {plans.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                    </select>
-                    <div className="space-y-1">
-                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Fecha de Inicio del Plan</label>
-                      <input type="date" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.joined_at ? selectedItem.joined_at.split('T')[0] : ''} onChange={e => setSelectedItem({...selectedItem, joined_at: e.target.value ? e.target.value + 'T00:00:00' : null})} />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Contraseña de Acceso</label>
-                      <input type="text" placeholder="Asignar Contraseña" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.password || ''} onChange={e => setSelectedItem({...selectedItem, password: e.target.value})} />
-                    </div>
-                  </div>
+                  <MemberModal 
+                    member={selectedItem} 
+                    plans={plans} 
+                    API_URL={API_URL} 
+                    onSave={handleSaveMember} 
+                    onClose={() => setIsModalOpen(false)} 
+                  />
                 )}
                 {modalType === 'plan' && (
                   <div className="space-y-3">
@@ -1648,6 +1637,7 @@ export default function AdminDashboard() {
           <SidebarItem icon={<User size={14} />} label="Mi Perfil" active={activeTab === 'Mi Perfil'} onClick={() => setActiveTab('Mi Perfil')} />
           <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
           <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => setActiveTab('Planes')} />
+          <SidebarItem icon={<Activity size={14} />} label="Entrenamientos" active={activeTab === 'Entrenamientos'} onClick={() => setActiveTab('Entrenamientos')} />
           <SidebarItem icon={<Calendar size={14} />} label="Agenda" active={activeTab === 'Agenda'} onClick={() => setActiveTab('Agenda')} />
           
           {(userRole === 'gerente' || userRole === 'administracion') && (

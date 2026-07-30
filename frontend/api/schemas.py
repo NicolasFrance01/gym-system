@@ -139,6 +139,16 @@ class PlanSchema(PlanBase):
     class Config:
         from_attributes = True
 
+class ExerciseSchema(BaseModel):
+    id: Optional[int] = None
+    name: str
+    segment: Optional[str] = None
+    zone: Optional[str] = None
+    muscle_group: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class CheckinSchema(BaseModel):
     id: int
     member_id: int
