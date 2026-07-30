@@ -18,11 +18,7 @@ export default function UserApp() {
   // User Data State
   const [userData, setUserData] = useState({
     name: "", dni: "", plan: "Miembro", maxDaysPerWeek: 7, streak: 0, streakMessage: "",
-    currentRoutine: [
-      { id: 1, name: "Press de Banca", sets: "4", reps: "10", weight: 0, completed: false },
-      { id: 2, name: "Sentadillas", sets: "3", reps: "12", weight: 0, completed: false },
-      { id: 3, name: "Jalón al Pecho", sets: "4", reps: "10", weight: 0, completed: false }
-    ],
+    routine: [] as any[],
     evolution: [
       { date: "Ene", "Press de Banca": 40, "Sentadillas": 60, "Jalón al Pecho": 35 },
       { date: "Feb", "Press de Banca": 45, "Sentadillas": 70, "Jalón al Pecho": 45 },
@@ -307,7 +303,7 @@ export default function UserApp() {
       const res = await fetch(`${API_URL}/user/bookings/${todayBooking.id}/workout`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exercises: userData.currentRoutine })
+        body: JSON.stringify({ exercises: userData.routine })
       });
       if (res.ok) {
         alert("Entrenamiento registrado en tu historial.");

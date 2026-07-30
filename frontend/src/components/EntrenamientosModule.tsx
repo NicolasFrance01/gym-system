@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Trash2, Edit2, X, Target, Activity } from 'lucide-react';
 
 export default function EntrenamientosModule({ API_URL }: any) {

@@ -1210,7 +1210,7 @@ export default function AdminDashboard() {
       setIsModalOpen(false);
     } catch (e) { console.error(e); }
   };
-  const handleSaveMember = async (formData = formData) => {
+  const handleSaveMember = async (formData: any = selectedItem) => {
     try {
       if (isEditMode) {
         const res = await fetch(`${API_URL}/admin/members/${formData.id}`, {

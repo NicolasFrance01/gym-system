@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Activity, Target } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Save } from 'lucide-react';
 
 export default function MemberModal({ member, plans, API_URL, onSave, onClose }: any) {
   const [activeTab, setActiveTab] = useState<'datos' | 'entrenamiento'>('datos');
