@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Trash2, Edit2, X, Target, Activity } from 'lucide-react';
+import { Search, Trash2, X } from 'lucide-react';
 
 export default function EntrenamientosModule({ API_URL }: any) {
   const [exercises, setExercises] = useState<any[]>([]);
