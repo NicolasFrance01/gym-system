@@ -1,4 +1,4 @@
-import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, AlertTriangle } from 'lucide-react';
+import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, AlertTriangle, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Tooltip, ResponsiveContainer, CartesianGrid, XAxis, YAxis, LineChart, Line, Legend } from 'recharts';
 
@@ -10,6 +10,10 @@ export default function UserApp() {
   const [activeTab, setActiveTab] = useState('Home');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClassIndex, setSelectedClassIndex] = useState(0);
+
+  const [globalExercises, setGlobalExercises] = useState<any[]>([]);
+  const [selectedExerciseInfo, setSelectedExerciseInfo] = useState<any | null>(null);
+  const [isExerciseInfoOpen, setIsExerciseInfoOpen] = useState(false);
 
   const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
     ? "http://localhost:8000" 
@@ -141,6 +145,13 @@ export default function UserApp() {
           streakMessage: data.member.streak_message || ""
         }));
         setIsAuthenticated(true);
+        // Fetch global exercises
+        try {
+          const exRes = await fetch(`${API_URL}/admin/exercises`);
+          if (exRes.ok) {
+            setGlobalExercises(await exRes.json());
+          }
+        } catch (e) { console.error("Error fetching exercises", e); }
         fetchUserBookings(data.member.dni);
         fetchHolidays();
       } else {
@@ -381,7 +392,19 @@ export default function UserApp() {
                                  <div onClick={()=>toggleExercise(selectedClassIndex, eIdx)} className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all ${ex.completed ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-white/5 text-white/20 hover:text-white hover:bg-white/10'}`}>
                                     {ex.completed ? <Check size={16} strokeWidth={4}/> : <Play size={16}/>}
                                  </div>
-                                 <div><p className="font-black text-sm text-white uppercase leading-none mb-1">{ex.name}</p><p className="text-[9px] text-white/30 font-black uppercase tracking-widest">{ex.sets} Sets × {ex.reps} Reps</p></div>
+                                 <div>
+                                   <div className="flex items-center gap-2 mb-1">
+                                     <p className="font-black text-sm text-white uppercase leading-none">{ex.name}</p>
+                                     <button onClick={() => {
+                                       const fullEx = globalExercises.find(ge => ge.id === ex.exercise_id || ge.name === ex.name);
+                                       setSelectedExerciseInfo(fullEx || ex);
+                                       setIsExerciseInfoOpen(true);
+                                     }} className="text-white/20 hover:text-white transition-colors">
+                                       <Info size={14} />
+                                     </button>
+                                   </div>
+                                   <p className="text-[9px] text-white/30 font-black uppercase tracking-widest">{ex.sets} Sets × {ex.reps} Reps</p>
+                                 </div>
                               </div>
                               <button onClick={()=>toggleExercise(selectedClassIndex, eIdx)} className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase ${ex.completed ? 'bg-green-500 text-white' : 'bg-white/5 text-white/40'}`}>{ex.completed ? 'Hecho' : 'Completar'}</button>
                            </div>
@@ -920,9 +943,73 @@ export default function UserApp() {
           </div>
         </div>
       )}
+
+      {/* Exercise Info Modal */}
+      {isExerciseInfoOpen && selectedExerciseInfo && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-[#141b29] border border-white/10 p-6 rounded-[30px] w-full max-w-md shadow-2xl relative">
+            <button onClick={() => setIsExerciseInfoOpen(false)} className="absolute top-4 right-4 text-white/30 hover:text-white">
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-4 pr-6">{selectedExerciseInfo.name}</h3>
+            
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+              {selectedExerciseInfo.video_url && (
+                <div className="rounded-2xl overflow-hidden border border-white/5 bg-black/40 mb-4 aspect-video">
+                  {selectedExerciseInfo.video_url.includes("youtube.com") || selectedExerciseInfo.video_url.includes("youtu.be") ? (
+                    <iframe 
+                      className="w-full h-full" 
+                      src={selectedExerciseInfo.video_url.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/")} 
+                      title="YouTube video player" 
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allowFullScreen>
+                    </iframe>
+                  ) : (
+                    <a href={selectedExerciseInfo.video_url} target="_blank" rel="noreferrer" className="w-full h-full flex flex-col items-center justify-center text-orange-500 hover:text-orange-400 transition-colors p-4 text-center">
+                      <Play size={32} className="mb-2" />
+                      <span className="text-xs font-black uppercase tracking-widest">Ver Video Tutorial</span>
+                    </a>
+                  )}
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">Mecánica</p>
+                  <p className="text-xs text-white font-bold">{selectedExerciseInfo.mechanics || '-'}</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">Equipamiento</p>
+                  <p className="text-xs text-white font-bold">{selectedExerciseInfo.equipment || '-'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">RIR Sugerido</p>
+                  <p className="text-xs text-white font-bold">{selectedExerciseInfo.rir || '-'}</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">RPE Sugerido</p>
+                  <p className="text-xs text-white font-bold">{selectedExerciseInfo.rpe || '-'}</p>
+                </div>
+              </div>
+
+              {selectedExerciseInfo.instructions && (
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-2">Instrucciones y Técnica</p>
+                  <p className="text-xs text-white/80 whitespace-pre-wrap">{selectedExerciseInfo.instructions}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
  
  function NavBtn({ active, onClick, icon }: any) {
    return (
