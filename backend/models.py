@@ -110,3 +110,12 @@ class Exercise(Base):
     zone = Column(String)          # Ej: Pecho
     muscle_group = Column(String)  # Ej: Pectoral mayor
 
+
+
+class Activity(Base):
+    __tablename__ = "activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    code = Column(String)
+    color = Column(String)

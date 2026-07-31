@@ -66,15 +66,7 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   
-  const defaultActivities = [
-    { name: 'Entrenamiento Funcional', code: 'EF', color: '#3b82f6' },
-    { name: 'Pilates en Suelo', code: 'PS', color: '#f97316' },
-    { name: 'Entrenamiento Personalizado', code: 'EP', color: '#ec4899' },
-    { name: 'Salsa y Bachata', code: 'SB', color: '#eab308' },
-    { name: 'Zumba', code: 'ZB', color: '#ef4444' },
-    { name: 'Reguetón Juvenil', code: 'RJ', color: '#06b6d4' }
-  ];
-  const allActivities = dbActivities.length > 0 ? dbActivities : defaultActivities;
+  const allActivities = dbActivities;
 
 
 

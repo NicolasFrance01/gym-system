@@ -181,3 +181,10 @@ class MassClassScheduleSchema(BaseModel):
     name: str
     code: str
     color: str
+
+
+class ActivitySchema(BaseModel):
+    id: Optional[int] = None
+    name: str
+    code: str
+    color: str
