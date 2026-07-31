@@ -168,7 +168,7 @@ def get_user_bookings(dni: str, db: Session = Depends(get_db)):
             "id": b.id,
             "class_schedule_id": b.class_schedule_id,
             "class_name": b.class_name,
-            "start_time": b.start_time.isoformat() + "Z",
+            "start_time": b.start_time.isoformat(),
             "status": b.status,
             "exercises_done": b.exercises_done
         })
@@ -322,7 +322,7 @@ def get_user_progress(dni: str, db: Session = Depends(get_db)):
                         # Uncompleted history
                         if ex.get('completed') == False or ex.get('uncompleted_reason'):
                             uncompleted_history.append({
-                                "date": b.start_time.isoformat() + "Z",
+                                "date": b.start_time.isoformat(),
                                 "exercise": ex.get('name'),
                                 "reason": ex.get('uncompleted_reason', 'No especificado')
                             })

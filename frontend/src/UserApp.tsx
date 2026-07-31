@@ -1,5 +1,5 @@
 import ProgressChart from './components/ProgressChart';
-import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, AlertTriangle, Info } from 'lucide-react';
+import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 
@@ -9,6 +9,11 @@ export default function UserApp() {
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [activeTab, setActiveTab] = useState('Home');
+  const [toast, setToast] = useState<{message: string, type: 'success'|'error'} | null>(null);
+  const showToast = (message: string, type: 'success'|'error' = 'success') => {
+    setToast({message, type});
+    setTimeout(() => setToast(null), 3500);
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClassIndex, setSelectedClassIndex] = useState(0);
 
@@ -172,7 +177,7 @@ const fetchUserBookings = async (memberDni: string) => {
         alert(data.detail || "Error al ingresar");
       }
     } catch (err) {
-      alert("Error de conexión con el servidor");
+      showToast("Error de conexión con el servidor", "error");
     } finally {
       setIsLoading(false);
     }
@@ -188,13 +193,13 @@ const fetchUserBookings = async (memberDni: string) => {
         body: JSON.stringify({ new_password: newPassword })
       });
       if (res.ok) {
-        alert("Contraseña actualizada con éxito");
+        showToast("Contraseña actualizada con éxito", "success");
         setNewPassword('');
       } else {
-        alert("Error al actualizar contraseña");
+        showToast("Error al actualizar contraseña", "success");
       }
     } catch (err) {
-      alert("Error de conexión");
+      showToast("Error de conexión", "success");
     } finally {
       setIsLoading(false);
     }
@@ -249,7 +254,7 @@ const fetchUserBookings = async (memberDni: string) => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Reserva realizada con éxito");
+        showToast("Reserva realizada con éxito", "success");
         fetchUserBookings(userData.dni);
         setIsBookingModalOpen(false);
       } else {
@@ -257,7 +262,7 @@ const fetchUserBookings = async (memberDni: string) => {
       }
     } catch (e) {
       console.error(e);
-      alert("Error al conectar con el servidor");
+      showToast("Error al conectar con el servidor", "success");
     }
   };
 
@@ -270,7 +275,7 @@ const fetchUserBookings = async (memberDni: string) => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Reserva realizada con éxito");
+        showToast("Reserva realizada con éxito", "success");
         fetchUserBookings(userData.dni);
         fetchWeekSchedules(getWeekDates(weekOffset));
       } else {
@@ -278,7 +283,7 @@ const fetchUserBookings = async (memberDni: string) => {
       }
     } catch (e) {
       console.error(e);
-      alert("Error al conectar con el servidor");
+      showToast("Error al conectar con el servidor", "success");
     }
   };
 
@@ -292,7 +297,7 @@ const fetchUserBookings = async (memberDni: string) => {
             method: 'DELETE'
           });
           if (res.ok) {
-            alert("Reserva cancelada");
+            showToast("Reserva cancelada", "success");
             fetchUserBookings(userData.dni);
             if (viewMode === 'week') {
               fetchWeekSchedules(getWeekDates(weekOffset));
@@ -303,7 +308,7 @@ const fetchUserBookings = async (memberDni: string) => {
           }
         } catch (e) {
           console.error(e);
-          alert("Error de conexión");
+          showToast("Error de conexión", "success");
         }
       }
     );
@@ -320,7 +325,7 @@ const fetchUserBookings = async (memberDni: string) => {
 
   const handleSaveWorkout = async () => {
     if (!todayBooking) {
-      alert("Debes tener una reserva confirmada para hoy para registrar tus ejercicios.");
+      showToast("Debes tener una reserva confirmada para hoy para registrar tus ejercicios.", "success");
       return;
     }
     
@@ -354,14 +359,14 @@ const fetchUserBookings = async (memberDni: string) => {
         body: JSON.stringify({ exercises: routineToSave })
       });
       if (res.ok) {
-        alert("Entrenamiento registrado en tu historial.");
+        showToast("Entrenamiento registrado en tu historial.", "success");
         fetchUserBookings(userData.dni);
       } else {
-        alert("Error al guardar entrenamiento");
+        showToast("Error al guardar entrenamiento", "success");
       }
     } catch (e) {
       console.error(e);
-      alert("Error de conexión");
+      showToast("Error de conexión", "success");
     } finally {
       setIsLoading(false);
     }
@@ -493,8 +498,26 @@ const fetchUserBookings = async (memberDni: string) => {
                    <ProgressChart data={userData.evolution} />
                 </div>
                 <div className="grid grid-cols-2 gap-3 flex-shrink-0">
-                   <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-xl font-black text-white">+25kg</p><p className="text-[9px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
-                   <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-xl font-black text-white">48</p><p className="text-[9px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>
+                   {(() => {
+                     let totalImprovement = 0;
+                     if (userData.evolution && userData.evolution.length > 1) {
+                       const first = userData.evolution[0];
+                       const last = userData.evolution[userData.evolution.length - 1];
+                       const keys = Object.keys(last).filter(k => k !== 'date' && k !== 'name');
+                       keys.forEach(k => {
+                         const firstVal = first[k] || 0;
+                         const lastVal = last[k] || 0;
+                         if (lastVal > firstVal) totalImprovement += (lastVal - firstVal);
+                       });
+                     }
+                     const daysTrained = userData?.attendanceHistory ? userData.attendanceHistory.filter((h: any) => h.type !== "Tótem").length : 0;
+                     return (
+                       <>
+                         <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-xl font-black text-white">+{totalImprovement}kg</p><p className="text-[9px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
+                         <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-xl font-black text-white">{daysTrained}</p><p className="text-[9px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>
+                       </>
+                     );
+                   })()}
                 </div>
              </div>
           </div>
@@ -1122,6 +1145,15 @@ const fetchUserBookings = async (memberDni: string) => {
                 Volver para Marcar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Toast Notification */}
+      {toast && (
+        <div id="toast-container" className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className={`px-6 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-xl border shadow-[0_0_20px_rgba(0,0,0,0.5)] ${toast.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+            {toast.type === 'success' ? <CheckCircle2 size={18} /> : <X size={18} />}
+            <span className="text-[11px] font-black uppercase tracking-wider">{toast.message}</span>
           </div>
         </div>
       )}

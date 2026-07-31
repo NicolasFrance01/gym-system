@@ -169,14 +169,14 @@ def get_member_checkins(member_id: int, db: Session = Depends(get_db)):
 
     # Get totem checkins list
     checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
-    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat() + "Z", "type": "Tótem"} for c in checkins]
+    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat(), "type": "Tótem"} for c in checkins]
 
     # Get attended bookings list
     bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member_id,
         models.Booking.status == "attended"
     ).all()
-    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat() + "Z", "type": b.class_name} for b in bookings]
+    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat(), "type": b.class_name} for b in bookings]
 
     # Combine and sort by date descending
     all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)

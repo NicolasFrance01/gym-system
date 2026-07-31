@@ -29,6 +29,27 @@ def get_totem_member(dni: str, db: Session = Depends(get_db)):
             db.commit()
             db.refresh(member)
 
+
+    # Create checkin record automatically when they use the Totem
+    new_checkin = models.Checkin(member_id=member.id, checkin_at=datetime.datetime.utcnow())
+    db.add(new_checkin)
+    
+    # Auto-attend today's bookings
+    today_start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start + datetime.timedelta(days=1)
+    
+    today_bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.start_time >= today_start,
+        models.Booking.start_time < today_end,
+        models.Booking.status == 'reserved'
+    ).all()
+    
+    for b in today_bookings:
+        b.status = 'attended'
+        
+    db.commit()
+
     wellness = member.wellness_data or {}
     return {
         "id": member.id,
