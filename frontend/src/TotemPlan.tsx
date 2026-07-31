@@ -610,7 +610,7 @@ export default function TotemPlan() {
                                   fontSize: 12,
                                 }}
                                 formatter={(v) => [`${v ?? 0} kg`]}
-                                labelFormatter={d => new Date(d).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                labelFormatter={d => new Date(d as any).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
                               />
                               <Legend wrapperStyle={{ fontSize: 11 }} />
                               {chartKeys.map((key, i) => (
