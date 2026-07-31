@@ -399,8 +399,8 @@ export default function UserApp() {
                                        const fullEx = globalExercises.find(ge => ge.id === ex.exercise_id || ge.name === ex.name);
                                        setSelectedExerciseInfo(fullEx || ex);
                                        setIsExerciseInfoOpen(true);
-                                     }} className="text-white/20 hover:text-white transition-colors">
-                                       <Info size={14} />
+                                     }} className="ml-2 px-2 py-1 bg-white/5 hover:bg-white/10 rounded-md flex items-center gap-1 text-[8px] uppercase tracking-widest text-white/50 transition-colors">
+                                       <Info size={10} /> Más Info
                                      </button>
                                    </div>
                                    <p className="text-[9px] text-white/30 font-black uppercase tracking-widest">{ex.sets} Sets × {ex.reps} Reps</p>
@@ -408,6 +408,12 @@ export default function UserApp() {
                               </div>
                               <button onClick={()=>toggleExercise(selectedClassIndex, eIdx)} className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase ${ex.completed ? 'bg-green-500 text-white' : 'bg-white/5 text-white/40'}`}>{ex.completed ? 'Hecho' : 'Completar'}</button>
                            </div>
+                           {ex.coach_notes && (
+                             <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-2">
+                               <p className="text-[8px] font-black text-orange-500/70 uppercase tracking-widest mb-1">Nota del Entrenador:</p>
+                               <p className="text-xs text-white/80 italic">{ex.coach_notes}</p>
+                             </div>
+                           )}
                            <div className="flex items-center gap-3 bg-black/40 rounded-2xl p-3 border border-white/5">
                               <TrendingUp size={14} className="text-orange-500" />
                               <span className="text-[9px] font-black text-white/20 uppercase mr-auto">Carga Actual:</span>
@@ -974,6 +980,22 @@ export default function UserApp() {
                 </div>
               )}
               
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">Segmento Corporal</p>
+                  <p className="text-xs text-white font-bold">{selectedExerciseInfo.segment || '-'}</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">Zona Corporal</p>
+                  <p className="text-xs text-white font-bold">{selectedExerciseInfo.zone || '-'}</p>
+                </div>
+              </div>
+
+              <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">Grupo Muscular</p>
+                <p className="text-xs text-white font-bold">{selectedExerciseInfo.muscle_group || '-'}</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
                   <p className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-1">Mecánica</p>
