@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
+import ProgressChart from './ProgressChart';
 
 export default function MemberModal({ member, plans, API_URL, onSave, onClose }: any) {
-  const [activeTab, setActiveTab] = useState<'datos' | 'entrenamiento'>('datos');
+  const [activeTab, setActiveTab] = useState<'datos' | 'entrenamiento' | 'progreso'>('datos');
   const [formData, setFormData] = useState(member);
   
   // Entrenamiento State
   const [routine, setRoutine] = useState<any[]>(member?.routine || []);
+  const [progressData, setProgressData] = useState<any>(null);
   const [exercises, setExercises] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSegment, setSelectedSegment] = useState<string>('Todos');
@@ -29,7 +31,14 @@ export default function MemberModal({ member, plans, API_URL, onSave, onClose }:
       .then(r => r.json())
       .then(data => setExercises(data))
       .catch(e => console.error(e));
-  }, [API_URL]);
+      
+    if (member?.dni) {
+      fetch(`${API_URL}/user/${member.dni}/progress`)
+        .then(r => r.json())
+        .then(data => setProgressData(data))
+        .catch(e => console.error("Error fetching progress", e));
+    }
+  }, [API_URL, member]);
 
   const handleAddClass = () => {
     if(!newClassName) return;
@@ -90,12 +99,13 @@ export default function MemberModal({ member, plans, API_URL, onSave, onClose }:
 
         <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-white/10 pb-2">
           <button onClick={() => setActiveTab('datos')} className={`text-[10px] font-black uppercase tracking-widest pb-2 ${activeTab === 'datos' ? 'text-orange-500 border-b-2 border-orange-500' : 'text-gray-500 hover:text-black dark:hover:text-white'}`}>Datos Personales</button>
-          <button onClick={() => setActiveTab('entrenamiento')} className={`text-[10px] font-black uppercase tracking-widest pb-2 ${activeTab === 'entrenamiento' ? 'text-orange-500 border-b-2 border-orange-500' : 'text-gray-500 hover:text-black dark:hover:text-white'}`}>Entrenamiento y Progreso</button>
+          <button onClick={() => setActiveTab('entrenamiento')} className={`text-[10px] font-black uppercase tracking-widest pb-2 ${activeTab === 'entrenamiento' ? 'text-orange-500 border-b-2 border-orange-500' : 'text-gray-500 hover:text-black dark:hover:text-white'}`}>Entrenamiento</button>
+          <button onClick={() => setActiveTab('progreso')} className={`text-[10px] font-black uppercase tracking-widest pb-2 ${activeTab === 'progreso' ? 'text-orange-500 border-b-2 border-orange-500' : 'text-gray-500 hover:text-black dark:hover:text-white'}`}>Progreso</button>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
           {activeTab === 'datos' && (
-            <div className="space-y-4 max-w-md">
+            <div className="space-y-4 w-full">
               <div className="grid grid-cols-2 gap-4">
                  <input type="text" placeholder="Nombre Completo" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={formData?.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
                  <input type="text" placeholder="DNI" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={formData?.dni || ''} onChange={e => setFormData({...formData, dni: e.target.value})} />
@@ -118,6 +128,31 @@ export default function MemberModal({ member, plans, API_URL, onSave, onClose }:
             </div>
           )}
 
+          {activeTab === 'progreso' && (
+            <div className="w-full h-full flex flex-col gap-6">
+              <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-3xl border border-gray-200 dark:border-white/10">
+                <h3 className="text-sm font-black uppercase mb-4 text-black dark:text-white">Gráfico de Cargas</h3>
+                <ProgressChart data={progressData?.chart_data || []} />
+              </div>
+              
+              {progressData?.uncompleted_history && progressData.uncompleted_history.length > 0 && (
+                <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-3xl">
+                  <h3 className="text-sm font-black uppercase mb-4 text-orange-500">Historial de Incompletos</h3>
+                  <div className="space-y-2">
+                    {progressData.uncompleted_history.map((uh: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                        <div>
+                          <p className="text-xs font-bold text-white">{uh.exercise}</p>
+                          <p className="text-[10px] text-white/50">{new Date(uh.date).toLocaleDateString()}</p>
+                        </div>
+                        <p className="text-xs font-bold text-orange-400 italic">"{uh.reason}"</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {activeTab === 'entrenamiento' && (
             <div className="flex flex-col md:flex-row gap-6 h-full">
               {/* Creador de Rutinas */}

@@ -1,6 +1,7 @@
+import ProgressChart from './components/ProgressChart';
 import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, AlertTriangle, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Tooltip, ResponsiveContainer, CartesianGrid, XAxis, YAxis, LineChart, Line, Legend } from 'recharts';
+
 
 export default function UserApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,16 +20,16 @@ export default function UserApp() {
     ? "http://localhost:8000" 
     : "/api";
 
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [uncompletedExercises, setUncompletedExercises] = useState<any[]>([]);
+  const [checklistResponses, setChecklistResponses] = useState<any>({});
+
+
   // User Data State
   const [userData, setUserData] = useState({
     name: "", dni: "", plan: "Miembro", maxDaysPerWeek: 7, streak: 0, streakMessage: "",
     routine: [] as any[],
-    evolution: [
-      { date: "Ene", "Press de Banca": 40, "Sentadillas": 60, "Jalón al Pecho": 35 },
-      { date: "Feb", "Press de Banca": 45, "Sentadillas": 70, "Jalón al Pecho": 45 },
-      { date: "Mar", "Press de Banca": 55, "Sentadillas": 85, "Jalón al Pecho": 50 },
-      { date: "Abr", "Press de Banca": 60, "Sentadillas": 95, "Jalón al Pecho": 55 }
-    ],
+    evolution: [],
     attendanceHistory: []
   });
 
@@ -107,7 +108,19 @@ export default function UserApp() {
     }
   }, [weekOffset, viewMode]);
 
-  const fetchUserBookings = async (memberDni: string) => {
+  
+  const fetchUserProgress = async (dni: string) => {
+    try {
+      const res = await fetch(`${API_URL}/user/${dni}/progress`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserData(prev => ({ ...prev, evolution: data.chart_data || [] }));
+      }
+    } catch (e) {
+      console.error("Error fetching progress", e);
+    }
+  };
+const fetchUserBookings = async (memberDni: string) => {
     try {
       const res = await fetch(`${API_URL}/user/${memberDni}/bookings`);
       if (res.ok) setBookings(await res.json());
@@ -154,6 +167,7 @@ export default function UserApp() {
         } catch (e) { console.error("Error fetching exercises", e); }
         fetchUserBookings(data.member.dni);
         fetchHolidays();
+        fetchUserProgress(data.member.dni);
       } else {
         alert(data.detail || "Error al ingresar");
       }
@@ -309,12 +323,35 @@ export default function UserApp() {
       alert("Debes tener una reserva confirmada para hoy para registrar tus ejercicios.");
       return;
     }
+    
+    // Check for uncompleted exercises
+    let uncompleted: any[] = [];
+    if (userData.routine && userData.routine.length > 0) {
+      userData.routine.forEach((day: any, dIdx: number) => {
+        day.exercises.forEach((ex: any, eIdx: number) => {
+          if (!ex.completed) {
+            uncompleted.push({ ...ex, dIdx, eIdx });
+          }
+        });
+      });
+    }
+
+    if (uncompleted.length > 0) {
+      setUncompletedExercises(uncompleted);
+      setShowChecklistModal(true);
+      return;
+    }
+
+    submitWorkout(userData.routine);
+  };
+
+  const submitWorkout = async (routineToSave: any) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/user/bookings/${todayBooking.id}/workout`, {
+      const res = await fetch(`${API_URL}/user/bookings/${todayBooking?.id}/workout`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exercises: userData.routine })
+        body: JSON.stringify({ exercises: routineToSave })
       });
       if (res.ok) {
         alert("Entrenamiento registrado en tu historial.");
@@ -329,6 +366,20 @@ export default function UserApp() {
       setIsLoading(false);
     }
   };
+
+  const handleChecklistSubmit = () => {
+    const routineCopy = JSON.parse(JSON.stringify(userData.routine));
+    uncompletedExercises.forEach(ue => {
+      const response = checklistResponses[`${ue.dIdx}-${ue.eIdx}`] || {};
+      routineCopy[ue.dIdx].exercises[ue.eIdx].uncompleted_reason = response.reason || 'Sin especificar';
+      if (response.reason === 'Otro' && response.customReason) {
+        routineCopy[ue.dIdx].exercises[ue.eIdx].uncompleted_reason = response.customReason;
+      }
+    });
+    setShowChecklistModal(false);
+    submitWorkout(routineCopy);
+  };
+
 
   if (!isAuthenticated) {
     return (
@@ -439,18 +490,7 @@ export default function UserApp() {
              <div className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col justify-between h-full min-h-0">
                 <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter flex-shrink-0"><TrendingUp className="text-orange-500" size={22}/> Mi Progreso</h3>
                 <div className="flex-1 min-h-0 my-4">
-                   <ResponsiveContainer width="100%" height="100%">
-                       <LineChart data={userData.evolution}>
-                           <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
-                           <XAxis dataKey="date" stroke="#666" fontSize={8} />
-                           <YAxis stroke="#666" fontSize={8} />
-                           <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'20px', padding:'10px'}} />
-                           <Legend wrapperStyle={{fontSize:'8px', textTransform:'uppercase', fontWeight:'900', marginTop:'10px'}} />
-                           <Line type="monotone" dataKey="Press de Banca" stroke="#3b82f6" strokeWidth={3} dot={{r:4, fill:'#3b82f6'}} activeDot={{r:8}} />
-                           <Line type="monotone" dataKey="Sentadillas" stroke="#10b981" strokeWidth={3} dot={{r:4, fill:'#10b981'}} />
-                           <Line type="monotone" dataKey="Jalón al Pecho" stroke="#f59e0b" strokeWidth={3} dot={{r:4, fill:'#f59e0b'}} />
-                       </LineChart>
-                   </ResponsiveContainer>
+                   <ProgressChart data={userData.evolution} />
                 </div>
                 <div className="grid grid-cols-2 gap-3 flex-shrink-0">
                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-xl font-black text-white">+25kg</p><p className="text-[9px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
@@ -1024,6 +1064,63 @@ export default function UserApp() {
                   <p className="text-xs text-white/80 whitespace-pre-wrap">{selectedExerciseInfo.instructions}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checklist Modal */}
+      {showChecklistModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-[#141b29] border border-white/10 p-6 rounded-[30px] w-full max-w-md shadow-2xl relative max-h-[80vh] flex flex-col">
+            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2 text-orange-500">¡Espera!</h3>
+            <p className="text-sm text-white/70 mb-4">Te faltó hacer {uncompletedExercises.length} ejercicio(s). Puedes continuar sin guardar ese progreso o volver para marcarlos.</p>
+            
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4 mb-4">
+              {uncompletedExercises.map((ue, idx) => (
+                <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <p className="text-xs font-bold text-white mb-2">{ue.name}</p>
+                  <p className="text-[10px] text-white/50 uppercase tracking-widest mb-2">¿Por qué no pudiste hacerlo? (Opcional)</p>
+                  <div className="space-y-2">
+                    {['No tuve tiempo', 'Muchas personas en la máquina', 'Otro'].map(reason => (
+                      <label key={reason} className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" 
+                          name={`reason-${ue.dIdx}-${ue.eIdx}`} 
+                          value={reason} 
+                          checked={checklistResponses[`${ue.dIdx}-${ue.eIdx}`]?.reason === reason}
+                          onChange={() => setChecklistResponses((prev: any) => ({
+                            ...prev, 
+                            [`${ue.dIdx}-${ue.eIdx}`]: { ...prev[`${ue.dIdx}-${ue.eIdx}`], reason }
+                          }))}
+                          className="accent-orange-500"
+                        />
+                        <span className="text-xs text-white/80">{reason}</span>
+                      </label>
+                    ))}
+                    {checklistResponses[`${ue.dIdx}-${ue.eIdx}`]?.reason === 'Otro' && (
+                      <input 
+                        type="text" 
+                        placeholder="Especificar..." 
+                        value={checklistResponses[`${ue.dIdx}-${ue.eIdx}`]?.customReason || ''}
+                        onChange={(e) => setChecklistResponses((prev: any) => ({
+                          ...prev, 
+                          [`${ue.dIdx}-${ue.eIdx}`]: { ...prev[`${ue.dIdx}-${ue.eIdx}`], customReason: e.target.value }
+                        }))}
+                        className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white mt-2 outline-none focus:border-orange-500/50"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-2 shrink-0">
+              <button onClick={handleChecklistSubmit} className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black uppercase tracking-widest text-xs py-3 rounded-2xl transition-colors">
+                Continuar y Guardar
+              </button>
+              <button onClick={() => setShowChecklistModal(false)} className="w-full bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs py-3 rounded-2xl transition-colors">
+                Volver para Marcar
+              </button>
             </div>
           </div>
         </div>
