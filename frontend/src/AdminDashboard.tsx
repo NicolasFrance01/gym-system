@@ -240,6 +240,18 @@ function AgendaModule({ members, API_URL }: any) {
     }
   };
 
+    const handleDeleteRow = async (start: string, end: string) => {
+    showConfirm("Eliminar Fila Completa", `¿Seguro que deseas eliminar TODAS las clases del horario ${start} - ${end} de esta semana?`, async () => {
+      const rowSchedules = schedules.filter(s => s.start_time === start && s.end_time === end);
+      try {
+        await Promise.all(rowSchedules.map(s => fetch(`${API_URL}/admin/class_schedules/${s.id}`, { method: 'DELETE' })));
+        fetchSchedules();
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  };
+
   const handleMassClassSubmit = async () => {
     try {
       const activity = allActivities.find(a => a.name === massClassData.activity_name);
@@ -374,10 +386,13 @@ function AgendaModule({ members, API_URL }: any) {
     return slots.map((slot, rowIndex) => {
       return (
         <tr key={rowIndex} className="border-b border-gray-200 dark:border-white/5">
-          <td className="p-1 sm:p-3 text-center w-14 sm:w-24">
+          <td className="p-1 sm:p-3 text-center w-14 sm:w-24 relative group">
             <span className="inline-block px-1.5 sm:px-3 py-1 sm:py-1.5 bg-[#F38E26]/10 text-gray-700 dark:text-gray-300 font-black rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 text-[7px] sm:text-[9px] uppercase tracking-tight">
               {slot.start} - {slot.end}
             </span>
+            <button onClick={() => handleDeleteRow(slot.start, slot.end)} className="absolute top-1 left-1 sm:top-2 sm:left-2 text-red-500 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all bg-white dark:bg-[#1b2435] border border-red-500/30 rounded-full p-0.5 shadow-md z-10" title="Eliminar fila completa">
+              <X size={10} strokeWidth={4} />
+            </button>
           </td>
           {weekdayShortNames.map((_, dayIndex) => {
             const cellSchedules = schedules.filter(s => s.day_of_week === dayIndex && s.start_time === slot.start && s.end_time === slot.end);

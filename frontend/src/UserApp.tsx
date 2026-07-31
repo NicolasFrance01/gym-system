@@ -730,7 +730,7 @@ const fetchUserBookings = async (memberDni: string) => {
                                                         );
                                                       }
                                                     }}
-                                                    style={{ backgroundColor: s.color }}
+                                                    style={{ backgroundColor: s.color, textShadow: '0px 1px 3px rgba(0,0,0,0.9)' }}
                                                     className={`w-9 sm:w-12 h-7 sm:h-8 rounded-lg sm:rounded-xl text-white font-black text-[7.5px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
                                                     <span className="leading-none text-[7.5px] sm:text-[9px]">{s.code}</span>
                                                     <span className="text-[5px] sm:text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
@@ -813,7 +813,7 @@ const fetchUserBookings = async (memberDni: string) => {
                                                         );
                                                       }
                                                     }}
-                                                    style={{ backgroundColor: s.color }}
+                                                    style={{ backgroundColor: s.color, textShadow: '0px 1px 3px rgba(0,0,0,0.9)' }}
                                                     className={`w-9 sm:w-12 h-7 sm:h-8 rounded-lg sm:rounded-xl text-white font-black text-[7.5px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md relative ${isAlreadyBooked ? 'ring-2 ring-white scale-105' : 'opacity-90'}`}>
                                                     <span className="leading-none text-[7.5px] sm:text-[9px]">{s.code}</span>
                                                     <span className="text-[5px] sm:text-[6px] opacity-75 leading-none mt-0.5">{s.bookings_count}/{s.capacity}</span>
