@@ -646,21 +646,6 @@ function AgendaModule({ members, API_URL }: any) {
         </div>
       </div>
 
-
-      <div className="mt-8 text-center border-t border-gray-200 dark:border-white/5 pt-8">
-        <h4 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/20 tracking-[0.2em] mb-4">Actividades</h4>
-        <div className="flex flex-wrap justify-center gap-4">
-          {allActivities.map((act: any, i: number) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: act.color }}></span>
-              <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: act.color, textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
-                {act.name} ({act.code})
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {isHolidayModalOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm">
@@ -743,9 +728,32 @@ function AgendaModule({ members, API_URL }: any) {
       {isNewActivityModalOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-6">
-              <h4 className="text-sm font-black uppercase text-orange-500">Nueva Actividad</h4>
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-sm font-black uppercase text-orange-500">Gestionar Actividades</h4>
               <button onClick={() => setIsNewActivityModalOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
+            </div>
+            
+            {/* List of existing activities */}
+            <div className="mb-6 space-y-2 max-h-40 overflow-y-auto custom-scrollbar bg-black/5 dark:bg-black/20 rounded-2xl p-4">
+              {allActivities.map((act: any, i: number) => (
+                <div key={i} className="flex items-center justify-between bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-2 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: act.color }}></span>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-black dark:text-white">
+                      {act.name} ({act.code})
+                    </span>
+                  </div>
+                  {act.id && (
+                    <button onClick={() => handleDeleteActivity(act.id)} className="text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors" title="Eliminar Actividad">
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="border-t border-gray-200 dark:border-white/10 pt-4 mb-4">
+              <h5 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/40 tracking-wider">Crear Nueva Actividad</h5>
             </div>
             <div className="space-y-4">
               <div className="space-y-1">
