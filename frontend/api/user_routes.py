@@ -308,9 +308,10 @@ def get_user_progress(dni: str, db: Session = Depends(get_db)):
     
     progress_data_map = {}
     uncompleted_history = []
+    last_weights_map = {}
     
     for b in bookings:
-        month_key = b.start_time.strftime("%b %Y") # e.g. "Jul 2026"
+        month_key = b.start_time.strftime("%Y-%m-%d")
         if month_key not in progress_data_map:
             progress_data_map[month_key] = {"date": month_key}
             
@@ -334,11 +335,15 @@ def get_user_progress(dni: str, db: Session = Depends(get_db)):
                                 current_max = progress_data_map[month_key].get(name, 0)
                                 if kg > current_max:
                                     progress_data_map[month_key][name] = kg
+                                
+                                # Track last absolute weight (overwriting linearly because bookings are asc order)
+                                last_weights_map[name] = kg
 
     progress_chart_data = list(progress_data_map.values())
     
     return {
         "status": "success",
         "chart_data": progress_chart_data,
-        "uncompleted_history": sorted(uncompleted_history, key=lambda x: x["date"], reverse=True)
+        "uncompleted_history": sorted(uncompleted_history, key=lambda x: x["date"], reverse=True),
+        "last_weights": last_weights_map
     }

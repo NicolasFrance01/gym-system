@@ -115,3 +115,10 @@ class Exercise(Base):
     instructions = Column(String, nullable=True)
     rpe = Column(String, nullable=True)
     rir = Column(String, nullable=True)
+
+class Activity(Base):
+    __tablename__ = 'activities'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    code = Column(String)
+    color = Column(String)

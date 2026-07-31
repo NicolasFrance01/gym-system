@@ -16,6 +16,26 @@ export default function UserApp() {
   };
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClassIndex, setSelectedClassIndex] = useState(0);
+  const [chartFilter, setChartFilter] = useState<'7d'|'30d'|'all'>('all');
+  const [showMorning, setShowMorning] = useState(true);
+  const [showEvening, setShowEvening] = useState(true);
+  const [dbActivities, setDbActivities] = useState<any[]>([]);
+  const fetchActivities = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/activities`);
+      if (res.ok) {
+        const data = await res.json();
+        setDbActivities(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  
+  useEffect(() => {
+    fetchActivities();
+  }, []);
+
 
   const [globalExercises, setGlobalExercises] = useState<any[]>([]);
   const [selectedExerciseInfo, setSelectedExerciseInfo] = useState<any | null>(null);
@@ -119,7 +139,7 @@ export default function UserApp() {
       const res = await fetch(`${API_URL}/user/${dni}/progress`);
       if (res.ok) {
         const data = await res.json();
-        setUserData(prev => ({ ...prev, evolution: data.chart_data || [] }));
+        setUserData(prev => ({ ...prev, evolution: data.chart_data || [], last_weights: data.last_weights || {} }));
       }
     } catch (e) {
       console.error("Error fetching progress", e);
@@ -489,39 +509,53 @@ const fetchUserBookings = async (memberDni: string) => {
              </div>
           </div>
         );
-      case 'Evolution':
+      case 'Evolution': {
+        let filteredEvolution: any[] = userData.evolution || [];
+        if (chartFilter === '7d') {
+          const limitDate = new Date();
+          limitDate.setDate(limitDate.getDate() - 7);
+          filteredEvolution = filteredEvolution.filter((e: any) => new Date(e.date) >= limitDate);
+        } else if (chartFilter === '30d') {
+          const limitDate = new Date();
+          limitDate.setDate(limitDate.getDate() - 30);
+          filteredEvolution = filteredEvolution.filter((e: any) => new Date(e.date) >= limitDate);
+        }
+
+        let totalImprovement = 0;
+        if (filteredEvolution && filteredEvolution.length > 1) {
+          const first = filteredEvolution[0];
+          const last = filteredEvolution[filteredEvolution.length - 1];
+          const keys = Object.keys(last).filter(k => k !== 'date' && k !== 'name');
+          keys.forEach(k => {
+            const firstVal = first[k] || 0;
+            const lastVal = last[k] || 0;
+            if (lastVal > firstVal) totalImprovement += (lastVal - firstVal);
+          });
+        }
+        const daysTrained = filteredEvolution.length;
+
         return (
           <div className="h-full flex flex-col min-h-0 justify-center animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
              <div className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col justify-between h-full min-h-0">
-                <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter flex-shrink-0"><TrendingUp className="text-orange-500" size={22}/> Mi Progreso</h3>
+                <div className="flex justify-between items-center flex-shrink-0">
+                  <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter"><TrendingUp className="text-orange-500" size={22}/> Mi Progreso</h3>
+                  <div className="flex gap-2">
+                     <button onClick={() => setChartFilter('7d')} className={`px-2 py-1 rounded text-[8px] font-black uppercase transition-colors ${chartFilter === '7d' ? 'bg-orange-500 text-white' : 'bg-white/10 text-white/40'}`}>7 Días</button>
+                     <button onClick={() => setChartFilter('30d')} className={`px-2 py-1 rounded text-[8px] font-black uppercase transition-colors ${chartFilter === '30d' ? 'bg-orange-500 text-white' : 'bg-white/10 text-white/40'}`}>30 Días</button>
+                     <button onClick={() => setChartFilter('all')} className={`px-2 py-1 rounded text-[8px] font-black uppercase transition-colors ${chartFilter === 'all' ? 'bg-orange-500 text-white' : 'bg-white/10 text-white/40'}`}>Histórico</button>
+                  </div>
+                </div>
                 <div className="flex-1 min-h-0 my-4">
-                   <ProgressChart data={userData.evolution} />
+                   <ProgressChart data={filteredEvolution} />
                 </div>
                 <div className="grid grid-cols-2 gap-3 flex-shrink-0">
-                   {(() => {
-                     let totalImprovement = 0;
-                     if (userData.evolution && userData.evolution.length > 1) {
-                       const first = userData.evolution[0];
-                       const last = userData.evolution[userData.evolution.length - 1];
-                       const keys = Object.keys(last).filter(k => k !== 'date' && k !== 'name');
-                       keys.forEach(k => {
-                         const firstVal = first[k] || 0;
-                         const lastVal = last[k] || 0;
-                         if (lastVal > firstVal) totalImprovement += (lastVal - firstVal);
-                       });
-                     }
-                     const daysTrained = userData?.attendanceHistory ? userData.attendanceHistory.filter((h: any) => h.type !== "Tótem").length : 0;
-                     return (
-                       <>
-                         <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-xl font-black text-white">+{totalImprovement}kg</p><p className="text-[9px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
-                         <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-xl font-black text-white">{daysTrained}</p><p className="text-[9px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>
-                       </>
-                     );
-                   })()}
+                   <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-xl font-black text-white">+{totalImprovement}kg</p><p className="text-[9px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
+                   <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-xl font-black text-white">{daysTrained}</p><p className="text-[9px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>
                 </div>
              </div>
           </div>
         );
+      }
       case 'Calendar':
         const allWeekSchedules = Object.values(weekSchedulesMap).flat();
         const getUniqueSlots = (allSchedules: any[]) => {
@@ -640,10 +674,11 @@ const fetchUserBookings = async (memberDni: string) => {
                           
                           {/* Clases por la Mañana */}
                           <div>
-                            <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl">
-                              Clases por la Mañana
+                            <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl flex items-center justify-center cursor-pointer relative" onClick={() => setShowMorning(!showMorning)}>
+                              <span>Clases por la Mañana</span>
+                              <span className="absolute right-4">{showMorning ? "▲" : "▼"}</span>
                             </div>
-                            <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-2xl scrollbar-thin">
+                            {showMorning && <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-2xl scrollbar-thin">
                               <table className="w-full border-collapse text-left table-fixed">
                                 <thead>
                                   <tr className="bg-[#F38E26]/5 text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
@@ -717,15 +752,16 @@ const fetchUserBookings = async (memberDni: string) => {
                                   ))}
                                 </tbody>
                               </table>
-                            </div>
+                            </div>}
                           </div>
 
                           {/* Clases por la Tarde / Noche */}
                           <div>
-                            <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl">
-                              Clases por la Tarde/Noche
+                            <div className="bg-[#F38E26] text-white font-black text-center py-2.5 uppercase tracking-widest text-[9px] rounded-t-2xl flex items-center justify-center cursor-pointer relative" onClick={() => setShowEvening(!showEvening)}>
+                              <span>Clases por la Tarde/Noche</span>
+                              <span className="absolute right-4">{showEvening ? "▲" : "▼"}</span>
                             </div>
-                            <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-2xl scrollbar-thin">
+                            {showEvening && <div className="overflow-x-auto border-x border-b border-white/5 rounded-b-2xl scrollbar-thin">
                               <table className="w-full border-collapse text-left table-fixed">
                                 <thead>
                                   <tr className="bg-[#F38E26]/5 text-white/20 border-b border-white/5 text-[7px] uppercase tracking-wider font-black">
@@ -799,8 +835,20 @@ const fetchUserBookings = async (memberDni: string) => {
                                   ))}
                                 </tbody>
                               </table>
-                            </div>
+                            </div>}
                           </div>
+
+                            {/* Actividades Leyenda */}
+                            <div className="pt-4 border-t border-white/10 text-center mt-4">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-white/20 block mb-3">Actividades</span>
+                              <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center items-center text-[8px] font-black uppercase">
+                                {dbActivities.map((act, i) => (
+                                  <span key={i} className="flex items-center gap-1 group relative" style={{ color: act.color }}>
+                                    ● {act.name} ({act.code})
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                        </div>
                     </div>
                   )}
