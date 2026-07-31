@@ -171,3 +171,13 @@ class StaffSchema(StaffBase):
 
     class Config:
         from_attributes = True
+
+class MassClassScheduleSchema(BaseModel):
+    days: List[int]
+    start_hour: int
+    end_hour: int
+    interval_hours: int
+    capacity: int
+    name: str
+    code: str
+    color: str

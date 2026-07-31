@@ -271,7 +271,7 @@ function AgendaModule({ members, API_URL }: any) {
       });
       if (res.ok) {
         setIsMassClassModalOpen(false);
-        
+        fetchSchedules();
       }
     } catch (e) {
       console.error(e);
@@ -423,7 +423,7 @@ function AgendaModule({ members, API_URL }: any) {
                           setActiveSchedule(s);
                           fetchClassBookings(s.id);
                         }}
-                        style={{ backgroundColor: s.color }}
+                        style={{ backgroundColor: s.color, textShadow: '0px 1px 3px rgba(0,0,0,0.9)' }}
                         className={`w-9 sm:w-14 h-7 sm:h-9 rounded-lg sm:rounded-xl text-white font-black text-[7px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md ${isSelected ? 'ring-2 ring-orange-500 scale-105' : 'opacity-90'}`}>
                         <span>{s.code}</span>
                       </button>
@@ -528,7 +528,7 @@ function AgendaModule({ members, API_URL }: any) {
               <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-white/20 block mb-3">Actividades</span>
               <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center items-center text-[8px] font-black uppercase">
                 {allActivities.map((act: any, i: number) => (
-                  <span key={i} className="flex items-center gap-1 group relative" style={{ color: act.color }}>
+                  <span key={i} className="flex items-center gap-1 group relative" style={{ color: act.color, textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
                     ● {act.name} ({act.code})
                     {act.id && (
                       <button onClick={() => handleDeleteActivity(act.id)} className="hidden group-hover:block absolute -top-4 -right-2 bg-red-500 text-white p-0.5 rounded-full z-10"><X size={10}/></button>
@@ -653,7 +653,7 @@ function AgendaModule({ members, API_URL }: any) {
           {allActivities.map((act: any, i: number) => (
             <div key={i} className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: act.color }}></span>
-              <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: act.color }}>
+              <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: act.color, textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
                 {act.name} ({act.code})
               </span>
             </div>

@@ -520,3 +520,43 @@ def delete_exercise(ex_id: int, db: Session = Depends(get_db)):
     db.delete(ex)
     db.commit()
     return {"status": "success"}
+
+@router.post("/class_schedules/mass")
+def create_mass_class_schedules(payload: schemas.MassClassScheduleSchema, db: Session = Depends(get_db)):
+    created_schedules = []
+    
+    for day in payload.days:
+        current_hour = payload.start_hour
+        while current_hour < payload.end_hour:
+            # Create start and end times
+            start_time = f"{current_hour:02d}:00"
+            
+            next_hour = current_hour + payload.interval_hours
+            if next_hour > payload.end_hour:
+                next_hour = payload.end_hour
+            
+            end_time = f"{next_hour:02d}:00"
+            
+            # Check if exists
+            existing = db.query(models.ClassSchedule).filter(
+                models.ClassSchedule.day_of_week == day,
+                models.ClassSchedule.start_time == start_time
+            ).first()
+            
+            if not existing:
+                new_schedule = models.ClassSchedule(
+                    name=payload.name,
+                    code=payload.code,
+                    day_of_week=day,
+                    start_time=start_time,
+                    end_time=end_time,
+                    color=payload.color,
+                    capacity=payload.capacity
+                )
+                db.add(new_schedule)
+                created_schedules.append(new_schedule)
+            
+            current_hour += payload.interval_hours
+            
+    db.commit()
+    return {"message": f"Created {len(created_schedules)} classes."}
