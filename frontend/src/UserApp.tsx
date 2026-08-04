@@ -1,5 +1,5 @@
 import ProgressChart from './components/ProgressChart';
-import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, CheckCircle2, AlertTriangle, Info, Receipt, History, FileText, CheckCircle } from 'lucide-react';
+import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, CheckCircle2, AlertTriangle, Info, Receipt, History, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';

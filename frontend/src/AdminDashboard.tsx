@@ -29,6 +29,41 @@ function AgendaModule({ members, API_URL }: any) {
   const [deletedSlotKeys, setDeletedSlotKeys] = useState<Set<string>>(new Set());
   const [showMorning, setShowMorning] = useState(true);
   const [showEvening, setShowEvening] = useState(true);
+  const [isMassClassModalOpen, setIsMassClassModalOpen] = useState(false);
+  const [massClassData, setMassClassData] = useState({
+    days: [] as number[],
+    start_hour: 7,
+    end_hour: 23,
+    interval_hours: 1,
+    capacity: 20,
+    activity_name: 'Entrenamiento Funcional'
+  });
+  const [isNewActivityModalOpen, setIsNewActivityModalOpen] = useState(false);
+  const [newActivityData, setNewActivityData] = useState({ name: '', code: '', color: '#ffffff' });
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   const fetchActivities = async () => {
     try {
@@ -55,6 +90,7 @@ function AgendaModule({ members, API_URL }: any) {
   }, [isClassModalOpen]);
 
   const allActivities = dbActivities;
+
 
   const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -207,19 +243,6 @@ function AgendaModule({ members, API_URL }: any) {
     } catch (e) { console.error(e); }
   };
 
-
-
-  const fetchActivities = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/activities`);
-      if (res.ok) {
-        const data = await res.json();
-        setDbActivities(data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   const handleDeleteRow = async (start: string, end: string) => {
     showConfirm("Eliminar Fila Completa", `¿Seguro que deseas eliminar TODAS las clases del horario ${start} - ${end} de esta semana?`, async () => {
