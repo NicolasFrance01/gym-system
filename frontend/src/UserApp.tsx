@@ -1,6 +1,8 @@
 import ProgressChart from './components/ProgressChart';
-import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Zap, Dumbbell, Clock, Check, Play, LayoutDashboard, User, TrendingUp, ArrowUpRight, X, Lock, CheckCircle2, AlertTriangle, Info, Receipt, History, FileText, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 
 export default function UserApp() {
@@ -20,6 +22,11 @@ export default function UserApp() {
   const [showMorning, setShowMorning] = useState(true);
   const [showEvening, setShowEvening] = useState(true);
   const [dbActivities, setDbActivities] = useState<any[]>([]);
+
+  const [checkinStats, setCheckinStats] = useState<{ total: number; used: number; remaining: number } | null>(null);
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+  const [billingHistory, setBillingHistory] = useState<any[]>([]);
+
   const fetchActivities = async () => {
     try {
       const res = await fetch(`${API_URL}/admin/activities`);
@@ -57,6 +64,7 @@ export default function UserApp() {
     evolution: [],
     attendanceHistory: []
   });
+
 
   const [bookings, setBookings] = useState<any[]>([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -159,6 +167,108 @@ const fetchUserBookings = async (memberDni: string) => {
     } catch (e) { console.error(e); }
   };
 
+  const fetchUserFullInfo = async (memberDni: string) => {
+    try {
+      const res = await fetch(`${API_URL}/user/${memberDni}/full_info`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.checkin_stats) setCheckinStats(data.checkin_stats);
+        if (data.attendance_history) setAttendanceHistory(data.attendance_history);
+        if (data.billing_history) setBillingHistory(data.billing_history);
+        setUserData(prev => ({
+          ...prev,
+          name: data.member.name,
+          dni: data.member.dni,
+          plan: data.member.membership_type,
+          routine: Array.isArray(data.member.routine) ? data.member.routine : [],
+          streak: data.member.streak || 0,
+          streakMessage: data.member.streak_message || ""
+        }));
+      }
+    } catch (e) {
+      console.error("Error fetching full user info", e);
+    }
+  };
+
+  const generatePaymentPDF = async (payment: any) => {
+    const doc = new jsPDF();
+
+    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    });
+
+    try {
+      const bgImg = await loadImage('/favicon.png');
+      const gState = new (doc as any).GState({opacity: 0.08});
+      doc.setGState(gState);
+      doc.addImage(bgImg, 'PNG', 45, 80, 120, 120);
+      doc.setGState(new (doc as any).GState({opacity: 1.0}));
+    } catch (e) {}
+
+    doc.setFontSize(22);
+    doc.setTextColor(249, 115, 22);
+    doc.text('FUSION FITNESS GYM', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('COMPROBANTE DE PAGO', 105, 30, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.text(`Fecha: ${payment.date}`, 14, 45);
+
+    autoTable(doc, {
+      startY: 55,
+      head: [['Detalle', 'Información']],
+      body: [
+        ['Nombre Completo', userData.name || '-'],
+        ['DNI', userData.dni || '-'],
+        ['Plan que se Abono', payment.plan || userData.plan || '-'],
+        ['Monto Abonado', `$${payment.amount?.toLocaleString()}`],
+        ['Medio de Pago Utilizado', payment.method || 'Efectivo'],
+        ['Usuario del Sistema', payment.processed_by || 'Administración'],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [249, 115, 22] },
+    });
+
+    const tableEndY = (doc as any).lastAutoTable?.finalY || 136;
+    const tableCenterY = (55 + tableEndY) / 2;
+
+    doc.setFontSize(80);
+    const textW = doc.getTextWidth('PAGADO');
+    const cos45 = Math.cos(Math.PI / 4);
+    const sin45 = Math.sin(Math.PI / 4);
+    const stampStartX = 105 - (textW / 2) * cos45;
+    const stampStartY = tableCenterY + (textW / 2) * sin45;
+
+    doc.setGState(new (doc as any).GState({opacity: 0.13}));
+    doc.setTextColor(249, 115, 22);
+    doc.text('PAGADO', stampStartX, stampStartY, { angle: 45 });
+    doc.setGState(new (doc as any).GState({opacity: 1.0}));
+    doc.setTextColor(0, 0, 0);
+
+    const finalY = tableEndY;
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('---------------------------------------------------------', 105, finalY + 20, { align: 'center' });
+    doc.text('Sello Institucional - Fusion Fitness', 105, finalY + 26, { align: 'center' });
+
+    try {
+      const logo = await loadImage('/logo_B.png');
+      doc.addImage(logo, 'PNG', 85, finalY + 35, 40, 40);
+    } catch (e) {}
+
+    doc.setFontSize(7);
+    doc.setTextColor(190, 190, 190);
+    doc.text('ESTE COMPROBANTE ES VÁLIDO COMO CONSTANCIA DE PAGO', 105, finalY + 82, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+
+    doc.save(`Comprobante_Pago_${(userData.name || 'Socio').replace(/\s+/g, '_')}.pdf`);
+  };
+
   const handleLogin = async (e: any) => {
     e.preventDefault();
     setIsLoading(true);
@@ -183,7 +293,7 @@ const fetchUserBookings = async (memberDni: string) => {
           streakMessage: data.member.streak_message || ""
         }));
         setIsAuthenticated(true);
-        // Fetch global exercises
+
         try {
           const exRes = await fetch(`${API_URL}/admin/exercises`);
           if (exRes.ok) {
@@ -193,8 +303,9 @@ const fetchUserBookings = async (memberDni: string) => {
         fetchUserBookings(data.member.dni);
         fetchHolidays();
         fetchUserProgress(data.member.dni);
+        fetchUserFullInfo(data.member.dni);
       } else {
-        alert(data.detail || "Error al ingresar");
+        showToast(data.detail || "Error al ingresar", "error");
       }
     } catch (err) {
       showToast("Error de conexión con el servidor", "error");
@@ -216,10 +327,10 @@ const fetchUserBookings = async (memberDni: string) => {
         showToast("Contraseña actualizada con éxito", "success");
         setNewPassword('');
       } else {
-        showToast("Error al actualizar contraseña", "success");
+        showToast("Error al actualizar contraseña", "error");
       }
     } catch (err) {
-      showToast("Error de conexión", "success");
+      showToast("Error de conexión", "error");
     } finally {
       setIsLoading(false);
     }
@@ -250,7 +361,11 @@ const fetchUserBookings = async (memberDni: string) => {
     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
     const holiday = holidays.find(h => h.date === dateStr);
     if (holiday) {
-      alert(`Día no laborable: ${holiday.description}`);
+      showConfirm(
+        "Día No Laborable",
+        `El día seleccionado es un feriado registrado: ${holiday.description}. El gimnasio no ofrecerá actividades este día.`,
+        () => {}
+      );
       return;
     }
     setSelectedDay(dayNum);
@@ -262,6 +377,7 @@ const fetchUserBookings = async (memberDni: string) => {
       }
     } catch (e) { console.error(e); }
   };
+
 
   const handleBookClass = async (scheduleId: number) => {
     const now = new Date();
@@ -932,9 +1048,100 @@ const fetchUserBookings = async (memberDni: string) => {
              </div>
           </div>
         );
+      case 'History':
+        return (
+          <div className="h-full flex flex-col min-h-0 animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
+             <div className="bg-[#141b29] border border-white/5 p-5 sm:p-8 rounded-3xl flex flex-col min-h-0 h-full">
+                <div className="flex justify-between items-center flex-shrink-0 mb-4">
+                   <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3"><History className="text-blue-400" size={22}/> Historial de Ingresos</h3>
+                   <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-[9px] font-black rounded-xl uppercase">{attendanceHistory.length} Registros</span>
+                </div>
+
+                {checkinStats && (
+                   <div className="grid grid-cols-3 gap-2 mb-4 flex-shrink-0">
+                     <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
+                       <p className="text-sm font-black text-white">{checkinStats.total}</p>
+                       <p className="text-[7px] text-white/30 uppercase font-black">Total Plan</p>
+                     </div>
+                     <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
+                       <p className="text-sm font-black text-orange-400">{checkinStats.used}</p>
+                       <p className="text-[7px] text-white/30 uppercase font-black">Usadas</p>
+                     </div>
+                     <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
+                       <p className="text-sm font-black text-blue-400">{checkinStats.remaining}</p>
+                       <p className="text-[7px] text-white/30 uppercase font-black">Restantes</p>
+                     </div>
+                   </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 min-h-0">
+                   {attendanceHistory.length > 0 ? attendanceHistory.map((item, i) => {
+                     const dt = new Date(item.checkin_at.replace(/\.\d+Z$/, 'Z'));
+                     const fecha = dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                     const hora = dt.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: true });
+                     return (
+                       <div key={i} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 font-black text-xs">
+                             {attendanceHistory.length - i}
+                           </div>
+                           <div>
+                             <p className="font-black text-white text-xs uppercase">{item.type || 'Ingreso'}</p>
+                             <p className="text-[9px] text-white/30 font-black">{fecha} · {hora} HS</p>
+                           </div>
+                         </div>
+                         <span className="px-2.5 py-1 bg-green-500/10 text-green-400 text-[8px] font-black uppercase rounded-lg">REGISTRADO</span>
+                       </div>
+                     );
+                   }) : (
+                     <p className="text-center text-white/20 italic text-[10px] font-black uppercase py-10">Sin ingresos registrados aún</p>
+                   )}
+                </div>
+             </div>
+          </div>
+        );
+      case 'Payments':
+        return (
+          <div className="h-full flex flex-col min-h-0 animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
+             <div className="bg-[#141b29] border border-white/5 p-5 sm:p-8 rounded-3xl flex flex-col min-h-0 h-full">
+                <div className="flex justify-between items-center flex-shrink-0 mb-4">
+                   <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3"><Receipt className="text-orange-500" size={22}/> Pagos y Planes</h3>
+                   <span className="px-3 py-1 bg-orange-500/20 text-[#F38E26] text-[9px] font-black rounded-xl uppercase">{billingHistory.length} Pagos</span>
+                </div>
+
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 mb-4 flex justify-between items-center flex-shrink-0">
+                  <div>
+                    <p className="text-[8px] text-white/40 font-black uppercase">Plan Actual del Socio</p>
+                    <p className="text-base font-black text-white uppercase">{userData.plan}</p>
+                  </div>
+                  <span className="px-3 py-1 bg-green-500/20 text-green-400 text-[9px] font-black uppercase rounded-full">AL DÍA</span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-3 min-h-0">
+                   {billingHistory.length > 0 ? billingHistory.map((item, i) => (
+                     <div key={i} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3">
+                       <div>
+                         <p className="font-black text-white text-xs uppercase">{item.plan}</p>
+                         <p className="text-[9px] text-white/30 font-black mt-0.5">{item.date} · Método: {item.method}</p>
+                         <p className="text-sm font-black text-green-400 mt-1">${item.amount?.toLocaleString()}</p>
+                       </div>
+                       <button
+                         onClick={() => generatePaymentPDF(item)}
+                         className="px-3 py-2 bg-[#F38E26] hover:bg-orange-600 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md active:scale-95 transition-all whitespace-nowrap"
+                       >
+                         <FileText size={12} /> Ver PDF
+                       </button>
+                     </div>
+                   )) : (
+                     <p className="text-center text-white/20 italic text-[10px] font-black uppercase py-10">Sin pagos registrados en el sistema</p>
+                   )}
+                </div>
+             </div>
+          </div>
+        );
       default:
         return (
-          <div className="space-y-6 animate-in fade-in duration-1000">
+          <div className="space-y-6 animate-in fade-in duration-1000 overflow-y-auto max-h-[75vh] custom-scrollbar pr-1">
              <header className="flex items-center justify-between">
                 <div><h2 className="text-3xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2><p className="text-white/30 text-[10px] font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
                 <div onClick={()=>setActiveTab('Profile')} className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all"><User size={20} className="text-blue-500" /></div>
@@ -950,6 +1157,45 @@ const fetchUserBookings = async (memberDni: string) => {
                     {userData.streakMessage || "¡Vamos por un nuevo comienzo con todo! ⚡"}
                   </p>
                   <div onClick={()=>setActiveTab('Evolution')} className="py-3 px-6 rounded-2xl border text-[9px] sm:text-[10px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-2 w-fit" style={{backgroundColor:'rgba(243,142,38,0.05)', borderColor:'rgba(243,142,38,0.15)', color:'#F38E26'}} onMouseEnter={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='#F38E26';(e.currentTarget as HTMLDivElement).style.color='#fff'}} onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='rgba(243,142,38,0.05)';(e.currentTarget as HTMLDivElement).style.color='#F38E26'}}>Explorar Evolución <ArrowUpRight size={14}/></div>
+             </section>
+
+             {/* Recordatorios Section */}
+             <section className="bg-white/[0.08] backdrop-blur-2xl p-6 rounded-[35px] border border-white/20 border-t-white/35 border-l-white/35 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] space-y-4">
+               <div className="flex justify-between items-center">
+                 <div>
+                   <h3 className="text-xs font-black uppercase tracking-widest text-[#F38E26] flex items-center gap-2">
+                     <Clock size={16} /> Recordatorios de Plan
+                   </h3>
+                   <p className="text-[9px] text-white/40 font-black uppercase tracking-wider mt-0.5">Plan Activo: {userData.plan}</p>
+                 </div>
+               </div>
+
+               <div className="bg-black/30 p-4 rounded-2xl border border-white/5 space-y-3">
+                 <p className="text-[9px] font-black uppercase text-blue-400 tracking-widest">
+                   Asistencia · {attendanceHistory.length} ingresos
+                 </p>
+                 <div className="flex gap-2">
+                   {[
+                     { label: 'Total', value: checkinStats?.total || 12, color: 'text-white/50' },
+                     { label: 'Usadas', value: checkinStats?.used || 0, color: 'text-orange-400' },
+                     { label: 'Restantes', value: checkinStats?.remaining || 0, color: 'text-blue-400' }
+                   ].map(s => (
+                     <div key={s.label} className="flex-1 bg-white/5 border border-white/5 rounded-xl p-2 text-center">
+                       <p className={`text-base font-black ${s.color}`}>{s.value}</p>
+                       <p className="text-[7px] text-white/40 font-black uppercase tracking-wider">{s.label}</p>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+
+               <div className="flex gap-2">
+                 <button onClick={() => setActiveTab('History')} className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-wider text-white transition-all">
+                   Ver Historial Completo
+                 </button>
+                 <button onClick={() => setActiveTab('Payments')} className="flex-1 py-3 bg-[#F38E26]/10 hover:bg-[#F38E26] border border-[#F38E26]/30 text-[#F38E26] hover:text-white rounded-2xl text-[9px] font-black uppercase tracking-wider transition-all">
+                   Pagos y Planes
+                 </button>
+               </div>
              </section>
           </div>
         );
@@ -1015,12 +1261,15 @@ const fetchUserBookings = async (memberDni: string) => {
       <main className="flex-1 w-full max-w-lg mx-auto min-h-0 overflow-hidden">{renderTabContent()}</main>
       
       {/* Brighter Liquid Glass Bottom Navigation Dock */}
-      <nav className="fixed bottom-4 left-4 right-4 h-16 bg-white/[0.1] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 rounded-2xl z-50 flex items-center justify-around px-4 shadow-lg shadow-black/40 animate-in slide-in-from-bottom-10 duration-1000">
-         <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={22}/>} />
-         <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={22}/>} />
-         <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={22}/>} />
-         <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={22}/>} />
+      <nav className="fixed bottom-4 left-4 right-4 h-16 bg-white/[0.1] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 rounded-2xl z-50 flex items-center justify-around px-2 shadow-lg shadow-black/40 animate-in slide-in-from-bottom-10 duration-1000">
+         <NavBtn active={activeTab === 'Home'} onClick={()=>setActiveTab('Home')} icon={<LayoutDashboard size={20}/>} />
+         <NavBtn active={activeTab === 'Training'} onClick={()=>setActiveTab('Training')} icon={<Dumbbell size={20}/>} />
+         <NavBtn active={activeTab === 'Calendar'} onClick={()=>setActiveTab('Calendar')} icon={<Clock size={20}/>} />
+         <NavBtn active={activeTab === 'Evolution'} onClick={()=>setActiveTab('Evolution')} icon={<TrendingUp size={20}/>} />
+         <NavBtn active={activeTab === 'History'} onClick={()=>setActiveTab('History')} icon={<History size={20}/>} />
+         <NavBtn active={activeTab === 'Payments'} onClick={()=>setActiveTab('Payments')} icon={<Receipt size={20}/>} />
       </nav>
+
 
       {/* Premium custom confirm dialog with opaque backdrop blur and bright glass styling */}
       {confirmModal.isOpen && (

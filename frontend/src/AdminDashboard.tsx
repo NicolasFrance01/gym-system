@@ -26,53 +26,35 @@ function AgendaModule({ members, API_URL }: any) {
   const [isEditingClass, setIsEditingClass] = useState(false);
 
   const [dbActivities, setDbActivities] = useState<any[]>([]);
+  const [deletedSlotKeys, setDeletedSlotKeys] = useState<Set<string>>(new Set());
   const [showMorning, setShowMorning] = useState(true);
   const [showEvening, setShowEvening] = useState(true);
-  const [isMassClassModalOpen, setIsMassClassModalOpen] = useState(false);
-  const [massClassData, setMassClassData] = useState({
-    days: [] as number[],
-    start_hour: 7,
-    end_hour: 23,
-    interval_hours: 1,
-    capacity: 20,
-    activity_name: 'Entrenamiento Funcional'
-  });
-  const [isNewActivityModalOpen, setIsNewActivityModalOpen] = useState(false);
-  const [newActivityData, setNewActivityData] = useState({ name: '', code: '', color: '#ffffff' });
 
-
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: () => {}
-  });
-
-  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
-    setConfirmModal({
-      isOpen: true,
-      title,
-      message,
-      onConfirm: () => {
-        onConfirm();
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  const fetchActivities = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/activities`);
+      if (res.ok) {
+        const data = await res.json();
+        setDbActivities(data);
       }
-    });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  
+  useEffect(() => {
+    fetchSchedules();
+    fetchHolidays();
+    fetchActivities();
+  }, []);
+
+  useEffect(() => {
+    if (isClassModalOpen) {
+      fetchActivities();
+    }
+  }, [isClassModalOpen]);
+
   const allActivities = dbActivities;
-
-
-
-
-
-
 
   const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -110,12 +92,15 @@ function AgendaModule({ members, API_URL }: any) {
       { start: "19:30", end: "20:30" }
     ];
     defaultSlots.forEach(s => {
-      slotsMap.set(`${s.start}-${s.end}`, s);
+      const key = `${s.start}-${s.end}`;
+      if (!deletedSlotKeys.has(key)) {
+        slotsMap.set(key, s);
+      }
     });
 
     allSchedules.forEach(s => {
       const key = `${s.start_time}-${s.end_time}`;
-      if (!slotsMap.has(key)) {
+      if (!deletedSlotKeys.has(key)) {
         slotsMap.set(key, { start: s.start_time, end: s.end_time });
       }
     });
@@ -149,10 +134,6 @@ function AgendaModule({ members, API_URL }: any) {
     } catch (e) { console.error(e); }
   };
 
-  useEffect(() => {
-    fetchSchedules();
-    fetchHolidays();
-  }, []);
 
   const selectedWeekday = getDayOfWeek(selectedDate);
   const isHoliday = holidays.find(h => h.date === selectedDate);
@@ -240,11 +221,18 @@ function AgendaModule({ members, API_URL }: any) {
     }
   };
 
-    const handleDeleteRow = async (start: string, end: string) => {
+  const handleDeleteRow = async (start: string, end: string) => {
     showConfirm("Eliminar Fila Completa", `¿Seguro que deseas eliminar TODAS las clases del horario ${start} - ${end} de esta semana?`, async () => {
       const rowSchedules = schedules.filter(s => s.start_time === start && s.end_time === end);
       try {
-        await Promise.all(rowSchedules.map(s => fetch(`${API_URL}/admin/class_schedules/${s.id}`, { method: 'DELETE' })));
+        for (const s of rowSchedules) {
+          await fetch(`${API_URL}/admin/class_schedules/${s.id}`, { method: 'DELETE' });
+        }
+        setDeletedSlotKeys(prev => {
+          const next = new Set(prev);
+          next.add(`${start}-${end}`);
+          return next;
+        });
         fetchSchedules();
       } catch (e) {
         console.error(e);
@@ -363,12 +351,14 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   const handleDeleteHoliday = async (id: number) => {
-    if (!confirm("¿Eliminar este feriado?")) return;
-    try {
-      const res = await fetch(`${API_URL}/admin/holidays/${id}`, { method: 'DELETE' });
-      if (res.ok) fetchHolidays();
-    } catch (e) { console.error(e); }
+    showConfirm("¿Eliminar este feriado?", "¿Estás seguro de que deseas eliminar este feriado del sistema?", async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/holidays/${id}`, { method: 'DELETE' });
+        if (res.ok) fetchHolidays();
+      } catch (e) { console.error(e); }
+    });
   };
+
 
   const filteredMembersSearch = walkInQuery.trim() === '' ? [] : members.filter((m: any) => {
     const query = walkInQuery.toLowerCase();

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from database import get_db
 import models
 import schemas
@@ -25,12 +26,10 @@ def calculate_member_streak_and_message(member_id: int, db: Session) -> tuple[in
     last_attendance = all_dates[0]
     days_since_last = (today - last_attendance).days
     
-    # Si pasaron 3 o más días desde la última asistencia, la racha es 0.
     if days_since_last >= 3:
         streak = 0
         message = "¡Vamos por un nuevo comienzo con todo! ⚡"
     else:
-        # Calcular racha consecutiva partiendo de la última asistencia
         streak = 1
         current_date = last_attendance
         for next_date in all_dates[1:]:
@@ -42,7 +41,6 @@ def calculate_member_streak_and_message(member_id: int, db: Session) -> tuple[in
             else:
                 break
         
-        # Generar mensaje de acuerdo a los días sin asistir
         if days_since_last == 0:
             message = "¡Vas muy bien en racha, sigue así! 🔥"
         elif days_since_last == 1:
@@ -63,7 +61,6 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     if member.password != credentials.password:
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
     
-    # Recalculate status from joined_at on login to keep it fresh
     if member.joined_at and member.status != 'INACTIVO':
         days_since = (datetime.datetime.utcnow() - member.joined_at).days
         if days_since >= 30:
@@ -101,25 +98,79 @@ def change_password(dni: str, data: schemas.PasswordChange, db: Session = Depend
     db.commit()
     return {"status": "success", "message": "Contraseña actualizada correctamente"}
 
-@router.get("/{dni}/wellness")
-def get_wellness_score(dni: str, db: Session = Depends(get_db)):
+@router.get("/{dni}/full_info")
+def get_user_full_info(dni: str, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == dni).first()
     if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
-    
-    # AI Logic placeholder for wellness score
-    wellness = member.wellness_data or {"hrv": 0, "sleep": 0, "fatigue": 0}
-    score = (wellness.get("hrv", 0) + (wellness.get("sleep", 0) * 100)) / 2
-    
-    return {
-        "score": round(score, 1),
-        "metrics": wellness,
-        "suggestions": ["Take a rest day", "Focus on hydration"] if score < 50 else ["High intensity session recommended"]
-    }
+        raise HTTPException(status_code=404, detail="Socio no encontrado")
 
-@router.get("/marketplace")
-def get_products(db: Session = Depends(get_db)):
-    return db.query(models.Product).all()
+    plan = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    days_per_week = plan.days_per_week if plan else 3
+    total_sessions = days_per_week * 4
+
+    today = datetime.datetime.utcnow()
+    cycle_start = member.joined_at if member.joined_at else (today - datetime.timedelta(days=30))
+
+    sessions_used_totem = db.query(models.Checkin).filter(
+        models.Checkin.member_id == member.id,
+        models.Checkin.checkin_at >= cycle_start
+    ).count()
+
+    sessions_used_bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == "attended",
+        models.Booking.start_time >= cycle_start
+    ).count()
+
+    sessions_used = sessions_used_totem + sessions_used_bookings
+
+    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member.id).all()
+    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat() + "Z", "type": "Tótem"} for c in checkins]
+
+    bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == "attended"
+    ).all()
+    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat() + "Z", "type": b.class_name} for b in bookings]
+
+    all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
+
+    billing_history = [
+        {
+            "id": p.id,
+            "date": p.created_at.strftime("%Y-%m-%d"),
+            "amount": p.amount,
+            "plan": member.membership_type or "Musculación",
+            "method": p.method or "Efectivo",
+            "processed_by": p.stripe_id or "—",
+            "status": "PAGADO"
+        } for p in sorted(member.payments, key=lambda x: x.created_at, reverse=True)
+    ]
+
+    streak_count, streak_msg = calculate_member_streak_and_message(member.id, db)
+
+    return {
+        "status": "success",
+        "member": {
+            "id": member.id,
+            "name": member.name,
+            "dni": member.dni,
+            "phone": member.phone,
+            "email": member.email,
+            "membership_type": member.membership_type,
+            "status": member.status,
+            "routine": member.routine,
+            "streak": streak_count,
+            "streak_message": streak_msg
+        },
+        "checkin_stats": {
+            "total": total_sessions,
+            "used": sessions_used,
+            "remaining": max(0, total_sessions - sessions_used)
+        },
+        "attendance_history": all_attendance,
+        "billing_history": billing_history
+    }
 
 @router.get("/class_schedules")
 def get_user_class_schedules(date: str, db: Session = Depends(get_db)):
