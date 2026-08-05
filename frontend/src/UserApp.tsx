@@ -553,10 +553,15 @@ const fetchUserBookings = async (memberDni: string) => {
       case 'Training':
         return (
           <div className="flex flex-col min-h-0 h-full max-h-[75vh] space-y-4 animate-in slide-in-from-bottom-8 duration-500 overflow-hidden">
-             <div className="flex-shrink-0 bg-gradient-to-br from-orange-500 to-red-600 p-5 rounded-[25px] text-white shadow-xl relative overflow-hidden">
-                <div className="absolute -top-6 -right-6 p-6 opacity-10 rotate-12"><Dumbbell size={100}/></div>
-                <h3 className="text-xl sm:text-2xl font-black mb-1 tracking-tighter">Plan del Día</h3>
-                <p className="text-white/60 text-[9px] font-black uppercase tracking-widest">Sigue tu progreso y sube cargas</p>
+             <div className="flex-shrink-0 bg-white/[0.08] backdrop-blur-2xl p-5 sm:p-6 rounded-[30px] border border-orange-500/20 border-t-orange-500/40 border-l-orange-500/40 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(243,142,38,0.15),transparent_70%)] pointer-events-none" />
+                <div className="absolute -top-6 -right-6 p-6 opacity-10 rotate-12 text-[#F38E26] pointer-events-none"><Dumbbell size={100}/></div>
+                <div className="relative z-10">
+                  <h3 className="text-xl sm:text-2xl font-black mb-1 tracking-tighter text-white uppercase flex items-center gap-2">
+                    <Dumbbell className="text-[#F38E26]" size={24} /> Plan del Día
+                  </h3>
+                  <p className="text-[#F38E26]/80 text-[9px] font-black uppercase tracking-[0.2em]">Sigue tu progreso y sube cargas</p>
+                </div>
              </div>
              <div className="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar min-h-0">
                 {(!userData.routine || userData.routine.length === 0) ? (
@@ -568,7 +573,7 @@ const fetchUserBookings = async (memberDni: string) => {
                   <>
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {userData.routine.map((c: any, idx: number) => (
-                        <button key={idx} onClick={() => setSelectedClassIndex(idx)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors ${selectedClassIndex === idx ? 'bg-orange-500 text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>
+                        <button key={idx} onClick={() => setSelectedClassIndex(idx)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${selectedClassIndex === idx ? 'bg-[#F38E26]/20 border border-[#F38E26]/40 text-[#F38E26] shadow-md' : 'bg-white/5 border border-white/5 text-white/40 hover:bg-white/10'}`}>
                           {c.class_name}
                         </button>
                       ))}
@@ -581,7 +586,7 @@ const fetchUserBookings = async (memberDni: string) => {
                         <div key={eIdx} className={`p-4 rounded-3xl border transition-all ${ex.completed ? 'bg-green-500/10 border-green-500/20 shadow-lg shadow-green-500/5' : 'bg-[#141b29] border-white/5'} space-y-3`}>
                            <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                 <div onClick={()=>toggleExercise(selectedClassIndex, eIdx)} className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all ${ex.completed ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-white/5 text-white/20 hover:text-white hover:bg-white/10'}`}>
+                                 <div onClick={()=>toggleExercise(selectedClassIndex, eIdx)} className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all ${ex.completed ? 'bg-green-500/20 text-green-400 border border-green-500/40 shadow-lg shadow-green-500/10' : 'bg-white/5 text-white/20 hover:text-white hover:bg-white/10'}`}>
                                     {ex.completed ? <Check size={16} strokeWidth={4}/> : <Play size={16}/>}
                                  </div>
                                  <div>
@@ -598,7 +603,7 @@ const fetchUserBookings = async (memberDni: string) => {
                                    <p className="text-[9px] text-white/30 font-black uppercase tracking-widest">{ex.sets} Sets × {ex.reps} Reps</p>
                                  </div>
                               </div>
-                              <button onClick={()=>toggleExercise(selectedClassIndex, eIdx)} className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase ${ex.completed ? 'bg-green-500 text-white' : 'bg-white/5 text-white/40'}`}>{ex.completed ? 'Hecho' : 'Completar'}</button>
+                              <button onClick={()=>toggleExercise(selectedClassIndex, eIdx)} className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${ex.completed ? 'bg-green-500/20 border border-green-500/40 text-green-400' : 'bg-white/5 border border-white/5 text-white/40'}`}>{ex.completed ? 'Hecho' : 'Completar'}</button>
                            </div>
                            {ex.coach_notes && (
                              <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-2">
@@ -619,7 +624,7 @@ const fetchUserBookings = async (memberDni: string) => {
                 )}
              </div>
              <div className="flex-shrink-0 pt-2 pb-6">
-               <button onClick={handleSaveWorkout} disabled={isLoading} className="w-full py-4 text-white bg-green-600 border border-green-500 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all text-xs disabled:opacity-50 shadow-md">
+               <button onClick={handleSaveWorkout} disabled={isLoading} className="w-full py-4 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 border-t-green-500/50 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all text-xs disabled:opacity-50 shadow-[0_10px_30px_rgba(34,197,94,0.15)] backdrop-blur-2xl">
                  {isLoading ? "Guardando..." : "Finalizar y Guardar Entrenamiento"}
                </button>
              </div>
