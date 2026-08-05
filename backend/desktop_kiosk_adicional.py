@@ -250,23 +250,54 @@ class GymDesktopKiosk:
         try:
             member = db.query(models.Member).filter(models.Member.dni == dni).first()
             if member:
+                if member.status == "INACTIVO":
+                    self.cv_engine.set_member_status(member.name, "INACTIVO")
+                    self.root.after(0, lambda: self.render_status_result(member.name, "INACTIVO", dni, "Socio Inactivo"))
+                    return
+
+                add_plans = member.additional_plans or []
+                if not add_plans:
+                    self.cv_engine.set_member_status(member.name, "SIN PLAN")
+                    self.root.after(0, lambda: self.render_status_result(member.name, "SIN PLAN", dni, "Sin Plan Adicional\nContratado"))
+                    return
+
                 now = datetime.datetime.utcnow()
+                cycle_start = member.joined_at if member.joined_at else (now - datetime.timedelta(days=30))
+
+                total_allowed_additional = 0
+                for add_name in add_plans:
+                    p_obj = db.query(models.Plan).filter(models.Plan.name == add_name, models.Plan.is_active == True).first()
+                    add_days = p_obj.days_per_week if p_obj else 2
+                    total_allowed_additional += (add_days * 4)
+
+                used_additional = db.query(models.Booking).filter(
+                    models.Booking.member_id == member.id,
+                    models.Booking.status == "attended",
+                    models.Booking.start_time >= cycle_start
+                ).count()
+
+                if used_additional >= total_allowed_additional:
+                    self.cv_engine.set_member_status(member.name, "SIN PASES")
+                    self.root.after(0, lambda: self.render_status_result(member.name, "SIN PASES", dni, f"0 de {total_allowed_additional} pases restantes\nen Plan Adicional"))
+                    return
+
                 start_window = now - datetime.timedelta(minutes=10)
                 end_window = now + datetime.timedelta(minutes=15)
-                
+
                 booking = db.query(models.Booking).filter(
                     models.Booking.member_id == member.id,
                     models.Booking.status == "reserved",
                     models.Booking.start_time >= start_window,
                     models.Booking.start_time <= end_window
                 ).first()
-                
+
                 if booking:
                     booking.status = "attended"
                     db.commit()
-                    
+
+                    remaining_after = max(0, total_allowed_additional - (used_additional + 1))
                     self.cv_engine.set_member_status(member.name, "ACTIVO")
-                    self.root.after(0, lambda: self.render_status_result(member.name, "ACTIVO", dni, f"Clase Confirmada:\n{booking.class_name}"))
+                    self.root.after(0, lambda: self.render_status_result(member.name, "ACTIVO", dni, f"Clase Confirmada:\n{booking.class_name}\n({remaining_after} pases restantes)"))
                 else:
                     self.cv_engine.set_member_status(member.name, "SIN RESERVA")
                     self.root.after(0, lambda: self.render_status_result(member.name, "SIN RESERVA", dni, "No hay clases\nreservadas para ahora"))

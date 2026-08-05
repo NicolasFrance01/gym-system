@@ -115,9 +115,52 @@ export default function MemberModal({ member, plans, API_URL, onSave, onClose }:
                  <input type="text" placeholder="WhatsApp / Número" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={formData?.phone || ''} onChange={e => setFormData({...formData, phone: e.target.value})} />
                  <input type="email" placeholder="Correo Electrónico" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={formData?.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
               </div>
-              <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs font-bold uppercase" value={formData?.membership_type || plans[0]?.name || ''} onChange={e => setFormData({...formData, membership_type: e.target.value})}>
-                 {plans.map((p:any) => <option key={p.id} value={p.name}>{p.name}</option>)}
-              </select>
+              <div className="space-y-1">
+                <label className="text-[9px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Plan Principal</label>
+                <select className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs font-bold uppercase" value={formData?.membership_type || plans[0]?.name || ''} onChange={e => setFormData({...formData, membership_type: e.target.value})}>
+                   {plans.map((p:any) => <option key={p.id} value={p.name}>{p.name}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2 mt-4 p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-200 dark:border-white/10">
+                <label className="text-[10px] text-orange-500 font-black uppercase tracking-wider block">
+                  Planes Adicionales (Unificables)
+                </label>
+                <p className="text-[9px] text-gray-400 dark:text-white/40 mb-2">
+                  Seleccioná los planes complementarios que se sumarán al cobro y tendrán asistencias separadas:
+                </p>
+                {plans.filter((p: any) => p.allow_unification).length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {plans.filter((p: any) => p.allow_unification).map((p: any) => {
+                      const currentAdd = formData?.additional_plans || [];
+                      const isChecked = currentAdd.includes(p.name);
+                      return (
+                        <label key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isChecked ? 'bg-orange-500/10 border-orange-500/50 text-orange-400 font-bold' : 'bg-white/5 border-white/5 text-gray-400'}`}>
+                          <input 
+                            type="checkbox" 
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData({ ...formData, additional_plans: [...currentAdd, p.name] });
+                              } else {
+                                setFormData({ ...formData, additional_plans: currentAdd.filter((n: string) => n !== p.name) });
+                              }
+                            }}
+                            className="rounded text-orange-500 focus:ring-orange-500"
+                          />
+                          <div className="text-xs">
+                            <p className="font-black uppercase">{p.name}</p>
+                            <p className="text-[10px] opacity-70">${p.price?.toLocaleString()} — {p.days_per_week} d/sem</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No hay planes marcados con "Permitir unificación con otros planes".</p>
+                )}
+              </div>
+
               <div className="space-y-1">
                 <label className="text-[9px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Fecha de Inicio del Plan</label>
                 <input type="date" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-black dark:text-white text-xs" value={formData?.joined_at ? formData.joined_at.split('T')[0] : ''} onChange={e => setFormData({...formData, joined_at: e.target.value ? e.target.value + 'T00:00:00' : null})} />

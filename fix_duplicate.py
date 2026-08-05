@@ -1,19 +1,18 @@
-with open('frontend/src/components/MemberModal.tsx', 'r', encoding='utf-8') as f:
+with open('frontend/src/AdminDashboard.tsx', 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 new_lines = []
 skip = False
-for i, line in enumerate(lines):
-    if "const [selectedSegment, setSelectedSegment] = useState<string>('Todos');" in line:
-        if any("const [selectedSegment" in l for l in new_lines):
-            skip = True
+for i, l in enumerate(lines):
+    if l.strip().startswith('const handleDeleteActivity = async') and i < 250:
+        skip = True
     
     if skip:
-        if "}, [selectedSegment]);" in line:
+        if l.strip() == '};' and lines[i+1].strip() == 'const fetchActivities = async () => {':
             skip = False
         continue
-        
-    new_lines.append(line)
+    
+    new_lines.append(l)
 
-with open('frontend/src/components/MemberModal.tsx', 'w', encoding='utf-8') as f:
+with open('frontend/src/AdminDashboard.tsx', 'w', encoding='utf-8') as f:
     f.writelines(new_lines)

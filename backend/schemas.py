@@ -38,6 +38,7 @@ class MemberBase(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = "123"
     membership_type: Optional[str] = None
+    additional_plans: Optional[List[str]] = []
     wellness_data: Optional[Dict] = None
     routine: Optional[List[Dict]] = None
 
@@ -50,6 +51,7 @@ class MemberCreate(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = "123"
     membership_type: Optional[str] = None
+    additional_plans: Optional[List[str]] = []
     joined_at: Optional[datetime] = None
     routine: Optional[List[Dict]] = None
 
@@ -130,6 +132,7 @@ class PlanBase(BaseModel):
     days_per_week: int = 3
     classes: List = []
     is_active: bool = True
+    allow_unification: Optional[bool] = False
 
 class PlanCreate(PlanBase):
     pass

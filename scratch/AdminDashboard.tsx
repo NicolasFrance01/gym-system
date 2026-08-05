@@ -26,9 +26,8 @@ function AgendaModule({ members, API_URL }: any) {
   const [isEditingClass, setIsEditingClass] = useState(false);
 
   const [dbActivities, setDbActivities] = useState<any[]>([]);
-  const [deletedSlotKeys, setDeletedSlotKeys] = useState<Set<string>>(new Set());
-  const [showMorning, setShowMorning] = useState(false);
-  const [showEvening, setShowEvening] = useState(false);
+  const [showMorning, setShowMorning] = useState(true);
+  const [showEvening, setShowEvening] = useState(true);
   const [isMassClassModalOpen, setIsMassClassModalOpen] = useState(false);
   const [massClassData, setMassClassData] = useState({
     days: [] as number[],
@@ -40,6 +39,7 @@ function AgendaModule({ members, API_URL }: any) {
   });
   const [isNewActivityModalOpen, setIsNewActivityModalOpen] = useState(false);
   const [newActivityData, setNewActivityData] = useState({ name: '', code: '', color: '#ffffff' });
+
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -65,32 +65,43 @@ function AgendaModule({ members, API_URL }: any) {
     });
   };
 
-  const fetchActivities = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/activities`);
-      if (res.ok) {
-        const data = await res.json();
-        setDbActivities(data);
-      }
-    } catch (e) {
-      console.error(e);
+  
+  const defaultActivities = [
+    { name: 'Entrenamiento Funcional', code: 'EF', color: '#3b82f6' },
+    { name: 'Pilates en Suelo', code: 'PS', color: '#f97316' },
+    { name: 'Entrenamiento Personalizado', code: 'EP', color: '#ec4899' },
+    { name: 'Salsa y Bachata', code: 'SB', color: '#eab308' },
+    { name: 'Zumba', code: 'ZB', color: '#ef4444' },
+    { name: 'Reguetón Juvenil', code: 'RJ', color: '#06b6d4' }
+  ];
+  const allActivities = dbActivities.length > 0 ? dbActivities : defaultActivities;
+
+
+
+
+
+
+  const handleAddNewActivity = () => {
+    if (!newActivityData.name || !newActivityData.code) {
+      alert("Por favor completa el nombre y código de la actividad.");
+      return;
     }
+    const codeUpper = newActivityData.code.substring(0, 2).toUpperCase();
+    const updated = [...activities, { name: newActivityData.name, code: codeUpper, color: newActivityData.color }];
+    setActivities(updated);
+    localStorage.setItem('gym_activities', JSON.stringify(updated));
+    
+    // Auto-select this newly created activity in the new class form
+    setNewClassData(prev => ({
+      ...prev,
+      name: newActivityData.name,
+      code: codeUpper,
+      color: newActivityData.color
+    }));
+    
+    setNewActivityData({ name: '', code: '', color: '#3b82f6' });
+    setIsAddingNewActivity(false);
   };
-
-  useEffect(() => {
-    fetchSchedules();
-    fetchHolidays();
-    fetchActivities();
-  }, []);
-
-  useEffect(() => {
-    if (isClassModalOpen) {
-      fetchActivities();
-    }
-  }, [isClassModalOpen]);
-
-  const allActivities = dbActivities;
-
 
   const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -128,15 +139,12 @@ function AgendaModule({ members, API_URL }: any) {
       { start: "19:30", end: "20:30" }
     ];
     defaultSlots.forEach(s => {
-      const key = `${s.start}-${s.end}`;
-      if (!deletedSlotKeys.has(key)) {
-        slotsMap.set(key, s);
-      }
+      slotsMap.set(`${s.start}-${s.end}`, s);
     });
 
     allSchedules.forEach(s => {
       const key = `${s.start_time}-${s.end_time}`;
-      if (!deletedSlotKeys.has(key)) {
+      if (!slotsMap.has(key)) {
         slotsMap.set(key, { start: s.start_time, end: s.end_time });
       }
     });
@@ -170,9 +178,13 @@ function AgendaModule({ members, API_URL }: any) {
     } catch (e) { console.error(e); }
   };
 
+  useEffect(() => {
+    fetchSchedules();
+    fetchHolidays();
+  }, []);
 
   const selectedWeekday = getDayOfWeek(selectedDate);
-
+  const isHoliday = holidays.find(h => h.date === selectedDate);
 
   const fetchClassBookings = async (scheduleId: number) => {
     try {
@@ -244,25 +256,6 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
 
-  const handleDeleteRow = async (start: string, end: string) => {
-    showConfirm("Eliminar Fila Completa", `¿Seguro que deseas eliminar TODAS las clases del horario ${start} - ${end} de esta semana?`, async () => {
-      const rowSchedules = schedules.filter(s => s.start_time === start && s.end_time === end);
-      try {
-        for (const s of rowSchedules) {
-          await fetch(`${API_URL}/admin/class_schedules/${s.id}`, { method: 'DELETE' });
-        }
-        setDeletedSlotKeys(prev => {
-          const next = new Set(prev);
-          next.add(`${start}-${end}`);
-          return next;
-        });
-        fetchSchedules();
-      } catch (e) {
-        console.error(e);
-      }
-    });
-  };
-
   const handleMassClassSubmit = async () => {
     try {
       const activity = allActivities.find(a => a.name === massClassData.activity_name);
@@ -286,7 +279,7 @@ function AgendaModule({ members, API_URL }: any) {
       });
       if (res.ok) {
         setIsMassClassModalOpen(false);
-        fetchSchedules();
+        fetchDashboard();
       }
     } catch (e) {
       console.error(e);
@@ -374,14 +367,12 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   const handleDeleteHoliday = async (id: number) => {
-    showConfirm("¿Eliminar este feriado?", "¿Estás seguro de que deseas eliminar este feriado del sistema?", async () => {
-      try {
-        const res = await fetch(`${API_URL}/admin/holidays/${id}`, { method: 'DELETE' });
-        if (res.ok) fetchHolidays();
-      } catch (e) { console.error(e); }
-    });
+    if (!confirm("¿Eliminar este feriado?")) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/holidays/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchHolidays();
+    } catch (e) { console.error(e); }
   };
-
 
   const filteredMembersSearch = walkInQuery.trim() === '' ? [] : members.filter((m: any) => {
     const query = walkInQuery.toLowerCase();
@@ -399,13 +390,10 @@ function AgendaModule({ members, API_URL }: any) {
     return slots.map((slot, rowIndex) => {
       return (
         <tr key={rowIndex} className="border-b border-gray-200 dark:border-white/5">
-          <td className="p-1 sm:p-3 text-center w-14 sm:w-24 relative group">
+          <td className="p-1 sm:p-3 text-center w-14 sm:w-24">
             <span className="inline-block px-1.5 sm:px-3 py-1 sm:py-1.5 bg-[#F38E26]/10 text-gray-700 dark:text-gray-300 font-black rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 text-[7px] sm:text-[9px] uppercase tracking-tight">
               {slot.start} - {slot.end}
             </span>
-            <button onClick={() => handleDeleteRow(slot.start, slot.end)} className="absolute top-1 left-1 sm:top-2 sm:left-2 text-red-500 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all bg-white dark:bg-[#1b2435] border border-red-500/30 rounded-full p-0.5 shadow-md z-10" title="Eliminar fila completa">
-              <X size={10} strokeWidth={4} />
-            </button>
           </td>
           {weekdayShortNames.map((_, dayIndex) => {
             const cellSchedules = schedules.filter(s => s.day_of_week === dayIndex && s.start_time === slot.start && s.end_time === slot.end);
@@ -443,7 +431,7 @@ function AgendaModule({ members, API_URL }: any) {
                           setActiveSchedule(s);
                           fetchClassBookings(s.id);
                         }}
-                        style={{ backgroundColor: s.color, textShadow: '0px 1px 3px rgba(0,0,0,0.9)' }}
+                        style={{ backgroundColor: s.color }}
                         className={`w-9 sm:w-14 h-7 sm:h-9 rounded-lg sm:rounded-xl text-white font-black text-[7px] sm:text-[9px] uppercase flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md ${isSelected ? 'ring-2 ring-orange-500 scale-105' : 'opacity-90'}`}>
                         <span>{s.code}</span>
                       </button>
@@ -476,6 +464,13 @@ function AgendaModule({ members, API_URL }: any) {
           <button onClick={() => setIsHolidayModalOpen(true)} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">+ Configurar Feriado</button>
         </div>
       </div>
+
+      {isHoliday && (
+        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider">⚠️ DÍA NO LABORABLE: {isHoliday.description}</p>
+          <button onClick={() => handleDeleteHoliday(isHoliday.id)} className="text-[8px] font-black uppercase tracking-widest bg-red-500 text-white px-3 py-1 rounded-lg">Eliminar Feriado</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -540,8 +535,8 @@ function AgendaModule({ members, API_URL }: any) {
             <div className="pt-4 border-t border-gray-200 dark:border-white/5 text-center">
               <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-white/20 block mb-3">Actividades</span>
               <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center items-center text-[8px] font-black uppercase">
-                {allActivities.map((act: any, i: number) => (
-                  <span key={i} className="flex items-center gap-1 group relative" style={{ color: act.color, textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
+                {allActivities.map((act, i) => (
+                  <span key={i} className="flex items-center gap-1 group relative" style={{ color: act.color }}>
                     ● {act.name} ({act.code})
                     {act.id && (
                       <button onClick={() => handleDeleteActivity(act.id)} className="hidden group-hover:block absolute -top-4 -right-2 bg-red-500 text-white p-0.5 rounded-full z-10"><X size={10}/></button>
@@ -696,7 +691,7 @@ function AgendaModule({ members, API_URL }: any) {
               <div className="space-y-1">
                 <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Seleccionar Actividad</label>
                 <select value={massClassData.activity_name} onChange={e => setMassClassData({...massClassData, activity_name: e.target.value})} className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 p-3 rounded-2xl text-[10px] uppercase font-black text-black dark:text-white outline-none">
-                  {allActivities.map((act: any, i: number) => <option key={i} value={act.name}>{act.name} ({act.code})</option>)}
+                  {allActivities.map((act, i) => <option key={i} value={act.name}>{act.name} ({act.code})</option>)}
                 </select>
               </div>
               <div className="space-y-1">
@@ -741,32 +736,9 @@ function AgendaModule({ members, API_URL }: any) {
       {isNewActivityModalOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 p-8 rounded-[35px] w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-sm font-black uppercase text-orange-500">Gestionar Actividades</h4>
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="text-sm font-black uppercase text-orange-500">Nueva Actividad</h4>
               <button onClick={() => setIsNewActivityModalOpen(false)} className="text-gray-400 hover:text-white"><X size={16}/></button>
-            </div>
-            
-            {/* List of existing activities */}
-            <div className="mb-6 space-y-2 max-h-40 overflow-y-auto custom-scrollbar bg-black/5 dark:bg-black/20 rounded-2xl p-4">
-              {allActivities.map((act: any, i: number) => (
-                <div key={i} className="flex items-center justify-between bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-2 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: act.color }}></span>
-                    <span className="text-[9px] font-black uppercase tracking-wider text-black dark:text-white">
-                      {act.name} ({act.code})
-                    </span>
-                  </div>
-                  {act.id && (
-                    <button onClick={() => handleDeleteActivity(act.id)} className="text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors" title="Eliminar Actividad">
-                      <Trash2 size={12} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            <div className="border-t border-gray-200 dark:border-white/10 pt-4 mb-4">
-              <h5 className="text-[10px] font-black uppercase text-gray-500 dark:text-white/40 tracking-wider">Crear Nueva Actividad</h5>
             </div>
             <div className="space-y-4">
               <div className="space-y-1">
@@ -808,7 +780,7 @@ function AgendaModule({ members, API_URL }: any) {
                     className="flex-1 bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" 
                     value={newClassData.name} 
                     onChange={e => {
-                      const selected = allActivities.find((act: any) => act.name === e.target.value);
+                      const selected = activities.find(act => act.name === e.target.value);
                       if (selected) {
                         setNewClassData(prev => ({
                           ...prev,
@@ -819,18 +791,40 @@ function AgendaModule({ members, API_URL }: any) {
                       }
                     }}>
                     <option value="">-- Seleccionar Actividad --</option>
-                    {allActivities.map((act: any, i: number) => <option key={i} value={act.name}>{act.name}</option>)}
+                    
                   </select>
                   <button 
                     type="button" 
-                    onClick={() => { setIsClassModalOpen(false); setIsNewActivityModalOpen(true); }} 
+                    onClick={() => setIsAddingNewActivity(!isAddingNewActivity)} 
                     className="px-3 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-xl text-[9px] font-black uppercase hover:bg-orange-500 hover:text-white transition-all whitespace-nowrap">
-                    + Nueva
+                    {isAddingNewActivity ? "Cerrar" : "+ Nueva"}
                   </button>
                 </div>
               </div>
 
-              
+              {isAddingNewActivity && (
+                <div className="p-4 bg-[#141b29]/60 dark:bg-black/40 border border-orange-500/20 rounded-2xl space-y-3">
+                  <p className="text-[9px] font-black uppercase text-orange-500">Nueva Actividad Personalizada</p>
+                  <div className="space-y-1">
+                    <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Nombre de Actividad</label>
+                    <input type="text" placeholder="Ej: Spinning, Yoga..." className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newActivityData.name} onChange={e=>setNewActivityData({...newActivityData, name: e.target.value})} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Código (2 letras)</label>
+                      <input type="text" maxLength={2} placeholder="Ej: SP" className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-black dark:text-white text-xs outline-none focus:border-orange-500 uppercase text-center font-bold" value={newActivityData.code} onChange={e=>setNewActivityData({...newActivityData, code: e.target.value.toUpperCase()})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-1">Color</label>
+                      <div className="flex gap-2 items-center">
+                        <input type="color" className="w-10 h-10 p-0 bg-transparent border-0 outline-none cursor-pointer rounded-xl flex-shrink-0" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                        <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-black dark:text-white text-[10px] outline-none focus:border-orange-500" value={newActivityData.color} onChange={e=>setNewActivityData({...newActivityData, color: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" onClick={handleAddNewActivity} className="w-full py-2 bg-orange-500 text-white rounded-xl text-[9px] font-black uppercase hover:scale-[1.01] transition-all">Guardar Actividad</button>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Actividad / Nombre</label>
@@ -871,14 +865,9 @@ function AgendaModule({ members, API_URL }: any) {
                   </div>
                 </div>
               </div>
-              <div className="pt-4 space-y-3">
-                <button onClick={() => { setIsClassModalOpen(false); setIsMassClassModalOpen(true); }} className="w-full py-2 bg-purple-600/10 text-purple-500 border border-purple-600/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all shadow-sm">
-                  ⚡ Carga Masiva (Repetitivas)
-                </button>
-                <div className="flex gap-3">
-                  <button onClick={() => setIsClassModalOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
-                  <button onClick={handleSaveClass} className="flex-1 py-3 bg-[#0a0a0a] text-white rounded-xl text-[9px] font-black uppercase border border-[#F38E26]">Guardar</button>
-                </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setIsClassModalOpen(false)} className="flex-1 py-3 text-[9px] font-black uppercase text-gray-400">Cancelar</button>
+                <button onClick={handleSaveClass} className="flex-1 py-3 bg-[#0a0a0a] text-white rounded-xl text-[9px] font-black uppercase border border-[#F38E26]">Guardar</button>
               </div>
             </div>
           </div>
@@ -1356,8 +1345,7 @@ export default function AdminDashboard() {
         price: selectedItem.price,
         days_per_week: selectedItem.daysPerWeek ?? selectedItem.days_per_week ?? 3,
         classes: selectedItem.classes || [],
-        is_active: true,
-        allow_unification: !!selectedItem.allow_unification
+        is_active: true
       };
       if (isEditMode) {
         const res = await fetch(`${API_URL}/admin/plans/${selectedItem.id}`, {
@@ -1477,8 +1465,6 @@ export default function AdminDashboard() {
     doc.setFontSize(12);
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} ${new Date().toLocaleTimeString('es-AR')}`, 14, 45);
 
-    const contractedPlansStr = [member.membership_type || 'Musculación', ...(member.additional_plans || [])].join(' + ');
-
     autoTable(doc, {
       startY: 55,
       head: [['Detalle', 'Información']],
@@ -1487,8 +1473,8 @@ export default function AdminDashboard() {
         ['DNI', member.dni || '-'],
         ['Correo Electrónico', member.email || '-'],
         ['Número de Teléfono', member.phone || '-'],
-        ['Planes Contratados', contractedPlansStr],
-        ['Monto Total Abonado', `$${amount.toLocaleString()}`],
+        ['Plan que se Abono', member.membership_type || '-'],
+        ['Monto Abonado', `$${amount.toLocaleString()}`],
         ['Medio de Pago Utilizado', method || '-'],
         ['Usuario del Sistema', staffName || '-'],
       ],
@@ -1681,62 +1667,36 @@ export default function AdminDashboard() {
                        </div>
                        {/* Asistencia */}
                        <div>
-                         <p className="text-[8px] font-black uppercase text-blue-400 mb-2 tracking-widest">Asistencia · {memberCheckins.length} ingresos registrados</p>
-                         {checkinStats?.plans_breakdown ? (
-                           <div className="space-y-2 mb-3">
-                             {checkinStats.plans_breakdown.map((pb: any, idx: number) => (
-                               <div key={idx} className="bg-gray-50 dark:bg-black/40 p-2.5 rounded-xl border border-gray-200 dark:border-white/5">
-                                 <div className="flex justify-between items-center mb-1.5">
-                                   <span className="text-[9px] font-black uppercase text-orange-500">{pb.name} ({pb.type})</span>
-                                 </div>
-                                 <div className="flex gap-2 text-center">
-                                   <div className="flex-1 bg-white/5 rounded-lg p-1">
-                                     <p className="text-[10px] font-black text-black dark:text-white">{pb.total}</p>
-                                     <p className="text-[6px] text-gray-400 dark:text-white/30 uppercase font-black">Permitidas</p>
-                                   </div>
-                                   <div className="flex-1 bg-white/5 rounded-lg p-1">
-                                     <p className="text-[10px] font-black text-orange-400">{pb.used}</p>
-                                     <p className="text-[6px] text-gray-400 dark:text-white/30 uppercase font-black">Utilizadas</p>
-                                   </div>
-                                   <div className="flex-1 bg-white/5 rounded-lg p-1">
-                                     <p className="text-[10px] font-black text-blue-400">{pb.remaining}</p>
-                                     <p className="text-[6px] text-gray-400 dark:text-white/30 uppercase font-black">Restantes</p>
-                                   </div>
-                                 </div>
-                               </div>
-                             ))}
-                           </div>
-                         ) : checkinStats && (
-                           <div className="flex gap-2 mb-2">{[{l:'Total',v:checkinStats.total,c:'text-white/40'},{l:'Usadas',v:checkinStats.used,c:'text-orange-400'},{l:'Restantes',v:checkinStats.remaining,c:'text-blue-400'}].map(s=><div key={s.l} className="flex-1 bg-black/20 rounded-lg p-1 text-center"><p className={`text-[10px] font-black ${s.c}`}>{s.v}</p><p className="text-[6px] text-white/20 uppercase font-black">{s.l}</p></div>)}</div>
-                         )}
+                         <p className="text-[8px] font-black uppercase text-blue-400 mb-1 tracking-widest">Asistencia · {memberCheckins.length} ingresos</p>
+                         {checkinStats && <div className="flex gap-2 mb-2">{[{l:'Total',v:checkinStats.total,c:'text-white/40'},{l:'Usadas',v:checkinStats.used,c:'text-orange-400'},{l:'Restantes',v:checkinStats.remaining,c:'text-blue-400'}].map(s=><div key={s.l} className="flex-1 bg-black/20 rounded-lg p-1 text-center"><p className={`text-[10px] font-black ${s.c}`}>{s.v}</p><p className="text-[6px] text-white/20 uppercase font-black">{s.l}</p></div>)}</div>}
                          <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
                            {memberCheckins.length > 0 ? memberCheckins.map((c:any, i:number)=>(
-                             <div key={i} className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/5 p-3 rounded-xl flex justify-between items-center">
-                               <div className="flex items-center gap-2">
+                              <div key={i} className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/5 p-3 rounded-xl flex justify-between items-center">
+                                <div className="flex items-center gap-2">
                                   <div className="w-6 h-6 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400 text-[8px] font-black">{memberCheckins.length - i}</div>
                                   {(() => { const dt = new Date(c.checkin_at.replace(/\.\d+Z$/, 'Z')); const fecha = dt.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit'}); const hora = dt.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit',hour12:true}); return <div><p className="font-black text-black dark:text-white text-[9px]">{fecha}</p><p className="text-[7px] text-gray-500 dark:text-white/20 font-black">{hora}</p></div>; })()}
-                               </div>
-                               <button
-                                 onClick={async () => {
-                                   if (confirm("¿Eliminar este ingreso del historial?")) {
-                                     const res = await fetch(`${API_URL}/admin/checkins/${c.id}`, { method: 'DELETE' });
-                                     if (res.ok) {
-                                       const updatedCheckins = memberCheckins.filter((item: any) => item.id !== c.id);
-                                       setMemberCheckins(updatedCheckins);
-                                       if (checkinStats) {
-                                         const newUsed = checkinStats.used - 1;
-                                         const newRemaining = Math.max(0, checkinStats.total - newUsed);
-                                         setCheckinStats({ ...checkinStats, used: newUsed, remaining: newRemaining });
-                                       }
-                                       refreshData();
-                                     }
-                                   }
-                                 }}
-                                 className="p-1 hover:bg-red-500/10 rounded text-red-500 transition-colors"
-                               >
-                                 <Trash2 size={12} />
-                               </button>
-                             </div>
+                                </div>
+                                <button
+                                  onClick={async () => {
+                                    if (confirm("¿Eliminar este ingreso del historial?")) {
+                                      const res = await fetch(`${API_URL}/admin/checkins/${c.id}`, { method: 'DELETE' });
+                                      if (res.ok) {
+                                        const updatedCheckins = memberCheckins.filter((item: any) => item.id !== c.id);
+                                        setMemberCheckins(updatedCheckins);
+                                        if (checkinStats) {
+                                          const newUsed = checkinStats.used - 1;
+                                          const newRemaining = Math.max(0, checkinStats.total - newUsed);
+                                          setCheckinStats({ ...checkinStats, used: newUsed, remaining: newRemaining });
+                                        }
+                                        refreshData();
+                                      }
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-red-500/10 rounded text-red-500 transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
                            )) : <p className="text-center text-gray-400 dark:text-white/10 uppercase font-black py-8 text-[8px]">Sin ingresos registrados</p>}
                          </div>
                        </div>
@@ -1756,31 +1716,19 @@ export default function AdminDashboard() {
                   <div className="space-y-3">
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Plan (nombre)</label>
-                      <input type="text" placeholder="Ej: Premium, Musculación..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.name || ''} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
+                      <input type="text" placeholder="Ej: Premium, Musculación..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.name} onChange={e => setSelectedItem({...selectedItem, name: e.target.value})} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Días (habilitados por semana)</label>
-                      <input type="number" placeholder="Ej: 3, 5, 7..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.daysPerWeek ?? selectedItem?.days_per_week ?? 3} onChange={e => setSelectedItem({...selectedItem, daysPerWeek: parseInt(e.target.value) || 0, days_per_week: parseInt(e.target.value) || 0})} />
+                      <input type="number" placeholder="Ej: 3, 5, 7..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.daysPerWeek} onChange={e => setSelectedItem({...selectedItem, daysPerWeek: parseInt(e.target.value) || 0})} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Precio Mensual</label>
-                      <input type="number" placeholder="Ej: 8500" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.price || 0} onChange={e => setSelectedItem({...selectedItem, price: parseInt(e.target.value) || 0})} />
+                      <input type="number" placeholder="Ej: 8500" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={selectedItem?.price} onChange={e => setSelectedItem({...selectedItem, price: parseInt(e.target.value) || 0})} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Clases Adicionales (separadas por coma)</label>
                       <input type="text" placeholder="Ej: Yoga, Zumba, Funcional..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={(selectedItem?.classes || []).join(', ')} onChange={e => setSelectedItem({...selectedItem, classes: e.target.value.split(',').map((c:string)=>c.trim()).filter((c:string)=>c)})} />
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-2">
-                      <input 
-                        type="checkbox" 
-                        id="allow_unification"
-                        checked={!!selectedItem?.allow_unification} 
-                        onChange={e => setSelectedItem({...selectedItem, allow_unification: e.target.checked})}
-                        className="w-4 h-4 text-orange-500 rounded accent-orange-500 cursor-pointer"
-                      />
-                      <label htmlFor="allow_unification" className="text-[10px] font-black uppercase text-black dark:text-white cursor-pointer select-none">
-                        Permitir unificación con otros planes
-                      </label>
                     </div>
                   </div>
                 )}
@@ -1863,7 +1811,7 @@ export default function AdminDashboard() {
         </nav>
         <button onClick={() => { localStorage.removeItem('gym_session'); localStorage.removeItem('gym_role'); localStorage.removeItem('gym_user'); setIsAuthenticated(false); setLoggedUser(null); }} className="w-full p-2 bg-red-500/10 hover:bg-red-500 rounded-xl text-red-500 hover:text-black dark:hover:text-white text-[9px] font-black uppercase tracking-widest transition-all mt-4">Salir</button>
         <div className="mt-4 text-center text-[7px] font-black uppercase tracking-wider text-gray-400 dark:text-white/20 select-none">
-          Fusion Fitness OS v3.0 · 05/08/2026
+          Atlascore v2.6 · 02/07/2026
         </div>
       </aside>
 
@@ -1891,42 +1839,19 @@ export default function AdminDashboard() {
 
 function PaymentModal({ plans, member, onPay, onClose }: any) {
   const [method, setMethod] = useState('Efectivo');
-  
-  const mainPlanObj = plans.find((p:any) => member.membership_type && p.name.toLowerCase().includes(member.membership_type.toLowerCase())) || plans[0];
-  const addPlansList: string[] = member.additional_plans || [];
-  const addPlanObjs = addPlansList.map(n => plans.find((p:any) => p.name === n)).filter(Boolean);
-
-  const defaultTotal = (mainPlanObj?.price || 0) + addPlanObjs.reduce((acc: number, curr: any) => acc + (curr?.price || 0), 0);
-  const [amount, setAmount] = useState(defaultTotal);
+  // Buscar el plan por coincidencia parcial (ej: "Elite" entra en "Elite (Libre)")
+  const planObj = plans.find((p:any) => member.membership_type && p.name.toLowerCase().includes(member.membership_type.toLowerCase())) || plans[0];
+  const [amount, setAmount] = useState(planObj?.price || 0);
 
   return (
     <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 p-10 rounded-[40px] w-full max-w-md shadow-3xl animate-in zoom-in duration-300">
       <h2 className="text-xl font-black mb-2 uppercase tracking-widest text-green-500 text-center">Facturación en Recepción</h2>
-      <p className="text-[10px] text-gray-500 dark:text-white/20 text-center uppercase font-black mb-6">Socio: {member.name}</p>
+      <p className="text-[10px] text-gray-500 dark:text-white/20 text-center uppercase font-black mb-8">Socio: {member.name}</p>
       
-      <div className="space-y-5">
-         {/* Desglose de planes contratados */}
-         <div className="bg-gray-50 dark:bg-black/40 p-4 rounded-2xl border border-gray-200 dark:border-white/10 space-y-2">
-            <p className="text-[9px] font-black uppercase text-gray-400 dark:text-white/40 tracking-wider">Desglose de Cobro:</p>
-            <div className="flex justify-between text-xs font-bold text-black dark:text-white">
-               <span>Plan Principal ({mainPlanObj?.name || member.membership_type})</span>
-               <span>${mainPlanObj?.price?.toLocaleString() || 0}</span>
-            </div>
-            {addPlanObjs.map((ap: any, i: number) => (
-              <div key={i} className="flex justify-between text-xs font-bold text-orange-500">
-                 <span>+ {ap.name} (Adicional)</span>
-                 <span>${ap.price?.toLocaleString() || 0}</span>
-              </div>
-            ))}
-            <div className="border-t border-gray-200 dark:border-white/10 pt-2 flex justify-between text-sm font-black text-green-500">
-               <span>Total Sugerido</span>
-               <span>${defaultTotal.toLocaleString()}</span>
-            </div>
-         </div>
-
+      <div className="space-y-6">
          <div className="space-y-2">
-            <label className="text-[9px] text-gray-500 dark:text-white/20 uppercase font-black ml-4">Monto Final a Cobrar</label>
-            <input type="number" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-2xl p-4 text-2xl font-black text-black dark:text-white text-center outline-none focus:border-green-500" value={amount} onChange={e => setAmount(parseInt(e.target.value) || 0)} />
+            <label className="text-[9px] text-gray-500 dark:text-white/20 uppercase font-black ml-4">Monto a Cobrar</label>
+            <input type="number" className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-2xl p-6 text-3xl font-black text-black dark:text-white text-center outline-none focus:border-green-500" value={amount} onChange={e => setAmount(parseInt(e.target.value) || 0)} />
          </div>
 
          <div className="space-y-2">
@@ -2171,18 +2096,11 @@ function PlansModule({ plans, onEdit, onDelete, onAddClick }: any) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
          {plans.map((p: any) => (
            <div key={p.id} className="p-6 bg-white dark:bg-white/5 rounded-3xl border border-gray-200 dark:border-white/5 relative group">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest">{p.name}</p>
-                {p.allow_unification && (
-                  <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 text-[7px] font-black uppercase border border-orange-500/20">
-                    Unificable
-                  </span>
-                )}
-              </div>
+              <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest mb-2">{p.name}</p>
               <p className="text-2xl font-black mb-4">${p.price}<span className="text-[10px] text-gray-500 dark:text-white/20 font-black">/mes</span></p>
               <div className="space-y-1 mb-6">
-                 <div className="flex items-center gap-2 text-[10px] text-gray-600 dark:text-white/40 font-bold"><CheckCircle size={10} className="text-green-500"/> {p.daysPerWeek ?? p.days_per_week} días/sem</div>
-                 <div className="flex items-center gap-2 text-[10px] text-gray-600 dark:text-white/40 font-bold truncate"><CheckCircle size={10} className="text-green-500"/> {(p.classes || []).join(', ') || 'Musculación'}</div>
+                 <div className="flex items-center gap-2 text-[10px] text-gray-600 dark:text-white/40 font-bold"><CheckCircle size={10} className="text-green-500"/> {p.daysPerWeek} días</div>
+                 <div className="flex items-center gap-2 text-[10px] text-gray-600 dark:text-white/40 font-bold truncate"><CheckCircle size={10} className="text-green-500"/> {p.classes.join(', ') || 'Musculación'}</div>
               </div>
               <div className="flex gap-2"><button onClick={()=>onEdit(p)} className="flex-1 py-2 bg-white dark:bg-white/5 rounded-xl text-[9px] font-black uppercase">Editar</button><button onClick={()=>onDelete(p.id)} className="p-2 text-red-500/30 hover:text-red-500"><Trash2 size={14}/></button></div>
            </div>

@@ -56,29 +56,52 @@ def checkin_adicional(dni: str, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == dni).first()
     if not member:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
-        
+
+    if member.status == "INACTIVO":
+        return {"status": "error", "detail": "Socio INACTIVO en el sistema"}
+
+    add_plans = member.additional_plans or []
+    if not add_plans:
+        return {"status": "error", "detail": "El socio no posee ningún Plan Adicional contratado"}
+
     now = datetime.datetime.utcnow()
-    # Find any reserved class for this user around current time (e.g. -15 mins to +45 mins)
-    # Tolerance: 15 mins before class, 10 mins after class
+    cycle_start = member.joined_at if member.joined_at else (now - datetime.timedelta(days=30))
+
+    total_allowed_additional = 0
+    for add_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_name, models.Plan.is_active == True).first()
+        add_days = p_obj.days_per_week if p_obj else 2
+        total_allowed_additional += (add_days * 4)
+
+    used_additional = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == "attended",
+        models.Booking.start_time >= cycle_start
+    ).count()
+
+    if used_additional >= total_allowed_additional:
+        return {"status": "error", "detail": f"Sin pases disponibles en Plan Adicional ({used_additional}/{total_allowed_additional})"}
+
     start_window = now - datetime.timedelta(minutes=10)
     end_window = now + datetime.timedelta(minutes=15)
-    
+
     booking = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
         models.Booking.status == "reserved",
         models.Booking.start_time >= start_window,
         models.Booking.start_time <= end_window
     ).first()
-    
+
     if not booking:
         return {"status": "error", "detail": "No tienes clases reservadas para este horario"}
-        
+
     booking.status = "attended"
     db.commit()
-    
+
+    remaining_after = max(0, total_allowed_additional - (used_additional + 1))
     return {
         "status": "success", 
-        "detail": f"Asistencia confirmada para {booking.class_name}",
+        "detail": f"Asistencia confirmada: {booking.class_name}\n({remaining_after} pases restantes en Plan Adicional)",
         "class_name": booking.class_name,
         "member_name": member.name
     }

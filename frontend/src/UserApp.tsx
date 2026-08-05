@@ -181,12 +181,15 @@ const fetchUserBookings = async (memberDni: string) => {
     } catch (e) { console.error(e); }
   };
 
+  const [plansBreakdown, setPlansBreakdown] = useState<any[]>([]);
+
   const fetchUserFullInfo = async (memberDni: string) => {
     try {
       const res = await fetch(`${API_URL}/user/${memberDni}/full_info`);
       if (res.ok) {
         const data = await res.json();
         if (data.checkin_stats) setCheckinStats(data.checkin_stats);
+        if (data.plans_breakdown) setPlansBreakdown(data.plans_breakdown);
         if (data.attendance_history) setAttendanceHistory(data.attendance_history);
         if (data.billing_history) setBillingHistory(data.billing_history);
         setUserData(prev => ({
@@ -233,14 +236,20 @@ const fetchUserBookings = async (memberDni: string) => {
     doc.setFontSize(12);
     doc.text(`Fecha: ${payment.date}`, 14, 45);
 
+    const planDesglose = payment.plan_details && payment.plan_details.length > 0 
+      ? payment.plan_details.map((p: any) => `${p.name} ($${p.price?.toLocaleString()})`).join(', ')
+      : (payment.additional_plans && payment.additional_plans.length > 0
+          ? `${payment.plan || userData.plan} + ${payment.additional_plans.join(' + ')}`
+          : (payment.plan || userData.plan || '-'));
+
     autoTable(doc, {
       startY: 55,
       head: [['Detalle', 'Información']],
       body: [
         ['Nombre Completo', userData.name || '-'],
         ['DNI', userData.dni || '-'],
-        ['Plan que se Abono', payment.plan || userData.plan || '-'],
-        ['Monto Abonado', `$${payment.amount?.toLocaleString()}`],
+        ['Planes Contratados', planDesglose],
+        ['Monto Total Abonado', `$${payment.amount?.toLocaleString()}`],
         ['Medio de Pago Utilizado', payment.method || 'Efectivo'],
         ['Usuario del Sistema', payment.processed_by || 'Administración'],
       ],
@@ -683,6 +692,25 @@ const fetchUserBookings = async (memberDni: string) => {
                 <div className="flex-1 min-h-0 my-4">
                    <ProgressChart data={filteredEvolution} />
                 </div>
+                {plansBreakdown && plansBreakdown.length > 0 && (
+                  <div className="w-full space-y-2 my-3 flex-shrink-0">
+                    <p className="text-[9px] font-black uppercase text-white/40 tracking-wider">Pases Disponibles por Plan:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {plansBreakdown.map((pb: any, idx: number) => (
+                        <div key={idx} className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-black uppercase text-orange-400">{pb.name}</span>
+                            <span className="text-[8px] font-black uppercase text-white/30">{pb.type}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs font-bold text-white mt-1">
+                            <span>Usados: {pb.used} / {pb.total}</span>
+                            <span className="text-green-400 font-black">{pb.remaining} restantes</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3 flex-shrink-0">
                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Mejoría Total</p><p className="text-xl font-black text-white">+{totalImprovement}kg</p><p className="text-[9px] text-green-500 font-black mt-1 uppercase">Imparable</p></div>
                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Días Entrenados</p><p className="text-xl font-black text-white">{daysTrained}</p><p className="text-[9px] text-orange-500 font-black mt-1 uppercase">Consistencia</p></div>

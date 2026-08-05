@@ -104,61 +104,84 @@ def get_user_full_info(dni: str, db: Session = Depends(get_db)):
     if not member:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
-    plan = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
-    days_per_week = plan.days_per_week if plan else 3
-    total_sessions = days_per_week * 4
-
     today = datetime.datetime.utcnow()
     cycle_start = member.joined_at if member.joined_at else (today - datetime.timedelta(days=30))
+
+    # Plan Principal Stats (Totem Checkins)
+    plan_principal = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    main_days = plan_principal.days_per_week if plan_principal else 3
+    main_total = main_days * 4
 
     sessions_used_totem = db.query(models.Checkin).filter(
         models.Checkin.member_id == member.id,
         models.Checkin.checkin_at >= cycle_start
     ).count()
+    main_remaining = max(0, main_total - sessions_used_totem)
 
+    # Planes Adicionales Stats (Attended Bookings / Totem Adicional)
     sessions_used_bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
         models.Booking.status == "attended",
         models.Booking.start_time >= cycle_start
     ).count()
 
-    sessions_used = sessions_used_totem + sessions_used_bookings
+    plans_breakdown = [
+        {
+            "name": member.membership_type or "Plan Principal",
+            "type": "Principal",
+            "total": main_total,
+            "used": sessions_used_totem,
+            "remaining": main_remaining
+        }
+    ]
 
-    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member.id).all()
-    checkin_list = []
-    for c in checkins:
-        dt = c.checkin_at or today
-        checkin_list.append({
-            "id": f"c_{c.id}",
-            "checkin_at": dt.isoformat() + "Z",
-            "type": "Tótem"
+    add_plans = member.additional_plans or []
+    for add_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_name, models.Plan.is_active == True).first()
+        add_days = p_obj.days_per_week if p_obj else 2
+        add_total = add_days * 4
+        add_remaining = max(0, add_total - sessions_used_bookings)
+        plans_breakdown.append({
+            "name": add_name,
+            "type": "Adicional",
+            "total": add_total,
+            "used": sessions_used_bookings,
+            "remaining": add_remaining
         })
+
+    # Checkins & Bookings
+    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member.id).all()
+    checkin_list = [{
+        "id": f"c_{c.id}",
+        "checkin_at": (c.checkin_at or today).isoformat() + "Z",
+        "type": "Tótem Principal"
+    } for c in checkins]
 
     bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
         models.Booking.status.in_(["attended", "reserved"])
     ).all()
-    booking_list = []
-    for b in bookings:
-        dt = b.start_time or today
-        booking_list.append({
-            "id": f"b_{b.id}",
-            "checkin_at": dt.isoformat() + "Z",
-            "type": b.class_name or "Clase de Gimnasio"
-        })
+    booking_list = [{
+        "id": f"b_{b.id}",
+        "checkin_at": (b.start_time or today).isoformat() + "Z",
+        "type": b.class_name or "Clase Adicional"
+    } for b in bookings]
 
-    all_attendance = checkin_list + booking_list
-    all_attendance.sort(key=lambda x: x["checkin_at"], reverse=True)
+    all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
 
     payments_raw = member.payments or []
     billing_history = []
     for p in payments_raw:
         dt = p.created_at or today
+        # Extract contracted plans list from payment details or fallback to member plans
+        p_details = p.plan_details if p.plan_details else [{"name": member.membership_type or "Plan Principal", "price": p.amount or 0}]
         billing_history.append({
             "id": p.id,
             "date": dt.strftime("%Y-%m-%d"),
             "amount": p.amount or 0,
             "plan": member.membership_type or "Musculación",
+            "additional_plans": add_plans,
+            "plan_details": p_details,
             "method": p.method or "Efectivo",
             "processed_by": p.stripe_id or "—",
             "status": "PAGADO"
@@ -176,16 +199,18 @@ def get_user_full_info(dni: str, db: Session = Depends(get_db)):
             "phone": member.phone,
             "email": member.email,
             "membership_type": member.membership_type,
+            "additional_plans": add_plans,
             "status": member.status,
             "routine": member.routine,
             "streak": streak_count,
             "streak_message": streak_msg
         },
         "checkin_stats": {
-            "total": total_sessions,
-            "used": sessions_used,
-            "remaining": max(0, total_sessions - sessions_used)
+            "total": main_total,
+            "used": sessions_used_totem,
+            "remaining": main_remaining
         },
+        "plans_breakdown": plans_breakdown,
         "attendance_history": all_attendance,
         "billing_history": billing_history
     }

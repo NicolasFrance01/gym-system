@@ -137,55 +137,76 @@ def update_member(member_id: int, member_data: schemas.MemberCreate, db: Session
     return db_member
 
 @router.get("/members/{member_id}/checkins")
+@router.get("/members/{member_id}/checkins")
 def get_member_checkins(member_id: int, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.id == member_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
-    plan = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
-    days_per_week = plan.days_per_week if plan else 3
-    total_sessions = days_per_week * 4
-
     today = datetime.datetime.utcnow()
-    if member.joined_at:
-        cycle_start = member.joined_at
-    else:
-        cycle_start = today - datetime.timedelta(days=30)
+    cycle_start = member.joined_at if member.joined_at else (today - datetime.timedelta(days=30))
 
-    # Count totem checkins in the current cycle
+    # Plan Principal Stats (Totem Checkins)
+    plan_principal = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    main_days = plan_principal.days_per_week if plan_principal else 3
+    main_total = main_days * 4
+
     sessions_used_totem = db.query(models.Checkin).filter(
         models.Checkin.member_id == member_id,
         models.Checkin.checkin_at >= cycle_start
     ).count()
 
-    # Count attended bookings in the current cycle
+    main_remaining = max(0, main_total - sessions_used_totem)
+
+    # Planes Adicionales Stats (Attended Bookings / Totem Adicional)
     sessions_used_bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member_id,
         models.Booking.status == "attended",
         models.Booking.start_time >= cycle_start
     ).count()
 
-    sessions_used = sessions_used_totem + sessions_used_bookings
+    plans_breakdown = [
+        {
+            "name": member.membership_type or "Plan Principal",
+            "type": "Principal",
+            "total": main_total,
+            "used": sessions_used_totem,
+            "remaining": main_remaining
+        }
+    ]
 
-    # Get totem checkins list
+    add_plans = member.additional_plans or []
+    for add_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_name, models.Plan.is_active == True).first()
+        add_days = p_obj.days_per_week if p_obj else 2
+        add_total = add_days * 4
+        add_remaining = max(0, add_total - sessions_used_bookings)
+        plans_breakdown.append({
+            "name": add_name,
+            "type": "Adicional",
+            "total": add_total,
+            "used": sessions_used_bookings,
+            "remaining": add_remaining
+        })
+
+    # Combined checkins & bookings list
     checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
-    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat() + "Z", "type": "Tótem"} for c in checkins]
+    checkin_list = [{"id": f"c_{c.id}", "checkin_at": (c.checkin_at or today).isoformat() + "Z", "type": "Tótem Principal"} for c in checkins]
 
-    # Get attended bookings list
     bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member_id,
-        models.Booking.status == "attended"
+        models.Booking.status.in_(["attended", "reserved"])
     ).all()
-    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat() + "Z", "type": b.class_name} for b in bookings]
+    booking_list = [{"id": f"b_{b.id}", "checkin_at": (b.start_time or today).isoformat() + "Z", "type": b.class_name or "Tótem Adicional"} for b in bookings]
 
-    # Combine and sort by date descending
     all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
 
     return {
-        "total_sessions": total_sessions,
-        "sessions_used": sessions_used,
-        "sessions_remaining": max(0, total_sessions - sessions_used),
-        "checkins": all_attendance
+        "total_sessions": main_total,
+        "sessions_used": sessions_used_totem,
+        "sessions_remaining": main_remaining,
+        "checkins": all_attendance,
+        "plans_breakdown": plans_breakdown
     }
 
 @router.put("/members/{member_id}/status")
@@ -198,16 +219,44 @@ def update_member_status(member_id: int, status: str, db: Session = Depends(get_
     return {"status": "updated", "new_status": status}
 
 @router.post("/payments")
-def record_payment(member_id: int, amount: float, method: str = "card", processed_by: str = "", db: Session = Depends(get_db)):
-    now = datetime.datetime.utcnow()
-    payment = models.Payment(member_id=member_id, amount=amount, status="paid", method=method, stripe_id=processed_by or None, created_at=now)
-    db.add(payment)
+def record_payment(member_id: int, amount: float = 0, method: str = "card", processed_by: str = "", db: Session = Depends(get_db)):
     member = db.query(models.Member).get(member_id)
-    if member:
-        member.status = "ACTIVO"
-        member.joined_at = now  # restart 30-day cycle from today
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    now = datetime.datetime.utcnow()
+
+    # Calculate itemized breakdown and total amount if amount is not specified
+    plan_principal = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    plan_details = []
+    calculated_amount = 0
+    if plan_principal:
+        plan_details.append({"name": plan_principal.name, "price": plan_principal.price})
+        calculated_amount += plan_principal.price
+
+    add_plans = member.additional_plans or []
+    for add_p_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_p_name, models.Plan.is_active == True).first()
+        if p_obj:
+            plan_details.append({"name": p_obj.name, "price": p_obj.price})
+            calculated_amount += p_obj.price
+
+    final_amount = amount if amount > 0 else calculated_amount
+
+    payment = models.Payment(
+        member_id=member_id,
+        amount=final_amount,
+        status="paid",
+        method=method,
+        stripe_id=processed_by or None,
+        plan_details=plan_details,
+        created_at=now
+    )
+    db.add(payment)
+    member.status = "ACTIVO"
+    member.joined_at = now
     db.commit()
-    return {"status": "payment recorded"}
+    return {"status": "payment recorded", "amount": final_amount, "details": plan_details}
 
 @router.delete("/payments/{payment_id}")
 def delete_payment(payment_id: int, db: Session = Depends(get_db)):
