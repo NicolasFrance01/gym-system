@@ -27,8 +27,8 @@ function AgendaModule({ members, API_URL }: any) {
 
   const [dbActivities, setDbActivities] = useState<any[]>([]);
   const [deletedSlotKeys, setDeletedSlotKeys] = useState<Set<string>>(new Set());
-  const [showMorning, setShowMorning] = useState(true);
-  const [showEvening, setShowEvening] = useState(true);
+  const [showMorning, setShowMorning] = useState(false);
+  const [showEvening, setShowEvening] = useState(false);
   const [isMassClassModalOpen, setIsMassClassModalOpen] = useState(false);
   const [massClassData, setMassClassData] = useState({
     days: [] as number[],
