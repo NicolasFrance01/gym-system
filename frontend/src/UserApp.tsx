@@ -147,6 +147,13 @@ export default function UserApp() {
     }
   }, [weekOffset, viewMode]);
 
+  useEffect(() => {
+    if (isAuthenticated && userData.dni) {
+      fetchUserFullInfo(userData.dni);
+    }
+  }, [isAuthenticated, userData.dni, activeTab]);
+
+
 
   
   const fetchUserProgress = async (dni: string) => {

@@ -125,27 +125,45 @@ def get_user_full_info(dni: str, db: Session = Depends(get_db)):
     sessions_used = sessions_used_totem + sessions_used_bookings
 
     checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member.id).all()
-    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat() + "Z", "type": "Tótem"} for c in checkins]
+    checkin_list = []
+    for c in checkins:
+        dt = c.checkin_at or today
+        checkin_list.append({
+            "id": f"c_{c.id}",
+            "checkin_at": dt.isoformat() + "Z",
+            "type": "Tótem"
+        })
 
     bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
-        models.Booking.status == "attended"
+        models.Booking.status.in_(["attended", "reserved"])
     ).all()
-    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat() + "Z", "type": b.class_name} for b in bookings]
+    booking_list = []
+    for b in bookings:
+        dt = b.start_time or today
+        booking_list.append({
+            "id": f"b_{b.id}",
+            "checkin_at": dt.isoformat() + "Z",
+            "type": b.class_name or "Clase de Gimnasio"
+        })
 
-    all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
+    all_attendance = checkin_list + booking_list
+    all_attendance.sort(key=lambda x: x["checkin_at"], reverse=True)
 
-    billing_history = [
-        {
+    payments_raw = member.payments or []
+    billing_history = []
+    for p in payments_raw:
+        dt = p.created_at or today
+        billing_history.append({
             "id": p.id,
-            "date": p.created_at.strftime("%Y-%m-%d"),
-            "amount": p.amount,
+            "date": dt.strftime("%Y-%m-%d"),
+            "amount": p.amount or 0,
             "plan": member.membership_type or "Musculación",
             "method": p.method or "Efectivo",
             "processed_by": p.stripe_id or "—",
             "status": "PAGADO"
-        } for p in sorted(member.payments, key=lambda x: x.created_at, reverse=True)
-    ]
+        })
+    billing_history.sort(key=lambda x: x["date"], reverse=True)
 
     streak_count, streak_msg = calculate_member_streak_and_message(member.id, db)
 
