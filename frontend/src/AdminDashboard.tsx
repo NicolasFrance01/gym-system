@@ -1351,11 +1351,16 @@ export default function AdminDashboard() {
 
   const handleSavePlan = async () => {
     try {
+      const classesRaw = selectedItem?.classesInput ?? (selectedItem?.classes || []).join(', ');
+      const classesList = typeof classesRaw === 'string'
+        ? classesRaw.split(',').map((c: string) => c.trim()).filter((c: string) => c.length > 0)
+        : (selectedItem?.classes || []);
+
       const payload = {
         name: selectedItem.name,
-        price: selectedItem.price,
+        price: Number(selectedItem.price) || 0,
         days_per_week: selectedItem.daysPerWeek ?? selectedItem.days_per_week ?? 3,
-        classes: selectedItem.classes || [],
+        classes: classesList,
         is_active: true,
         allow_unification: !!selectedItem.allow_unification
       };
@@ -1542,8 +1547,8 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{ setSelectedItem(m); setMemberCheckins([]); setCheckinStats(null); setModalType('history'); setIsModalOpen(true); fetch(`${API_URL}/admin/members/${m.id}/checkins`).then(r=>r.json()).then(data=>{ const checkinsList = Array.isArray(data) ? data : (data.checkins || []); const planName = m.membership_type || 'Básico'; const plan = plans.find((p:any) => p.name === planName); const daysPerWeek = plan ? (plan.daysPerWeek ?? plan.days_per_week ?? 3) : 3; const totalSessions = daysPerWeek * 4; const today = new Date(); let cycleStart = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); const joinedStr = m.joined_at; if(joinedStr){ const joined = new Date(joinedStr); cycleStart = new Date(joined.getFullYear(), joined.getMonth(), joined.getDate()); } const sessionsUsed = checkinsList.filter((c:any) => { const checkinDate = new Date(c.checkin_at.replace(' ', 'T')); return checkinDate >= cycleStart; }).length; const sessionsRemaining = Math.max(0, totalSessions - sessionsUsed); setMemberCheckins(checkinsList); setCheckinStats({ total: totalSessions, used: sessionsUsed, remaining: sessionsRemaining }); }).catch(()=>{}); }} onEdit={(m: any) => { const validPlan = plans.find((p:any) => p.name === m.membership_type)?.name || plans[0]?.name || ''; setSelectedItem({...m, membership_type: validPlan}); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Dar de baja socio?")){ const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
-      case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem(p); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={async (id:any)=>{ if(!confirm('¿Eliminar plan?')) return; const res = await fetch(`${API_URL}/admin/plans/${id}`,{method:'DELETE'}); if(res.ok) refreshData(); }} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[]}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
+      case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{ setSelectedItem(m); setMemberCheckins([]); setCheckinStats(null); setModalType('history'); setIsModalOpen(true); fetch(`${API_URL}/admin/members/${m.id}/checkins`).then(r=>r.json()).then(data=>{ const checkinsList = Array.isArray(data) ? data : (data.checkins || []); const planName = m.membership_type || 'Básico'; const plan = plans.find((p:any) => p.name === planName); const daysPerWeek = plan ? (plan.daysPerWeek ?? plan.days_per_week ?? 3) : 3; const totalSessions = daysPerWeek * 4; const today = new Date(); let cycleStart = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); const joinedStr = m.joined_at; if(joinedStr){ const joined = new Date(joinedStr); cycleStart = new Date(joined.getFullYear(), joined.getMonth(), joined.getDate()); } const sessionsUsed = checkinsList.filter((c:any) => { const checkinDate = new Date(c.checkin_at.replace(' ', 'T')); return checkinDate >= cycleStart; }).length; const sessionsRemaining = Math.max(0, totalSessions - sessionsUsed); setMemberCheckins(checkinsList); setCheckinStats({ total: totalSessions, used: sessionsUsed, remaining: sessionsRemaining }); }).catch(()=>{}); }} onEdit={(m: any) => { const validPlan = plans.find((p:any) => p.name === m.membership_type)?.name || plans[0]?.name || ''; setSelectedItem({...m, membership_type: validPlan}); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={(id: any) => { showConfirm("¿Dar de baja socio?", "¿Estás seguro de que deseas dar de baja este socio?", async () => { const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
+      case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem({...p, allow_unification: !!p.allow_unification, classesInput: (p.classes || []).join(', ')}); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(p:any)=>{ showConfirm("¿Eliminar Plan?", `¿Estás seguro de que deseas eliminar el plan "${p.name}" del sistema?`, async () => { const res = await fetch(`${API_URL}/admin/plans/${p.id}`,{method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[], classesInput: '', allow_unification: false}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Entrenamientos': return <EntrenamientosModule API_URL={API_URL} />;
       case 'Agenda': return <AgendaModule members={members} API_URL={API_URL} setConfirmModal={setConfirmModal} />;
       case 'Mi Perfil': return <ProfileModule user={loggedUser} onSave={async (newPassword: string) => {
@@ -1556,9 +1561,9 @@ export default function AdminDashboard() {
           else { const err = await res.json().catch(() => ({})); alert(`Error al actualizar: ${err.detail || res.status}`); }
         } catch(e) { alert('Error de conexión al guardar la contraseña'); }
       }} />;
-      case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={async (id: any) => { if(confirm("¿Eliminar empleado?")){ const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); } }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', password:'1234'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
+      case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => { showConfirm("¿Eliminar empleado?", "¿Estás seguro de que deseas eliminar este empleado?", async () => { const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', password:'1234'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
       case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} members={members} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} filterType={filterType} setFilterType={setFilterType} /> : <NoAccess />;
-      case 'Facturación': return (userRole === 'gerente' || userRole === 'administracion') ? <BillingModule members={members} onDeletePayment={async (id: number) => { if (!confirm('¿Eliminar este cobro?')) return; const res = await fetch(`${API_URL}/admin/payments/${id}`, { method: 'DELETE' }); if (res.ok) refreshData(); else alert('Error al eliminar'); }} /> : <NoAccess />;
+      case 'Facturación': return (userRole === 'gerente' || userRole === 'administracion') ? <BillingModule members={members} onDeletePayment={(id: number) => { showConfirm("¿Eliminar Cobro?", "¿Estás seguro de que deseas eliminar este registro de cobro?", async () => { const res = await fetch(`${API_URL}/admin/payments/${id}`, { method: 'DELETE' }); if (res.ok) refreshData(); else alert('Error al eliminar'); }); }} /> : <NoAccess />;
       default: return (
         <div className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1768,7 +1773,13 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Clases Adicionales (separadas por coma)</label>
-                      <input type="text" placeholder="Ej: Yoga, Zumba, Funcional..." className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" value={(selectedItem?.classes || []).join(', ')} onChange={e => setSelectedItem({...selectedItem, classes: e.target.value.split(',').map((c:string)=>c.trim()).filter((c:string)=>c)})} />
+                      <input 
+                        type="text" 
+                        placeholder="Ej: Yoga, Zumba, Funcional..." 
+                        className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-black dark:text-white text-xs" 
+                        value={selectedItem?.classesInput ?? (selectedItem?.classes || []).join(', ')} 
+                        onChange={e => setSelectedItem({...selectedItem, classesInput: e.target.value})} 
+                      />
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-2">
                       <input 
@@ -2184,7 +2195,7 @@ function PlansModule({ plans, onEdit, onDelete, onAddClick }: any) {
                  <div className="flex items-center gap-2 text-[10px] text-gray-600 dark:text-white/40 font-bold"><CheckCircle size={10} className="text-green-500"/> {p.daysPerWeek ?? p.days_per_week} días/sem</div>
                  <div className="flex items-center gap-2 text-[10px] text-gray-600 dark:text-white/40 font-bold truncate"><CheckCircle size={10} className="text-green-500"/> {(p.classes || []).join(', ') || 'Musculación'}</div>
               </div>
-              <div className="flex gap-2"><button onClick={()=>onEdit(p)} className="flex-1 py-2 bg-white dark:bg-white/5 rounded-xl text-[9px] font-black uppercase">Editar</button><button onClick={()=>onDelete(p.id)} className="p-2 text-red-500/30 hover:text-red-500"><Trash2 size={14}/></button></div>
+              <div className="flex gap-2"><button onClick={()=>onEdit(p)} className="flex-1 py-2 bg-white dark:bg-white/5 rounded-xl text-[9px] font-black uppercase">Editar</button><button onClick={()=>onDelete(p)} className="p-2 text-red-500/30 hover:text-red-500"><Trash2 size={14}/></button></div>
            </div>
          ))}
       </div>
