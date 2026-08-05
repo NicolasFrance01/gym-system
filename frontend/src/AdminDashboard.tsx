@@ -172,7 +172,7 @@ function AgendaModule({ members, API_URL }: any) {
 
 
   const selectedWeekday = getDayOfWeek(selectedDate);
-  const isHoliday = holidays.find(h => h.date === selectedDate);
+
 
   const fetchClassBookings = async (scheduleId: number) => {
     try {
@@ -476,13 +476,6 @@ function AgendaModule({ members, API_URL }: any) {
           <button onClick={() => setIsHolidayModalOpen(true)} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">+ Configurar Feriado</button>
         </div>
       </div>
-
-      {isHoliday && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider">⚠️ DÍA NO LABORABLE: {isHoliday.description}</p>
-          <button onClick={() => handleDeleteHoliday(isHoliday.id)} className="text-[8px] font-black uppercase tracking-widest bg-red-500 text-white px-3 py-1 rounded-lg">Eliminar Feriado</button>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

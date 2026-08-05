@@ -100,17 +100,22 @@ export default function UserApp() {
     });
   };
 
+  const getLocalDateStr = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getWeekDates = (offsetWeeks: number) => {
     const today = new Date();
     const day = today.getDay();
     const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diff));
-    monday.setDate(monday.getDate() + offsetWeeks * 7);
+    const monday = new Date(today.getFullYear(), today.getMonth(), diff + offsetWeeks * 7);
     
     const dates = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
       dates.push(d);
     }
     return dates;
@@ -119,7 +124,7 @@ export default function UserApp() {
   const fetchWeekSchedules = async (dates: Date[]) => {
     try {
       const promises = dates.map(d => {
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = getLocalDateStr(d);
         return fetch(`${API_URL}/user/class_schedules?date=${dateStr}`)
           .then(r => r.json())
           .then(data => ({ dateStr, schedules: data }));
@@ -141,6 +146,7 @@ export default function UserApp() {
       fetchWeekSchedules(dates);
     }
   }, [weekOffset, viewMode]);
+
 
   
   const fetchUserProgress = async (dni: string) => {
@@ -829,7 +835,7 @@ const fetchUserBookings = async (memberDni: string) => {
                                        </td>
                                        {weekdayShortNames.map((_, dayIndex) => {
                                          const date = weekDates[dayIndex];
-                                         const dateStr = date.toISOString().split('T')[0];
+                                         const dateStr = getLocalDateStr(date);
                                          const holiday = holidays.find(h => h.date === dateStr);
                                          const daySchedulesList = weekSchedulesMap[dateStr] || [];
                                          const cellSchedules = daySchedulesList.filter((s: any) => s.start_time === slot.start && s.end_time === slot.end);
@@ -917,7 +923,7 @@ const fetchUserBookings = async (memberDni: string) => {
                                        </td>
                                        {weekdayShortNames.map((_, dayIndex) => {
                                          const date = weekDates[dayIndex];
-                                         const dateStr = date.toISOString().split('T')[0];
+                                         const dateStr = getLocalDateStr(date);
                                          const holiday = holidays.find(h => h.date === dateStr);
                                          const daySchedulesList = weekSchedulesMap[dateStr] || [];
                                          const cellSchedules = daySchedulesList.filter((s: any) => s.start_time === slot.start && s.end_time === slot.end);
