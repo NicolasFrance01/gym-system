@@ -229,7 +229,7 @@ class GymDesktopKiosk:
         self.plan_label.pack(pady=(0, 16))
 
         # Versioning
-        ctk.CTkLabel(self.sidebar, text="Atlascore v2.6 (02/07/2026) | SYNC: ONLINE", font=ctk.CTkFont(size=9), text_color="#333").pack(side="bottom", pady=20)
+        ctk.CTkLabel(self.sidebar, text="Fusion Fitness Adicional v3.0 | SYNC: ONLINE", font=ctk.CTkFont(size=9), text_color="#333").pack(side="bottom", pady=20)
 
     def handle_backspace(self):
         curr = self.dni_entry.get()
