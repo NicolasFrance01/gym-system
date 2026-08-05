@@ -709,7 +709,7 @@ const fetchUserBookings = async (memberDni: string) => {
 
         return (
           <div className="h-full flex flex-col min-h-0 animate-in slide-in-from-bottom-8 overflow-hidden">
-             <div className="bg-[#141b29] border border-white/5 p-4 sm:p-6 rounded-3xl shadow-2xl flex flex-col min-h-0 h-full max-h-[75vh]">
+             <div className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 p-4 sm:p-6 rounded-[35px] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col min-h-0 h-full max-h-[75vh]">
                 <div className="flex justify-between items-center flex-shrink-0 mb-4">
                    <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3"><Clock className="text-blue-500" size={22}/> Agenda</h3>
                    <div onClick={()=>setActiveTab('Calendar')} className="px-3 py-1 text-[8px] font-black rounded-xl uppercase shadow-lg bg-blue-500/20 text-[#F38E26]">{bookings.filter(b=>b.status !== "cancelled").length} Reservas</div>
@@ -1007,48 +1007,23 @@ const fetchUserBookings = async (memberDni: string) => {
       case 'Profile':
         return (
           <div className="h-full flex flex-col min-h-0 animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
-             <div className="bg-[#141b29] border border-white/5 p-5 sm:p-10 rounded-3xl flex flex-col min-h-0 h-full">
-                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0 space-y-6 flex flex-col items-center">
-                   <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full flex items-center justify-center text-4xl sm:text-5xl font-black shadow-2xl mb-4 ring-4 ring-white/5">{userData.name[0]}</div>
+             <div className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 p-5 sm:p-10 rounded-[35px] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col min-h-0 h-full">
+                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0 space-y-6 flex flex-col items-center justify-center">
+                   <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-tr from-[#F38E26] to-orange-400 rounded-full flex items-center justify-center text-4xl font-black shadow-[0_0_30px_rgba(243,142,38,0.3)] mb-2 ring-4 ring-white/10 text-white">{userData.name[0]}</div>
                    <h2 className="text-2xl sm:text-3xl font-black text-white mb-1 text-center">{userData.name}</h2>
-                   <span className="px-4 py-1.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-6">{userData.plan}</span>
+                   <span className="px-4 py-1.5 bg-[#F38E26]/10 border border-[#F38E26]/30 text-[#F38E26] text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-4">{userData.plan}</span>
                    
-                   <div className="w-full space-y-4 pt-6 border-t border-white/5">
-                      <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Dumbbell size={14}/> Historial de Entrenamientos</h4>
-                      <div className="space-y-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar text-left w-full">
-                         {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).map((b, i) => {
-                            const dt = new Date(b.start_time);
-                            const dateStr = dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                            return (
-                               <div key={i} className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2">
-                                  <p className="font-black text-white text-[10px] uppercase">{b.class_name} • {dateStr}</p>
-                                  <div className="space-y-1 pl-2 border-l border-[#F38E26]/50">
-                                     {b.exercises_done.map((ex: any, idx: number) => (
-                                        <p key={idx} className="text-[9px] text-white/55 uppercase font-black">
-                                           {ex.name}: {ex.completed ? `✅ ${ex.sets}x${ex.reps} (${ex.weight}kg)` : '❌ Incompleto'}
-                                        </p>
-                                     ))}
-                                  </div>
-                               </div>
-                            );
-                         })}
-                         {bookings.filter(b => b.exercises_done && b.exercises_done.length > 0).length === 0 && (
-                            <p className="text-center text-white/20 italic text-[9px] font-black uppercase py-4">No hay entrenamientos registrados aún</p>
-                         )}
-                      </div>
-                   </div>
-   
-                   <div className="w-full space-y-4 pt-6 border-t border-white/5">
-                      <h4 className="text-xs font-black uppercase text-white/40 tracking-widest flex items-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
+                   <div className="w-full max-w-sm space-y-4 pt-6 border-t border-white/10">
+                      <h4 className="text-xs font-black uppercase text-white/50 tracking-widest flex items-center justify-center gap-2"><Lock size={14}/> Cambiar Contraseña</h4>
                       <div className="space-y-3">
-                         <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-5 text-white text-xs outline-none focus:border-blue-500" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
-                         <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-3 bg-[#F38E26] text-white border border-[#F38E26] rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-md disabled:opacity-50 hover:scale-[1.01] transition-all">Actualizar Contraseña</button>
+                         <input type="password" placeholder="Nueva Contraseña" className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 px-5 text-white text-xs outline-none focus:border-[#F38E26] transition-all text-center" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
+                         <button onClick={handleChangePassword} disabled={isLoading || !newPassword} className="w-full py-3.5 bg-[#F38E26]/20 hover:bg-[#F38E26] text-[#F38E26] hover:text-white border border-[#F38E26]/40 backdrop-blur-md rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-md disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-all">Actualizar Contraseña</button>
                       </div>
                    </div>
                 </div>
                 
-                <div className="flex-shrink-0 pt-4 pb-2">
-                  <button onClick={()=>setIsAuthenticated(false)} className="w-full py-3.5 bg-[#0a0a0a] text-white border border-[#F38E26] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-md">Cerrar Sesión</button>
+                <div className="flex-shrink-0 pt-4 pb-2 w-full max-w-sm mx-auto">
+                  <button onClick={()=>setIsAuthenticated(false)} className="w-full py-3.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 backdrop-blur-md rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-md">Cerrar Sesión</button>
                 </div>
              </div>
           </div>
@@ -1056,7 +1031,7 @@ const fetchUserBookings = async (memberDni: string) => {
       case 'History':
         return (
           <div className="h-full flex flex-col min-h-0 animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
-             <div className="bg-[#141b29] border border-white/5 p-5 sm:p-8 rounded-3xl flex flex-col min-h-0 h-full">
+             <div className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 p-5 sm:p-8 rounded-[35px] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col min-h-0 h-full">
                 <div className="flex justify-between items-center flex-shrink-0 mb-4">
                    <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3"><History className="text-blue-400" size={22}/> Historial de Ingresos</h3>
                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-[9px] font-black rounded-xl uppercase">{attendanceHistory.length} Registros</span>
@@ -1108,7 +1083,7 @@ const fetchUserBookings = async (memberDni: string) => {
       case 'Payments':
         return (
           <div className="h-full flex flex-col min-h-0 animate-in slide-in-from-bottom-8 overflow-hidden max-h-[75vh]">
-             <div className="bg-[#141b29] border border-white/5 p-5 sm:p-8 rounded-3xl flex flex-col min-h-0 h-full">
+             <div className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 border-t-white/35 border-l-white/35 p-5 sm:p-8 rounded-[35px] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col min-h-0 h-full">
                 <div className="flex justify-between items-center flex-shrink-0 mb-4">
                    <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3"><Receipt className="text-orange-500" size={22}/> Pagos y Planes</h3>
                    <span className="px-3 py-1 bg-orange-500/20 text-[#F38E26] text-[9px] font-black rounded-xl uppercase">{billingHistory.length} Pagos</span>
@@ -1146,37 +1121,45 @@ const fetchUserBookings = async (memberDni: string) => {
         );
       default:
         return (
-          <div className="space-y-6 animate-in fade-in duration-1000 overflow-y-auto max-h-[75vh] custom-scrollbar pr-1">
-             <header className="flex items-center justify-between">
-                <div><h2 className="text-3xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2><p className="text-white/30 text-[10px] font-black uppercase tracking-[0.3em] mt-1">Estatus: Bestia en Entrenamiento</p></div>
-                <div onClick={()=>setActiveTab('Profile')} className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all"><User size={20} className="text-blue-500" /></div>
+          <div className="h-full flex flex-col min-h-0 justify-between space-y-3 sm:space-y-4 animate-in fade-in duration-500 overflow-hidden max-h-[75vh]">
+             <header className="flex items-center justify-between flex-shrink-0">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tighter">¡Hola, {userData.name.split(' ')[0]}! 👋</h2>
+                  <p className="text-white/30 text-[9px] font-black uppercase tracking-[0.25em] mt-0.5">Estatus: Bestia en Entrenamiento</p>
+                </div>
+                <div onClick={()=>setActiveTab('Profile')} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-90 transition-all flex-shrink-0">
+                  <User size={18} className="text-blue-500" />
+                </div>
              </header>
-             <section className="bg-white/[0.08] backdrop-blur-2xl p-8 rounded-[35px] border border-white/20 border-t-white/35 border-l-white/35 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] text-center relative overflow-hidden group">
+
+             <section className="bg-white/[0.08] backdrop-blur-2xl p-4 sm:p-5 rounded-[28px] border border-white/20 border-t-white/35 border-l-white/35 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] text-center relative overflow-hidden group flex-shrink-0">
                   <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(243,142,38,0.15),transparent_70%)]" />
-                  <p className="text-[10px] uppercase tracking-[0.4em] font-black mb-6 relative z-10 animate-pulse" style={{color:'#F38E26'}}>Racha de Fuego</p>
-                  <div className="relative z-10 flex items-center justify-center gap-4 mb-2">
-                    <div className="p-4 bg-orange-500/10 rounded-full text-orange-500"><Zap size={32} strokeWidth={3} /></div>
-                    <span className="text-7xl font-black tracking-tighter text-white">{userData.streak}</span>
+                  <p className="text-[9px] uppercase tracking-[0.3em] font-black mb-2 relative z-10 animate-pulse text-[#F38E26]">Racha de Fuego</p>
+                  <div className="relative z-10 flex items-center justify-center gap-3 mb-1">
+                    <div className="p-2.5 bg-orange-500/10 rounded-full text-orange-500"><Zap size={24} strokeWidth={3} /></div>
+                    <span className="text-5xl font-black tracking-tighter text-white">{userData.streak}</span>
                   </div>
-                  <p className="relative z-10 text-[10px] font-black uppercase tracking-wider text-white/70 mb-6 max-w-[280px] mx-auto leading-relaxed">
+                  <p className="relative z-10 text-[9px] font-black uppercase tracking-wider text-white/70 mb-3 max-w-[260px] mx-auto leading-tight truncate">
                     {userData.streakMessage || "¡Vamos por un nuevo comienzo con todo! ⚡"}
                   </p>
-                  <div onClick={()=>setActiveTab('Evolution')} className="py-3 px-6 rounded-2xl border text-[9px] sm:text-[10px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-2 w-fit" style={{backgroundColor:'rgba(243,142,38,0.05)', borderColor:'rgba(243,142,38,0.15)', color:'#F38E26'}} onMouseEnter={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='#F38E26';(e.currentTarget as HTMLDivElement).style.color='#fff'}} onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.backgroundColor='rgba(243,142,38,0.05)';(e.currentTarget as HTMLDivElement).style.color='#F38E26'}}>Explorar Evolución <ArrowUpRight size={14}/></div>
+                  <div onClick={()=>setActiveTab('Evolution')} className="py-2 px-4 rounded-xl border text-[8px] uppercase font-black tracking-widest hover:text-white transition-all cursor-pointer relative z-10 mx-auto flex items-center justify-center gap-1.5 w-fit bg-[#F38E26]/10 border-[#F38E26]/30 text-[#F38E26] hover:bg-[#F38E26]">
+                    Explorar Evolución <ArrowUpRight size={12}/>
+                  </div>
              </section>
 
              {/* Recordatorios Section */}
-             <section className="bg-white/[0.08] backdrop-blur-2xl p-6 rounded-[35px] border border-white/20 border-t-white/35 border-l-white/35 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] space-y-4">
+             <section className="bg-white/[0.08] backdrop-blur-2xl p-4 sm:p-5 rounded-[28px] border border-white/20 border-t-white/35 border-l-white/35 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] space-y-3 flex-shrink-0">
                <div className="flex justify-between items-center">
                  <div>
-                   <h3 className="text-xs font-black uppercase tracking-widest text-[#F38E26] flex items-center gap-2">
-                     <Clock size={16} /> Recordatorios de Plan
+                   <h3 className="text-[11px] font-black uppercase tracking-widest text-[#F38E26] flex items-center gap-1.5">
+                     <Clock size={14} /> Recordatorios de Plan
                    </h3>
-                   <p className="text-[9px] text-white/40 font-black uppercase tracking-wider mt-0.5">Plan Activo: {userData.plan}</p>
+                   <p className="text-[8px] text-white/40 font-black uppercase tracking-wider mt-0.5">Plan Activo: {userData.plan}</p>
                  </div>
                </div>
 
-               <div className="bg-black/30 p-4 rounded-2xl border border-white/5 space-y-3">
-                 <p className="text-[9px] font-black uppercase text-blue-400 tracking-widest">
+               <div className="bg-black/30 p-3 rounded-2xl border border-white/5 space-y-2">
+                 <p className="text-[8px] font-black uppercase text-blue-400 tracking-widest">
                    Asistencia · {attendanceHistory.length} ingresos
                  </p>
                  <div className="flex gap-2">
@@ -1185,8 +1168,8 @@ const fetchUserBookings = async (memberDni: string) => {
                      { label: 'Usadas', value: checkinStats?.used || 0, color: 'text-orange-400' },
                      { label: 'Restantes', value: checkinStats?.remaining || 0, color: 'text-blue-400' }
                    ].map(s => (
-                     <div key={s.label} className="flex-1 bg-white/5 border border-white/5 rounded-xl p-2 text-center">
-                       <p className={`text-base font-black ${s.color}`}>{s.value}</p>
+                     <div key={s.label} className="flex-1 bg-white/5 border border-white/5 rounded-xl p-1.5 text-center">
+                       <p className={`text-sm sm:text-base font-black ${s.color}`}>{s.value}</p>
                        <p className="text-[7px] text-white/40 font-black uppercase tracking-wider">{s.label}</p>
                      </div>
                    ))}
@@ -1194,10 +1177,10 @@ const fetchUserBookings = async (memberDni: string) => {
                </div>
 
                <div className="flex gap-2">
-                 <button onClick={() => setActiveTab('History')} className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-wider text-white transition-all">
+                 <button onClick={() => setActiveTab('History')} className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-wider text-white transition-all">
                    Ver Historial Completo
                  </button>
-                 <button onClick={() => setActiveTab('Payments')} className="flex-1 py-3 bg-[#F38E26]/10 hover:bg-[#F38E26] border border-[#F38E26]/30 text-[#F38E26] hover:text-white rounded-2xl text-[9px] font-black uppercase tracking-wider transition-all">
+                 <button onClick={() => setActiveTab('Payments')} className="flex-1 py-2.5 bg-[#F38E26]/10 hover:bg-[#F38E26] border border-[#F38E26]/30 text-[#F38E26] hover:text-white rounded-xl text-[8px] font-black uppercase tracking-wider transition-all">
                    Pagos y Planes
                  </button>
                </div>
