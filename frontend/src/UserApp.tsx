@@ -723,16 +723,7 @@ const fetchUserBookings = async (memberDni: string) => {
         const allWeekSchedules = Object.values(weekSchedulesMap).flat();
         const getUniqueSlots = (allSchedules: any[]) => {
           const slotsMap = new Map<string, { start: string, end: string }>();
-          const defaultSlots = [
-            { start: "08:30", end: "09:30" },
-            { start: "08:50", end: "09:50" },
-            { start: "10:00", end: "11:00" },
-            { start: "17:30", end: "18:30" },
-            { start: "18:15", end: "19:15" },
-            { start: "18:30", end: "19:30" },
-            { start: "19:30", end: "20:30" }
-          ];
-          defaultSlots.forEach(s => slotsMap.set(`${s.start}-${s.end}`, s));
+          // Removed default slots so the calendar only shows times with actual classes
           allSchedules.forEach(s => {
             if (s && s.start_time && s.end_time) {
               const key = `${s.start_time}-${s.end_time}`;
