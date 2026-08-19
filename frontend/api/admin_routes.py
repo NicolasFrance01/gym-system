@@ -564,18 +564,19 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)):
 # --- Mass Class Generation ---
 @router.post("/class_schedules/mass")
 def create_mass_class_schedules(data: dict, db: Session = Depends(get_db)):
-    # data: { days: [0, 1, 2], start_hour: 7, end_hour: 23, interval_hours: 1, capacity: 50, name: "Musculación", code: "MUSC", color: "#3b82f6" }
-    days = data.get("days", [])
-    start_hour = data.get("start_hour", 7)
-    end_hour = data.get("end_hour", 23)
-    interval_hours = data.get("interval_hours", 1)
+    configs = data.get("configs", [])
     capacity = data.get("capacity", 50)
     name = data.get("name")
     code = data.get("code")
     color = data.get("color")
     
     created = 0
-    for day in days:
+    for config in configs:
+        day = config.get("day")
+        start_hour = config.get("start_hour", 7)
+        end_hour = config.get("end_hour", 23)
+        interval_hours = config.get("interval_hours", 1)
+        
         current_h = start_hour
         while current_h < end_hour:
             start_str = f"{current_h:02d}:00"
@@ -584,17 +585,23 @@ def create_mass_class_schedules(data: dict, db: Session = Depends(get_db)):
                 end_h = end_hour
             end_str = f"{end_h:02d}:00"
             
-            new_class = models.ClassSchedule(
-                name=name,
-                code=code,
-                day_of_week=day,
-                start_time=start_str,
-                end_time=end_str,
-                color=color,
-                capacity=capacity
-            )
-            db.add(new_class)
-            created += 1
+            existing = db.query(models.ClassSchedule).filter(
+                models.ClassSchedule.day_of_week == day,
+                models.ClassSchedule.start_time == start_str
+            ).first()
+            
+            if not existing:
+                new_class = models.ClassSchedule(
+                    name=name,
+                    code=code,
+                    day_of_week=day,
+                    start_time=start_str,
+                    end_time=end_str,
+                    color=color,
+                    capacity=capacity
+                )
+                db.add(new_class)
+                created += 1
             current_h += interval_hours
             
     db.commit()
