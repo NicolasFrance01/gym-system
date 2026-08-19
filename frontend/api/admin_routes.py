@@ -573,17 +573,25 @@ def create_mass_class_schedules(data: dict, db: Session = Depends(get_db)):
     created = 0
     for config in configs:
         day = config.get("day")
-        start_hour = config.get("start_hour", 7)
-        end_hour = config.get("end_hour", 23)
-        interval_hours = config.get("interval_hours", 1)
+        start_time = config.get("start_time", "07:00")
+        end_time = config.get("end_time", "23:00")
+        interval_minutes = int(config.get("interval_minutes", 60))
         
-        current_h = start_hour
-        while current_h < end_hour:
-            start_str = f"{current_h:02d}:00"
-            end_h = current_h + interval_hours
-            if end_h > end_hour:
-                end_h = end_hour
-            end_str = f"{end_h:02d}:00"
+        try:
+            start_h, start_m = map(int, start_time.split(':'))
+            end_h, end_m = map(int, end_time.split(':'))
+        except ValueError:
+            continue
+            
+        current_minutes = start_h * 60 + start_m
+        end_minutes = end_h * 60 + end_m
+        
+        while current_minutes < end_minutes:
+            start_str = f"{current_minutes // 60:02d}:{current_minutes % 60:02d}"
+            next_minutes = current_minutes + interval_minutes
+            if next_minutes > end_minutes:
+                next_minutes = end_minutes
+            end_str = f"{next_minutes // 60:02d}:{next_minutes % 60:02d}"
             
             existing = db.query(models.ClassSchedule).filter(
                 models.ClassSchedule.day_of_week == day,
@@ -602,7 +610,8 @@ def create_mass_class_schedules(data: dict, db: Session = Depends(get_db)):
                 )
                 db.add(new_class)
                 created += 1
-            current_h += interval_hours
+                
+            current_minutes += interval_minutes
             
     db.commit()
     return {"success": True, "created": created}

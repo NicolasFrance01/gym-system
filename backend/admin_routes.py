@@ -575,21 +575,25 @@ def create_mass_class_schedules(payload: schemas.MassClassScheduleSchema, db: Se
     created_schedules = []
     
     for config in payload.configs:
-        current_hour = config.start_hour
-        while current_hour < config.end_hour:
-            # Create start and end times
-            start_time = f"{current_hour:02d}:00"
+        try:
+            start_h, start_m = map(int, config.start_time.split(':'))
+            end_h, end_m = map(int, config.end_time.split(':'))
+        except ValueError:
+            continue
             
-            next_hour = current_hour + config.interval_hours
-            if next_hour > config.end_hour:
-                next_hour = config.end_hour
+        current_minutes = start_h * 60 + start_m
+        end_minutes = end_h * 60 + end_m
+        
+        while current_minutes < end_minutes:
+            start_time_str = f"{current_minutes // 60:02d}:{current_minutes % 60:02d}"
+            next_minutes = current_minutes + config.interval_minutes
+            if next_minutes > end_minutes:
+                next_minutes = end_minutes
+            end_time_str = f"{next_minutes // 60:02d}:{next_minutes % 60:02d}"
             
-            end_time = f"{next_hour:02d}:00"
-            
-            # Check if exists
             existing = db.query(models.ClassSchedule).filter(
                 models.ClassSchedule.day_of_week == config.day,
-                models.ClassSchedule.start_time == start_time
+                models.ClassSchedule.start_time == start_time_str
             ).first()
             
             if not existing:
@@ -597,15 +601,15 @@ def create_mass_class_schedules(payload: schemas.MassClassScheduleSchema, db: Se
                     name=payload.name,
                     code=payload.code,
                     day_of_week=config.day,
-                    start_time=start_time,
-                    end_time=end_time,
+                    start_time=start_time_str,
+                    end_time=end_time_str,
                     color=payload.color,
                     capacity=payload.capacity
                 )
                 db.add(new_schedule)
                 created_schedules.append(new_schedule)
-            
-            current_hour += config.interval_hours
+                
+            current_minutes += config.interval_minutes
             
     db.commit()
     return {"message": f"Created {len(created_schedules)} classes."}

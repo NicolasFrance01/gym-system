@@ -177,9 +177,9 @@ class StaffSchema(StaffBase):
 
 class DailyMassConfig(BaseModel):
     day: int
-    start_hour: int
-    end_hour: int
-    interval_hours: int
+    start_time: str
+    end_time: str
+    interval_minutes: int
 
 class MassClassScheduleSchema(BaseModel):
     configs: List[DailyMassConfig]
