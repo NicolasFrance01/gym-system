@@ -1,8 +1,18 @@
 from .database import engine
 from sqlalchemy import text
+from . import models
 
 def migrate():
     print("Iniciando migración de base de datos...")
+    models.Base.metadata.create_all(bind=engine)
+    
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE TABLE IF NOT EXISTS system_configs (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE, value JSON)"))
+            conn.commit()
+    except Exception as e:
+        print("Error creating system_configs", e)
+        
     columns_to_add = [
         ("members", "phone", "VARCHAR"),
         ("members", "password", "VARCHAR DEFAULT '123'"),
@@ -19,7 +29,6 @@ def migrate():
                 conn.commit()
                 print(f"Columna {col_name} en {table_name} agregada con éxito.")
         except Exception as e:
-            # If column already exists, just ignore
             print(f"Aviso: La columna {col_name} en {table_name} podría ya existir o se ignoró error: {e}")
             
     print("Migración finalizada.")
