@@ -1,15 +1,17 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import KioskView from './KioskView';
 import AdminDashboard from './AdminDashboard';
 import UserApp from './UserApp';
 import TotemPlan from './TotemPlan';
 
 function App() {
+  const isVercel = window.location.hostname.includes('vercel');
+
   return (
     <Router>
       <Routes>
         {/* Kiosk View - Default entry point for physical access */}
-        <Route path="/" element={<KioskView />} />
+        <Route path="/" element={isVercel ? <Navigate to="/app" /> : <KioskView />} />
 
         {/* Admin Dashboard - The Brain (Back-End/SaaS) */}
         <Route path="/admin" element={<AdminDashboard />} />

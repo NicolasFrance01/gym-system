@@ -670,3 +670,10 @@ def set_config(key: str, payload: dict, db: Session = Depends(get_db)):
         db.add(config)
     db.commit()
     return {"status": "success"}
+
+
+@router.get('/force_migrate')
+def force_migrate():
+    from .migrate_db import migrate
+    migrate()
+    return {'status': 'migrated'}
