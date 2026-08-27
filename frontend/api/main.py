@@ -5,8 +5,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
-import models
-from database import engine, get_db
+from . import models
+from .database import engine, get_db
 
 import admin_routes
 import user_routes

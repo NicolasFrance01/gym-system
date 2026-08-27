@@ -18,9 +18,9 @@ import time
 import datetime
 import winsound
 from sqlalchemy.orm import Session
-from database import SessionLocal
-import models
-from cv_engine import CVEngine
+from .database import SessionLocal
+from . import models
+from .cv_engine import CVEngine
 import uvicorn
 from main import app as fastapi_app
 
