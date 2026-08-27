@@ -690,3 +690,11 @@ def debug_migrate():
             return {'status': 'table created manually'}
     except Exception as e:
         return {'error': str(e)}
+
+
+@router.get('/debug_err')
+def debug_err(db: Session = Depends(get_db)):
+    try:
+        return {'status': 'ok', 'val': db.query(models.SystemConfig).first().key if db.query(models.SystemConfig).first() else 'none'}
+    except Exception as e:
+        return {'error': str(e)}
