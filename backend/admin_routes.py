@@ -466,9 +466,12 @@ def get_class_bookings(schedule_id: int, date: str, db: Session = Depends(get_db
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Usar YYYY-MM-DD")
     
+    start_of_day = datetime.datetime.combine(query_date, datetime.time.min)
+    end_of_day = datetime.datetime.combine(query_date, datetime.time.max)
     bookings = db.query(models.Booking).filter(
         models.Booking.class_schedule_id == schedule_id,
-        func.date(models.Booking.start_time) == query_date
+        models.Booking.start_time >= start_of_day,
+        models.Booking.start_time <= end_of_day
     ).all()
     
     result = []
@@ -648,3 +651,22 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)):
         db.delete(act)
         db.commit()
     return {"ok": True}
+
+
+@router.get("/configs/{key}")
+def get_config(key: str, db: Session = Depends(get_db)):
+    config = db.query(models.SystemConfig).filter(models.SystemConfig.key == key).first()
+    if config:
+        return {"status": "success", "value": config.value}
+    return {"status": "success", "value": {}}
+
+@router.post("/configs/{key}")
+def set_config(key: str, payload: dict, db: Session = Depends(get_db)):
+    config = db.query(models.SystemConfig).filter(models.SystemConfig.key == key).first()
+    if config:
+        config.value = payload.get("value", {})
+    else:
+        config = models.SystemConfig(key=key, value=payload.get("value", {}))
+        db.add(config)
+    db.commit()
+    return {"status": "success"}

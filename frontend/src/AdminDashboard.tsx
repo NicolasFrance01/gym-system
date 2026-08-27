@@ -79,10 +79,25 @@ function AgendaModule({ members, API_URL }: any) {
     }
   };
 
+  const fetchHiddenSlots = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/configs/hidden_slots`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value && Array.isArray(data.value)) {
+          setDeletedSlotKeys(new Set(data.value));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchSchedules();
     fetchHolidays();
     fetchActivities();
+    fetchHiddenSlots();
   }, []);
 
   useEffect(() => {
@@ -1562,7 +1577,7 @@ export default function AdminDashboard() {
     } catch (e) { console.error(e); }
   };
 
-  const generatePaymentPDF = async (member: any, amount: number, method: string, staffName: string) => {
+  const generatePaymentPDF = async (member: any, amount: number, method: string, staffName: string, customDate?: string) => {
     const doc = new jsPDF();
 
     const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
@@ -1593,7 +1608,7 @@ export default function AdminDashboard() {
     doc.text('COMPROBANTE DE PAGO', 105, 30, { align: 'center' });
 
     doc.setFontSize(12);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} ${new Date().toLocaleTimeString('es-AR')}`, 14, 45);
+    doc.text(`Fecha: ${customDate || new Date().toLocaleDateString('es-AR') + ' ' + new Date().toLocaleTimeString('es-AR')}`, 14, 45);
 
     const contractedPlansStr = [member.membership_type || 'Musculación', ...(member.additional_plans || [])].join(' + ');
 
@@ -1792,8 +1807,13 @@ export default function AdminDashboard() {
                            {selectedItem.billing_history?.length > 0 ? selectedItem.billing_history.map((h:any, i:number)=>(
                              <div key={i} className="bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/5 p-3 rounded-xl flex justify-between items-center">
                                <div><p className="font-black text-black dark:text-white uppercase text-[9px]">{h.plan}</p><p className="text-[7px] text-gray-500 dark:text-white/20 font-black">{h.date} · {h.method}</p></div>
-                               <p className="text-sm font-black text-green-500">${h.amount?.toLocaleString()}</p>
-                             </div>
+                               <div className="flex items-center gap-2">
+                                   <p className="text-sm font-black text-green-500">${h.amount?.toLocaleString()}</p>
+                                   <button onClick={() => generatePaymentPDF({ ...selectedItem, membership_type: h.plan, additional_plans: [] }, h.amount, h.method, 'Historial', h.date)} className="p-1.5 bg-orange-500/20 hover:bg-orange-500 text-orange-500 hover:text-white rounded-lg transition-colors" title="Descargar Recibo">
+                                     <Download size={12}/>
+                                   </button>
+                                 </div>
+                               </div>
                            )) : <p className="text-center text-gray-400 dark:text-white/10 uppercase font-black py-8 text-[8px]">Sin cobros</p>}
                          </div>
                        </div>

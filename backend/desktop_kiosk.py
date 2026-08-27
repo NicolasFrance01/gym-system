@@ -276,23 +276,29 @@ class GymDesktopKiosk:
                 ).count()
                 sessions_used = sessions_used_totem + sessions_used_bookings
 
+                # History
+                history_totem = db.query(models.Checkin).filter(models.Checkin.member_id == member.id).order_by(models.Checkin.checkin_at.desc()).limit(3).all()
+                history_bookings = db.query(models.Booking).filter(models.Booking.member_id == member.id, models.Booking.status == "attended").order_by(models.Booking.start_time.desc()).limit(3).all()
+                all_hist = sorted([(h.checkin_at, "Kiosko") for h in history_totem] + [(h.start_time, "Clase") for h in history_bookings], reverse=True)[:3]
+                hist_str = "\n\nÚltimos ingresos:\n" + "\n".join([f"{d.strftime('%d/%m %H:%M')} ({t})" for d, t in all_hist]) if all_hist else "\n\nÚltimos ingresos: Ninguno"
+
                 # Block conditions
                 if status == "INACTIVO":
                     sessions_remaining = max(0, total_sessions - sessions_used)
-                    plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} pases disponibles\nSocio Inactivo"
+                    plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} pases disponibles\nSocio Inactivo" + hist_str
                     self.cv_engine.set_member_status(member.name, "INACTIVO")
                     self.root.after(0, lambda: self.render_status_result(member.name, "INACTIVO", dni, plan_info))
                     return
 
                 if status == "DEUDA":
                     sessions_remaining = max(0, total_sessions - sessions_used)
-                    plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} de {total_sessions} pases\nSuscripción Vencida"
+                    plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} de {total_sessions} pases\nSuscripción Vencida" + hist_str
                     self.cv_engine.set_member_status(member.name, "DEUDA")
                     self.root.after(0, lambda: self.render_status_result(member.name, "DEUDA", dni, plan_info))
                     return
 
                 if sessions_used >= total_sessions:
-                    plan_info = f"{member.membership_type or 'Plan'}\n0 de {total_sessions} pases\nLímite de ingresos alcanzado"
+                    plan_info = f"{member.membership_type or 'Plan'}\n0 de {total_sessions} pases\nLímite de ingresos alcanzado" + hist_str
                     self.cv_engine.set_member_status(member.name, "SIN PASES")
                     self.root.after(0, lambda: self.render_status_result(member.name, "SIN PASES", dni, plan_info))
                     return
@@ -309,7 +315,9 @@ class GymDesktopKiosk:
                 # Recount checkins including this one
                 sessions_used += 1
                 sessions_remaining = max(0, total_sessions - sessions_used)
-                plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} de {total_sessions} pases\n{days_left}d restantes a renovar"
+                
+                hist_str = "\n\nÚltimos ingresos:\n" + "\n".join([f"{d.strftime('%d/%m %H:%M')} ({t})" for d, t in all_hist]) if all_hist else "\n\nÚltimos ingresos: Ninguno"
+                plan_info = f"{member.membership_type or 'Plan'}\n{sessions_remaining} de {total_sessions} pases\n{days_left}d restantes a renovar" + hist_str
 
                 self.cv_engine.set_member_status(member.name, status)
                 self.root.after(0, lambda: self.render_status_result(member.name, status, dni, plan_info))

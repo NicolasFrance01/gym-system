@@ -125,3 +125,10 @@ class Activity(Base):
     name = Column(String)
     code = Column(String)
     color = Column(String)
+
+class SystemConfig(Base):
+    __tablename__ = "system_configs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, index=True)
+    value = Column(JSON, default=dict)

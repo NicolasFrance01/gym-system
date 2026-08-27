@@ -227,9 +227,12 @@ def get_user_class_schedules(date: str, db: Session = Depends(get_db)):
     
     result = []
     for s in schedules:
+        start_of_day = datetime.datetime.combine(query_date, datetime.time.min)
+        end_of_day = datetime.datetime.combine(query_date, datetime.time.max)
         bookings_count = db.query(models.Booking).filter(
             models.Booking.class_schedule_id == s.id,
-            func.date(models.Booking.start_time) == query_date,
+            models.Booking.start_time >= start_of_day,
+            models.Booking.start_time <= end_of_day,
             models.Booking.status != "cancelled"
         ).count()
         
@@ -293,9 +296,12 @@ def book_class(dni: str, payload: dict, db: Session = Depends(get_db)):
     if holiday:
         raise HTTPException(status_code=400, detail=f"No se puede reservar en un día no laborable: {holiday.description}")
         
+    start_of_day = datetime.datetime.combine(class_date, datetime.time.min)
+    end_of_day = datetime.datetime.combine(class_date, datetime.time.max)
     bookings_count = db.query(models.Booking).filter(
         models.Booking.class_schedule_id == schedule_id,
-        func.date(models.Booking.start_time) == class_date,
+        models.Booking.start_time >= start_of_day,
+        models.Booking.start_time <= end_of_day,
         models.Booking.status != "cancelled"
     ).count()
     
@@ -305,7 +311,8 @@ def book_class(dni: str, payload: dict, db: Session = Depends(get_db)):
     existing = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
         models.Booking.class_schedule_id == schedule_id,
-        func.date(models.Booking.start_time) == class_date
+        models.Booking.start_time >= start_of_day,
+        models.Booking.start_time <= end_of_day
     ).first()
     
     if existing:
@@ -322,10 +329,12 @@ def book_class(dni: str, payload: dict, db: Session = Depends(get_db)):
     start_of_week = class_date - datetime.timedelta(days=class_date.weekday())
     end_of_week = start_of_week + datetime.timedelta(days=6)
     
+    start_of_week_dt = datetime.datetime.combine(start_of_week, datetime.time.min)
+    end_of_week_dt = datetime.datetime.combine(end_of_week, datetime.time.max)
     weekly_bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
-        func.date(models.Booking.start_time) >= start_of_week,
-        func.date(models.Booking.start_time) <= end_of_week,
+        models.Booking.start_time >= start_of_week_dt,
+        models.Booking.start_time <= end_of_week_dt,
         models.Booking.status != "cancelled"
     ).count()
     
@@ -386,3 +395,51 @@ def update_routine(dni: str, payload: dict, db: Session = Depends(get_db)):
     member.routine = payload.get("routine", [])
     db.commit()
     return {"status": "success", "message": "Rutina actualizada"}
+
+@router.get("/{dni}/progress")
+def get_user_progress(dni: str, db: Session = Depends(get_db)):
+    member = db.query(models.Member).filter(models.Member.dni == dni).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Socio no encontrado")
+        
+    bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == 'attended',
+        models.Booking.exercises_done != None
+    ).order_by(models.Booking.start_time.asc()).all()
+    
+    progress_data_map = {}
+    uncompleted_history = []
+    
+    for b in bookings:
+        month_key = b.start_time.strftime("%b %Y")
+        if month_key not in progress_data_map:
+            progress_data_map[month_key] = {"date": month_key}
+            
+        routine = b.exercises_done
+        if isinstance(routine, list):
+            for day in routine:
+                if 'exercises' in day:
+                    for ex in day['exercises']:
+                        if ex.get('completed') == False or ex.get('uncompleted_reason'):
+                            uncompleted_history.append({
+                                "date": b.start_time.isoformat() + "Z",
+                                "exercise": ex.get('name'),
+                                "reason": ex.get('uncompleted_reason', 'No especificado')
+                            })
+                        else:
+                            kg = ex.get('kg', 0)
+                            name = ex.get('name')
+                            if kg > 0 and name:
+                                current_max = progress_data_map[month_key].get(name, 0)
+                                if kg > current_max:
+                                    progress_data_map[month_key][name] = kg
+
+    progress_chart_data = list(progress_data_map.values())
+    
+    return {
+        "status": "success",
+        "chart_data": progress_chart_data,
+        "uncompleted_history": sorted(uncompleted_history, key=lambda x: x["date"], reverse=True)
+    }
+
