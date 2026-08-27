@@ -677,3 +677,16 @@ def force_migrate():
     from .migrate_db import migrate
     migrate()
     return {'status': 'migrated'}
+
+
+@router.get('/debug_migrate')
+def debug_migrate():
+    from .database import engine
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            conn.execute(text('CREATE TABLE IF NOT EXISTS system_configs (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE, value JSON)'))
+            conn.commit()
+            return {'status': 'table created manually'}
+    except Exception as e:
+        return {'error': str(e)}
