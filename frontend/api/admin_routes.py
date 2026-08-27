@@ -698,3 +698,17 @@ def debug_err(db: Session = Depends(get_db)):
         return {'status': 'ok', 'val': db.query(models.SystemConfig).first().key if db.query(models.SystemConfig).first() else 'none'}
     except Exception as e:
         return {'error': str(e)}
+
+
+@router.get('/debug_drop')
+def debug_drop(db: Session = Depends(get_db)):
+    try:
+        from .database import engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text('DROP TABLE IF EXISTS system_configs'))
+            conn.execute(text('CREATE TABLE system_configs (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE, value JSON)'))
+            conn.commit()
+        return {'status': 'dropped and recreated'}
+    except Exception as e:
+        return {'error': str(e)}
