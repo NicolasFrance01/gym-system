@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # Relative imports for Vercel
 from . import models
 from .database import engine, get_db
-from .cv_engine import CVEngine
 from . import admin_routes
 from . import user_routes
 from . import totem_routes
