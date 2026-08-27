@@ -7,14 +7,25 @@ import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import models
 from database import engine, get_db
-from cv_engine import CVEngine
 
 import admin_routes
 import user_routes
+import totem_routes
 
 models.Base.metadata.create_all(bind=engine)
 
-cv_engine = CVEngine()
+# Mock CVEngine for Vercel/Serverless environments where OpenCV fails to load
+try:
+    from cv_engine import CVEngine
+    cv_engine = CVEngine()
+except ImportError as e:
+    print(f"Warning: CVEngine could not be loaded ({e}). Mocking it for serverless.")
+    class MockCVEngine:
+        is_alarm_active = False
+        def set_member_status(self, *args, **kwargs): pass
+        def start(self): pass
+        def get_frame(self): return None
+    cv_engine = MockCVEngine()
 
 # Start camera only if explicitly requested or in local environments
 if os.getenv("LOCAL_CAMERA", "false").lower() == "true":
@@ -36,6 +47,7 @@ app.add_middleware(
 # Include Routers
 app.include_router(admin_routes.router)
 app.include_router(user_routes.router)
+app.include_router(totem_routes.router)
 
 @app.get("/")
 def read_root():
@@ -73,13 +85,10 @@ def gen_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
             # Cap at ~30 FPS
-            # Note: time is not imported in original, but needed for sleep
-            # import time 
-            # time.sleep(0.03) 
+            time.sleep(0.03) 
         else:
             # Wait for next frame
-            # time.sleep(0.1)
-            pass
+            time.sleep(0.1)
 
 @app.get("/video_feed")
 def video_feed():

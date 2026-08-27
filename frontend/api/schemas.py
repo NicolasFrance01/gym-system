@@ -38,6 +38,7 @@ class MemberBase(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = "123"
     membership_type: Optional[str] = None
+    additional_plans: Optional[List[str]] = []
     wellness_data: Optional[Dict] = None
     routine: Optional[List[Dict]] = None
 
@@ -50,6 +51,7 @@ class MemberCreate(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = "123"
     membership_type: Optional[str] = None
+    additional_plans: Optional[List[str]] = []
     joined_at: Optional[datetime] = None
     routine: Optional[List[Dict]] = None
 
@@ -130,6 +132,7 @@ class PlanBase(BaseModel):
     days_per_week: int = 3
     classes: List = []
     is_active: bool = True
+    allow_unification: Optional[bool] = False
 
 class PlanCreate(PlanBase):
     pass
@@ -145,12 +148,6 @@ class ExerciseSchema(BaseModel):
     segment: Optional[str] = None
     zone: Optional[str] = None
     muscle_group: Optional[str] = None
-    mechanics: Optional[str] = None
-    equipment: Optional[str] = None
-    video_url: Optional[str] = None
-    instructions: Optional[str] = None
-    rpe: Optional[str] = None
-    rir: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -177,3 +174,23 @@ class StaffSchema(StaffBase):
 
     class Config:
         from_attributes = True
+
+class DailyMassConfig(BaseModel):
+    day: int
+    start_time: str
+    end_time: str
+    interval_minutes: int
+
+class MassClassScheduleSchema(BaseModel):
+    configs: List[DailyMassConfig]
+    capacity: int
+    name: str
+    code: str
+    color: str
+
+
+class ActivitySchema(BaseModel):
+    id: Optional[int] = None
+    name: str
+    code: str
+    color: str

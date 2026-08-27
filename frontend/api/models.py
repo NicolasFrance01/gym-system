@@ -1,6 +1,9 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, JSON
 from sqlalchemy.orm import relationship
-from .database import Base
+try:
+    from .database import Base
+except ImportError:
+    from database import Base
 import datetime
 
 class Member(Base):
@@ -14,7 +17,8 @@ class Member(Base):
     photo_url = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     password = Column(String, default="123")
-    membership_type = Column(String) # Basic, Premium, Elite
+    membership_type = Column(String) # Basic, Premium, Elite (Plan Principal)
+    additional_plans = Column(JSON, default=[]) # Planes Adicionales
     joined_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_checkin = Column(DateTime, nullable=True)
     
@@ -35,6 +39,7 @@ class Payment(Base):
     status = Column(String) # paid, pending, failed
     method = Column(String, default="Efectivo") # Efectivo, Tarjeta, etc
     stripe_id = Column(String, nullable=True)
+    plan_details = Column(JSON, nullable=True) # Desglose de planes contratados
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     member = relationship("Member", back_populates="payments")
@@ -101,6 +106,7 @@ class Plan(Base):
     days_per_week = Column(Integer, default=3)
     classes = Column(JSON, default=[])
     is_active = Column(Boolean, default=True)
+    allow_unification = Column(Boolean, default=False)
 
 class Exercise(Base):
     __tablename__ = "exercises"
@@ -109,16 +115,20 @@ class Exercise(Base):
     segment = Column(String)       # Ej: Tren superior
     zone = Column(String)          # Ej: Pecho
     muscle_group = Column(String)  # Ej: Pectoral mayor
-    mechanics = Column(String, nullable=True) # Ej: Compuesto
-    equipment = Column(String, nullable=True) # Ej: Barra
-    video_url = Column(String, nullable=True)
-    instructions = Column(String, nullable=True)
-    rpe = Column(String, nullable=True)
-    rir = Column(String, nullable=True)
+
+
 
 class Activity(Base):
-    __tablename__ = 'activities'
+    __tablename__ = "activities"
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    name = Column(String)
     code = Column(String)
     color = Column(String)
+
+class SystemConfig(Base):
+    __tablename__ = "system_configs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, index=True)
+    value = Column(JSON, default=dict)

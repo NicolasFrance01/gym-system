@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from .database import get_db
-from . import models
-from . import schemas
+from database import get_db
+import models
+import schemas
 import datetime
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -26,12 +26,10 @@ def calculate_member_streak_and_message(member_id: int, db: Session) -> tuple[in
     last_attendance = all_dates[0]
     days_since_last = (today - last_attendance).days
     
-    # Si pasaron 3 o más días desde la última asistencia, la racha es 0.
     if days_since_last >= 3:
         streak = 0
         message = "¡Vamos por un nuevo comienzo con todo! ⚡"
     else:
-        # Calcular racha consecutiva partiendo de la última asistencia
         streak = 1
         current_date = last_attendance
         for next_date in all_dates[1:]:
@@ -43,7 +41,6 @@ def calculate_member_streak_and_message(member_id: int, db: Session) -> tuple[in
             else:
                 break
         
-        # Generar mensaje de acuerdo a los días sin asistir
         if days_since_last == 0:
             message = "¡Vas muy bien en racha, sigue así! 🔥"
         elif days_since_last == 1:
@@ -64,7 +61,6 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     if member.password != credentials.password:
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
     
-    # Recalculate status from joined_at on login to keep it fresh
     if member.joined_at and member.status != 'INACTIVO':
         days_since = (datetime.datetime.utcnow() - member.joined_at).days
         if days_since >= 30:
@@ -102,20 +98,121 @@ def change_password(dni: str, data: schemas.PasswordChange, db: Session = Depend
     db.commit()
     return {"status": "success", "message": "Contraseña actualizada correctamente"}
 
-@router.get("/{dni}/wellness")
-def get_wellness_score(dni: str, db: Session = Depends(get_db)):
+@router.get("/{dni}/full_info")
+def get_user_full_info(dni: str, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == dni).first()
     if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
-    
-    # AI Logic placeholder for wellness score
-    wellness = member.wellness_data or {"hrv": 0, "sleep": 0, "fatigue": 0}
-    score = (wellness.get("hrv", 0) + (wellness.get("sleep", 0) * 100)) / 2
-    
+        raise HTTPException(status_code=404, detail="Socio no encontrado")
+
+    today = datetime.datetime.utcnow()
+    cycle_start = member.joined_at if member.joined_at else (today - datetime.timedelta(days=30))
+
+    # Plan Principal Stats (Totem Checkins)
+    plan_principal = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    main_days = plan_principal.days_per_week if plan_principal else 3
+    main_total = main_days * 4
+
+    sessions_used_totem = db.query(models.Checkin).filter(
+        models.Checkin.member_id == member.id,
+        models.Checkin.checkin_at >= cycle_start
+    ).count()
+    main_remaining = max(0, main_total - sessions_used_totem)
+
+    # Planes Adicionales Stats (Attended Bookings / Totem Adicional)
+    sessions_used_bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == "attended",
+        models.Booking.start_time >= cycle_start
+    ).count()
+
+    plans_breakdown = [
+        {
+            "name": member.membership_type or "Plan Principal",
+            "type": "Principal",
+            "total": main_total,
+            "used": sessions_used_totem,
+            "remaining": main_remaining
+        }
+    ]
+
+    add_plans = member.additional_plans or []
+    for add_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_name, models.Plan.is_active == True).first()
+        add_days = p_obj.days_per_week if p_obj else 2
+        add_total = add_days * 4
+        add_remaining = max(0, add_total - sessions_used_bookings)
+        plans_breakdown.append({
+            "name": add_name,
+            "type": "Adicional",
+            "total": add_total,
+            "used": sessions_used_bookings,
+            "remaining": add_remaining
+        })
+
+    # Checkins & Bookings
+    checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member.id).all()
+    checkin_list = [{
+        "id": f"c_{c.id}",
+        "checkin_at": (c.checkin_at or today).isoformat() + "Z",
+        "type": "Tótem Principal"
+    } for c in checkins]
+
+    bookings = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status.in_(["attended", "reserved"])
+    ).all()
+    booking_list = [{
+        "id": f"b_{b.id}",
+        "checkin_at": (b.start_time or today).isoformat() + "Z",
+        "type": b.class_name or "Clase Adicional"
+    } for b in bookings]
+
+    all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
+
+    payments_raw = member.payments or []
+    billing_history = []
+    for p in payments_raw:
+        dt = p.created_at or today
+        # Extract contracted plans list from payment details or fallback to member plans
+        p_details = p.plan_details if p.plan_details else [{"name": member.membership_type or "Plan Principal", "price": p.amount or 0}]
+        billing_history.append({
+            "id": p.id,
+            "date": dt.strftime("%Y-%m-%d"),
+            "amount": p.amount or 0,
+            "plan": member.membership_type or "Musculación",
+            "additional_plans": add_plans,
+            "plan_details": p_details,
+            "method": p.method or "Efectivo",
+            "processed_by": p.stripe_id or "—",
+            "status": "PAGADO"
+        })
+    billing_history.sort(key=lambda x: x["date"], reverse=True)
+
+    streak_count, streak_msg = calculate_member_streak_and_message(member.id, db)
+
     return {
-        "score": round(score, 1),
-        "metrics": wellness,
-        "suggestions": ["Take a rest day", "Focus on hydration"] if score < 50 else ["High intensity session recommended"]
+        "status": "success",
+        "member": {
+            "id": member.id,
+            "name": member.name,
+            "dni": member.dni,
+            "phone": member.phone,
+            "email": member.email,
+            "membership_type": member.membership_type,
+            "additional_plans": add_plans,
+            "status": member.status,
+            "routine": member.routine,
+            "streak": streak_count,
+            "streak_message": streak_msg
+        },
+        "checkin_stats": {
+            "total": main_total,
+            "used": sessions_used_totem,
+            "remaining": main_remaining
+        },
+        "plans_breakdown": plans_breakdown,
+        "attendance_history": all_attendance,
+        "billing_history": billing_history
     }
 
 @router.get("/class_schedules")
@@ -130,9 +227,12 @@ def get_user_class_schedules(date: str, db: Session = Depends(get_db)):
     
     result = []
     for s in schedules:
+        start_of_day = datetime.datetime.combine(query_date, datetime.time.min)
+        end_of_day = datetime.datetime.combine(query_date, datetime.time.max)
         bookings_count = db.query(models.Booking).filter(
             models.Booking.class_schedule_id == s.id,
-            func.date(models.Booking.start_time) == query_date,
+            models.Booking.start_time >= start_of_day,
+            models.Booking.start_time <= end_of_day,
             models.Booking.status != "cancelled"
         ).count()
         
@@ -168,7 +268,7 @@ def get_user_bookings(dni: str, db: Session = Depends(get_db)):
             "id": b.id,
             "class_schedule_id": b.class_schedule_id,
             "class_name": b.class_name,
-            "start_time": b.start_time.isoformat(),
+            "start_time": b.start_time.isoformat() + "Z",
             "status": b.status,
             "exercises_done": b.exercises_done
         })
@@ -196,9 +296,12 @@ def book_class(dni: str, payload: dict, db: Session = Depends(get_db)):
     if holiday:
         raise HTTPException(status_code=400, detail=f"No se puede reservar en un día no laborable: {holiday.description}")
         
+    start_of_day = datetime.datetime.combine(class_date, datetime.time.min)
+    end_of_day = datetime.datetime.combine(class_date, datetime.time.max)
     bookings_count = db.query(models.Booking).filter(
         models.Booking.class_schedule_id == schedule_id,
-        func.date(models.Booking.start_time) == class_date,
+        models.Booking.start_time >= start_of_day,
+        models.Booking.start_time <= end_of_day,
         models.Booking.status != "cancelled"
     ).count()
     
@@ -208,7 +311,8 @@ def book_class(dni: str, payload: dict, db: Session = Depends(get_db)):
     existing = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
         models.Booking.class_schedule_id == schedule_id,
-        func.date(models.Booking.start_time) == class_date
+        models.Booking.start_time >= start_of_day,
+        models.Booking.start_time <= end_of_day
     ).first()
     
     if existing:
@@ -225,10 +329,12 @@ def book_class(dni: str, payload: dict, db: Session = Depends(get_db)):
     start_of_week = class_date - datetime.timedelta(days=class_date.weekday())
     end_of_week = start_of_week + datetime.timedelta(days=6)
     
+    start_of_week_dt = datetime.datetime.combine(start_of_week, datetime.time.min)
+    end_of_week_dt = datetime.datetime.combine(end_of_week, datetime.time.max)
     weekly_bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
-        func.date(models.Booking.start_time) >= start_of_week,
-        func.date(models.Booking.start_time) <= end_of_week,
+        models.Booking.start_time >= start_of_week_dt,
+        models.Booking.start_time <= end_of_week_dt,
         models.Booking.status != "cancelled"
     ).count()
     
@@ -302,16 +408,11 @@ def get_user_progress(dni: str, db: Session = Depends(get_db)):
         models.Booking.exercises_done != None
     ).order_by(models.Booking.start_time.asc()).all()
     
-    # Structure to build historical data per month/date
-    # Output format for Recharts: [{ date: "YYYY-MM", "Press de Banca": 40, "Sentadilla": 60 }, ...]
-    # We also return a history of uncompleted exercises
-    
     progress_data_map = {}
     uncompleted_history = []
-    last_weights_map = {}
     
     for b in bookings:
-        month_key = b.start_time.strftime("%Y-%m-%d")
+        month_key = b.start_time.strftime("%b %Y")
         if month_key not in progress_data_map:
             progress_data_map[month_key] = {"date": month_key}
             
@@ -320,30 +421,25 @@ def get_user_progress(dni: str, db: Session = Depends(get_db)):
             for day in routine:
                 if 'exercises' in day:
                     for ex in day['exercises']:
-                        # Uncompleted history
                         if ex.get('completed') == False or ex.get('uncompleted_reason'):
                             uncompleted_history.append({
-                                "date": b.start_time.isoformat(),
+                                "date": b.start_time.isoformat() + "Z",
                                 "exercise": ex.get('name'),
                                 "reason": ex.get('uncompleted_reason', 'No especificado')
                             })
                         else:
-                            # Completed exercise: update max kg lifted in this month
                             kg = ex.get('kg', 0)
                             name = ex.get('name')
                             if kg > 0 and name:
                                 current_max = progress_data_map[month_key].get(name, 0)
                                 if kg > current_max:
                                     progress_data_map[month_key][name] = kg
-                                
-                                # Track last absolute weight (overwriting linearly because bookings are asc order)
-                                last_weights_map[name] = kg
 
     progress_chart_data = list(progress_data_map.values())
     
     return {
         "status": "success",
         "chart_data": progress_chart_data,
-        "uncompleted_history": sorted(uncompleted_history, key=lambda x: x["date"], reverse=True),
-        "last_weights": last_weights_map
+        "uncompleted_history": sorted(uncompleted_history, key=lambda x: x["date"], reverse=True)
     }
+

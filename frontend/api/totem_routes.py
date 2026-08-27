@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
-from .database import get_db
-from . import models
+from database import get_db
+import models
 import datetime
 
 router = APIRouter(prefix="/totem", tags=["Totem"])
@@ -13,42 +13,6 @@ def get_totem_member(dni: str, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.dni == dni).first()
     if not member:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
-
-    if member.status != "INACTIVO" and member.joined_at:
-        now = datetime.datetime.utcnow()
-        days_since = (now - member.joined_at).days
-        if days_since >= 30:
-            new_status = "DEUDA"
-        elif days_since >= 23:
-            new_status = "POR VENCER"
-        else:
-            new_status = "ACTIVO"
-        
-        if member.status != new_status:
-            member.status = new_status
-            db.commit()
-            db.refresh(member)
-
-
-    # Create checkin record automatically when they use the Totem
-    new_checkin = models.Checkin(member_id=member.id, checkin_at=datetime.datetime.utcnow())
-    db.add(new_checkin)
-    
-    # Auto-attend today's bookings
-    today_start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    today_end = today_start + datetime.timedelta(days=1)
-    
-    today_bookings = db.query(models.Booking).filter(
-        models.Booking.member_id == member.id,
-        models.Booking.start_time >= today_start,
-        models.Booking.start_time < today_end,
-        models.Booking.status == 'reserved'
-    ).all()
-    
-    for b in today_bookings:
-        b.status = 'attended'
-        
-    db.commit()
 
     wellness = member.wellness_data or {}
     return {
@@ -86,3 +50,59 @@ def save_evolution_entry(dni: str, entry: dict, db: Session = Depends(get_db)):
     db.commit()
 
     return {"success": True, "evolution": evolution}
+
+@router.post("/{dni}/checkin/adicional")
+def checkin_adicional(dni: str, db: Session = Depends(get_db)):
+    member = db.query(models.Member).filter(models.Member.dni == dni).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Socio no encontrado")
+
+    if member.status == "INACTIVO":
+        return {"status": "error", "detail": "Socio INACTIVO en el sistema"}
+
+    add_plans = member.additional_plans or []
+    if not add_plans:
+        return {"status": "error", "detail": "El socio no posee ningún Plan Adicional contratado"}
+
+    now = datetime.datetime.utcnow()
+    cycle_start = member.joined_at if member.joined_at else (now - datetime.timedelta(days=30))
+
+    total_allowed_additional = 0
+    for add_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_name, models.Plan.is_active == True).first()
+        add_days = p_obj.days_per_week if p_obj else 2
+        total_allowed_additional += (add_days * 4)
+
+    used_additional = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == "attended",
+        models.Booking.start_time >= cycle_start
+    ).count()
+
+    if used_additional >= total_allowed_additional:
+        return {"status": "error", "detail": f"Sin pases disponibles en Plan Adicional ({used_additional}/{total_allowed_additional})"}
+
+    start_window = now - datetime.timedelta(minutes=10)
+    end_window = now + datetime.timedelta(minutes=15)
+
+    booking = db.query(models.Booking).filter(
+        models.Booking.member_id == member.id,
+        models.Booking.status == "reserved",
+        models.Booking.start_time >= start_window,
+        models.Booking.start_time <= end_window
+    ).first()
+
+    if not booking:
+        return {"status": "error", "detail": "No tienes clases reservadas para este horario"}
+
+    booking.status = "attended"
+    db.commit()
+
+    remaining_after = max(0, total_allowed_additional - (used_additional + 1))
+    return {
+        "status": "success", 
+        "detail": f"Asistencia confirmada: {booking.class_name}\n({remaining_after} pases restantes en Plan Adicional)",
+        "class_name": booking.class_name,
+        "member_name": member.name
+    }
+

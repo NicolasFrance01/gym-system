@@ -137,55 +137,76 @@ def update_member(member_id: int, member_data: schemas.MemberCreate, db: Session
     return db_member
 
 @router.get("/members/{member_id}/checkins")
+@router.get("/members/{member_id}/checkins")
 def get_member_checkins(member_id: int, db: Session = Depends(get_db)):
     member = db.query(models.Member).filter(models.Member.id == member_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
-    plan = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
-    days_per_week = plan.days_per_week if plan else 3
-    total_sessions = days_per_week * 4
-
     today = datetime.datetime.utcnow()
-    if member.joined_at:
-        cycle_start = member.joined_at
-    else:
-        cycle_start = today - datetime.timedelta(days=30)
+    cycle_start = member.joined_at if member.joined_at else (today - datetime.timedelta(days=30))
 
-    # Count totem checkins in the current cycle
+    # Plan Principal Stats (Totem Checkins)
+    plan_principal = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    main_days = plan_principal.days_per_week if plan_principal else 3
+    main_total = main_days * 4
+
     sessions_used_totem = db.query(models.Checkin).filter(
         models.Checkin.member_id == member_id,
         models.Checkin.checkin_at >= cycle_start
     ).count()
 
-    # Count attended bookings in the current cycle
+    main_remaining = max(0, main_total - sessions_used_totem)
+
+    # Planes Adicionales Stats (Attended Bookings / Totem Adicional)
     sessions_used_bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member_id,
         models.Booking.status == "attended",
         models.Booking.start_time >= cycle_start
     ).count()
 
-    sessions_used = sessions_used_totem + sessions_used_bookings
+    plans_breakdown = [
+        {
+            "name": member.membership_type or "Plan Principal",
+            "type": "Principal",
+            "total": main_total,
+            "used": sessions_used_totem,
+            "remaining": main_remaining
+        }
+    ]
 
-    # Get totem checkins list
+    add_plans = member.additional_plans or []
+    for add_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_name, models.Plan.is_active == True).first()
+        add_days = p_obj.days_per_week if p_obj else 2
+        add_total = add_days * 4
+        add_remaining = max(0, add_total - sessions_used_bookings)
+        plans_breakdown.append({
+            "name": add_name,
+            "type": "Adicional",
+            "total": add_total,
+            "used": sessions_used_bookings,
+            "remaining": add_remaining
+        })
+
+    # Combined checkins & bookings list
     checkins = db.query(models.Checkin).filter(models.Checkin.member_id == member_id).all()
-    checkin_list = [{"id": f"c_{c.id}", "checkin_at": c.checkin_at.isoformat(), "type": "Tótem"} for c in checkins]
+    checkin_list = [{"id": f"c_{c.id}", "checkin_at": (c.checkin_at or today).isoformat() + "Z", "type": "Tótem Principal"} for c in checkins]
 
-    # Get attended bookings list
     bookings = db.query(models.Booking).filter(
         models.Booking.member_id == member_id,
-        models.Booking.status == "attended"
+        models.Booking.status.in_(["attended", "reserved"])
     ).all()
-    booking_list = [{"id": f"b_{b.id}", "checkin_at": b.start_time.isoformat(), "type": b.class_name} for b in bookings]
+    booking_list = [{"id": f"b_{b.id}", "checkin_at": (b.start_time or today).isoformat() + "Z", "type": b.class_name or "Tótem Adicional"} for b in bookings]
 
-    # Combine and sort by date descending
     all_attendance = sorted(checkin_list + booking_list, key=lambda x: x["checkin_at"], reverse=True)
 
     return {
-        "total_sessions": total_sessions,
-        "sessions_used": sessions_used,
-        "sessions_remaining": max(0, total_sessions - sessions_used),
-        "checkins": all_attendance
+        "total_sessions": main_total,
+        "sessions_used": sessions_used_totem,
+        "sessions_remaining": main_remaining,
+        "checkins": all_attendance,
+        "plans_breakdown": plans_breakdown
     }
 
 @router.put("/members/{member_id}/status")
@@ -198,16 +219,44 @@ def update_member_status(member_id: int, status: str, db: Session = Depends(get_
     return {"status": "updated", "new_status": status}
 
 @router.post("/payments")
-def record_payment(member_id: int, amount: float, method: str = "card", processed_by: str = "", db: Session = Depends(get_db)):
-    now = datetime.datetime.utcnow()
-    payment = models.Payment(member_id=member_id, amount=amount, status="paid", method=method, stripe_id=processed_by or None, created_at=now)
-    db.add(payment)
+def record_payment(member_id: int, amount: float = 0, method: str = "card", processed_by: str = "", db: Session = Depends(get_db)):
     member = db.query(models.Member).get(member_id)
-    if member:
-        member.status = "ACTIVO"
-        member.joined_at = now  # restart 30-day cycle from today
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    now = datetime.datetime.utcnow()
+
+    # Calculate itemized breakdown and total amount if amount is not specified
+    plan_principal = db.query(models.Plan).filter(models.Plan.name == member.membership_type, models.Plan.is_active == True).first()
+    plan_details = []
+    calculated_amount = 0
+    if plan_principal:
+        plan_details.append({"name": plan_principal.name, "price": plan_principal.price})
+        calculated_amount += plan_principal.price
+
+    add_plans = member.additional_plans or []
+    for add_p_name in add_plans:
+        p_obj = db.query(models.Plan).filter(models.Plan.name == add_p_name, models.Plan.is_active == True).first()
+        if p_obj:
+            plan_details.append({"name": p_obj.name, "price": p_obj.price})
+            calculated_amount += p_obj.price
+
+    final_amount = amount if amount > 0 else calculated_amount
+
+    payment = models.Payment(
+        member_id=member_id,
+        amount=final_amount,
+        status="paid",
+        method=method,
+        stripe_id=processed_by or None,
+        plan_details=plan_details,
+        created_at=now
+    )
+    db.add(payment)
+    member.status = "ACTIVO"
+    member.joined_at = now
     db.commit()
-    return {"status": "payment recorded"}
+    return {"status": "payment recorded", "amount": final_amount, "details": plan_details}
 
 @router.delete("/payments/{payment_id}")
 def delete_payment(payment_id: int, db: Session = Depends(get_db)):
@@ -417,9 +466,12 @@ def get_class_bookings(schedule_id: int, date: str, db: Session = Depends(get_db
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Usar YYYY-MM-DD")
     
+    start_of_day = datetime.datetime.combine(query_date, datetime.time.min)
+    end_of_day = datetime.datetime.combine(query_date, datetime.time.max)
     bookings = db.query(models.Booking).filter(
         models.Booking.class_schedule_id == schedule_id,
-        func.date(models.Booking.start_time) == query_date
+        models.Booking.start_time >= start_of_day,
+        models.Booking.start_time <= end_of_day
     ).all()
     
     result = []
@@ -521,65 +573,14 @@ def delete_exercise(ex_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success"}
 
-@router.put("/exercises/{ex_id}", response_model=schemas.ExerciseSchema)
-def update_exercise(ex_id: int, ex: schemas.ExerciseSchema, db: Session = Depends(get_db)):
-    db_ex = db.query(models.Exercise).filter(models.Exercise.id == ex_id).first()
-    if not db_ex:
-        raise HTTPException(status_code=404, detail="Exercise not found")
-    
-    update_data = ex.model_dump(exclude_unset=True)
-    if "id" in update_data:
-        del update_data["id"]
-        
-    for key, value in update_data.items():
-        setattr(db_ex, key, value)
-        
-    db.commit()
-    db.refresh(db_ex)
-    return db_ex
-
-
-
-# --- Activities ---
-@router.get("/activities")
-def get_activities(db: Session = Depends(get_db)):
-    return db.query(models.Activity).all()
-
-@router.post("/activities")
-def create_activity(activity: dict, db: Session = Depends(get_db)):
-    db_activity = models.Activity(**activity)
-    db.add(db_activity)
-    db.commit()
-    db.refresh(db_activity)
-    return db_activity
-
-@router.delete("/activities/{activity_id}")
-def delete_activity(activity_id: int, db: Session = Depends(get_db)):
-    activity = db.query(models.Activity).filter(models.Activity.id == activity_id).first()
-    if activity:
-        db.delete(activity)
-        db.commit()
-    return {"success": True}
-
-# --- Mass Class Generation ---
 @router.post("/class_schedules/mass")
-def create_mass_class_schedules(data: dict, db: Session = Depends(get_db)):
-    configs = data.get("configs", [])
-    capacity = data.get("capacity", 50)
-    name = data.get("name")
-    code = data.get("code")
-    color = data.get("color")
+def create_mass_class_schedules(payload: schemas.MassClassScheduleSchema, db: Session = Depends(get_db)):
+    created_schedules = []
     
-    created = 0
-    for config in configs:
-        day = config.get("day")
-        start_time = config.get("start_time", "07:00")
-        end_time = config.get("end_time", "23:00")
-        interval_minutes = int(config.get("interval_minutes", 60))
-        
+    for config in payload.configs:
         try:
-            start_h, start_m = map(int, start_time.split(':'))
-            end_h, end_m = map(int, end_time.split(':'))
+            start_h, start_m = map(int, config.start_time.split(':'))
+            end_h, end_m = map(int, config.end_time.split(':'))
         except ValueError:
             continue
             
@@ -587,31 +588,85 @@ def create_mass_class_schedules(data: dict, db: Session = Depends(get_db)):
         end_minutes = end_h * 60 + end_m
         
         while current_minutes < end_minutes:
-            start_str = f"{current_minutes // 60:02d}:{current_minutes % 60:02d}"
-            next_minutes = current_minutes + interval_minutes
+            start_time_str = f"{current_minutes // 60:02d}:{current_minutes % 60:02d}"
+            next_minutes = current_minutes + config.interval_minutes
             if next_minutes > end_minutes:
                 next_minutes = end_minutes
-            end_str = f"{next_minutes // 60:02d}:{next_minutes % 60:02d}"
+            end_time_str = f"{next_minutes // 60:02d}:{next_minutes % 60:02d}"
             
             existing = db.query(models.ClassSchedule).filter(
-                models.ClassSchedule.day_of_week == day,
-                models.ClassSchedule.start_time == start_str
+                models.ClassSchedule.day_of_week == config.day,
+                models.ClassSchedule.start_time == start_time_str
             ).first()
             
             if not existing:
-                new_class = models.ClassSchedule(
-                    name=name,
-                    code=code,
-                    day_of_week=day,
-                    start_time=start_str,
-                    end_time=end_str,
-                    color=color,
-                    capacity=capacity
+                new_schedule = models.ClassSchedule(
+                    name=payload.name,
+                    code=payload.code,
+                    day_of_week=config.day,
+                    start_time=start_time_str,
+                    end_time=end_time_str,
+                    color=payload.color,
+                    capacity=payload.capacity
                 )
-                db.add(new_class)
-                created += 1
+                db.add(new_schedule)
+                created_schedules.append(new_schedule)
                 
-            current_minutes += interval_minutes
+            current_minutes += config.interval_minutes
             
     db.commit()
-    return {"success": True, "created": created}
+    return {"message": f"Created {len(created_schedules)} classes."}
+
+
+@router.get("/activities")
+def get_activities(db: Session = Depends(get_db)):
+    activities = db.query(models.Activity).all()
+    if not activities:
+        defaults = [
+            {"name": "Entrenamiento Funcional", "code": "EF", "color": "#3b82f6"},
+            {"name": "Pilates en Suelo", "code": "PS", "color": "#f97316"},
+            {"name": "Entrenamiento Personalizado", "code": "EP", "color": "#ec4899"},
+            {"name": "Salsa y Bachata", "code": "SB", "color": "#eab308"},
+            {"name": "Zumba", "code": "ZB", "color": "#ef4444"},
+            {"name": "Reguetón Juvenil", "code": "RJ", "color": "#06b6d4"}
+        ]
+        for d in defaults:
+            db.add(models.Activity(name=d["name"], code=d["code"], color=d["color"]))
+        db.commit()
+        activities = db.query(models.Activity).all()
+    return activities
+
+@router.post("/activities")
+def create_activity(activity: schemas.ActivitySchema, db: Session = Depends(get_db)):
+    new_act = models.Activity(name=activity.name, code=activity.code, color=activity.color)
+    db.add(new_act)
+    db.commit()
+    db.refresh(new_act)
+    return new_act
+
+@router.delete("/activities/{activity_id}")
+def delete_activity(activity_id: int, db: Session = Depends(get_db)):
+    act = db.query(models.Activity).filter(models.Activity.id == activity_id).first()
+    if act:
+        db.delete(act)
+        db.commit()
+    return {"ok": True}
+
+
+@router.get("/configs/{key}")
+def get_config(key: str, db: Session = Depends(get_db)):
+    config = db.query(models.SystemConfig).filter(models.SystemConfig.key == key).first()
+    if config:
+        return {"status": "success", "value": config.value}
+    return {"status": "success", "value": {}}
+
+@router.post("/configs/{key}")
+def set_config(key: str, payload: dict, db: Session = Depends(get_db)):
+    config = db.query(models.SystemConfig).filter(models.SystemConfig.key == key).first()
+    if config:
+        config.value = payload.get("value", {})
+    else:
+        config = models.SystemConfig(key=key, value=payload.get("value", {}))
+        db.add(config)
+    db.commit()
+    return {"status": "success"}
