@@ -271,7 +271,8 @@ function AgendaModule({ members, API_URL }: any) {
         setDeletedSlotKeys(prev => {
           const next = new Set(prev);
           next.add(`${start}-${end}`);
-          return next;
+          fetch(`${API_URL}/admin/configs/hidden_slots`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: Array.from(next) }) }).catch(console.error);
+            return next;
         });
         fetchSchedules();
       } catch (e) {
