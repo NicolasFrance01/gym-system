@@ -8,21 +8,12 @@ export default function SystemNoticeModal({ announcement }: { announcement: any 
     if (!announcement || !announcement.active) {
       return;
     }
-
-    // Generate a unique ID for this announcement based on its title and version
-    const announceId = `sys_notice_${btoa(announcement.title + announcement.version_to).replace(/=/g, '')}`;
-    const dismissed = localStorage.getItem(announceId);
-
-    if (!dismissed) {
-      setIsVisible(true);
-    }
+    setIsVisible(true);
   }, [announcement]);
 
   if (!isVisible || !announcement || !announcement.active) return null;
 
   const handleDismiss = () => {
-    const announceId = `sys_notice_${btoa(announcement.title + announcement.version_to).replace(/=/g, '')}`;
-    localStorage.setItem(announceId, 'true');
     setIsVisible(false);
   };
 

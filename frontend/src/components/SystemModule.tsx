@@ -52,6 +52,17 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
     if (!licenseInfo) return null;
     const { status, last_paid_month } = licenseInfo;
 
+    let formattedDate = 'N/A';
+    if (last_paid_month) {
+      try {
+        const d = new Date(last_paid_month);
+        formattedDate = d.toLocaleString('es-AR', {
+          day: '2-digit', month: 'long', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires'
+        }) + ' hs';
+      } catch (e) {}
+    }
+
     let bgClass = "bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-700/60 text-green-700 dark:text-green-400";
     let badgeClass = "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300";
     let Icon = CheckCircle;
@@ -79,7 +90,7 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs uppercase font-bold opacity-80">Último mes abonado</span>
-            <span className="text-xs font-bold">{last_paid_month || 'N/A'}</span>
+            <span className="text-xs font-bold">{formattedDate}</span>
           </div>
           
           {status !== 'AL DIA' && (
@@ -96,7 +107,7 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="w-full max-w-7xl space-y-6">
       <div className="flex items-center gap-2 mb-6">
         <Settings className="text-gray-400" size={20} />
         <h2 className="text-lg font-black uppercase text-gray-900 dark:text-white">Sistema y Ajustes Master</h2>

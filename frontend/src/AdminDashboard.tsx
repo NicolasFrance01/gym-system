@@ -1285,7 +1285,22 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_URL}/admin/configs/license_status`);
       if (res.ok) {
         const data = await res.json();
-        setLicenseInfo(data.value);
+        const value = data.value || {};
+        
+        let calculatedStatus = 'VENCIDA';
+        if (value.last_paid_month) {
+           const paidDate = new Date(value.last_paid_month);
+           const now = new Date();
+           if (paidDate.getMonth() === now.getMonth() && paidDate.getFullYear() === now.getFullYear()) {
+             calculatedStatus = 'AL DIA';
+           } else if (now.getDate() <= 5) {
+             const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+             if (paidDate.getMonth() === lastMonth.getMonth() && paidDate.getFullYear() === lastMonth.getFullYear()) {
+               calculatedStatus = 'POR VENCER';
+             }
+           }
+        }
+        setLicenseInfo({ ...value, status: calculatedStatus });
       }
     } catch (err) {
       console.error("Error fetching license status:", err);
@@ -1714,7 +1729,7 @@ export default function AdminDashboard() {
       case 'Sistema': return loggedUser?.id === 0 ? <SystemModule API_URL={API_URL} licenseInfo={licenseInfo} onRenewLicense={async () => {
         showConfirm("Confirmar Renovación", "¿Desea marcar la licencia como AL DIA para el mes en curso?", async () => {
           try {
-            const newStatus = { status: 'active', last_paid_month: new Date().toISOString() };
+            const newStatus = { status: 'AL DIA', last_paid_month: new Date().toISOString() };
             const res = await fetch(`${API_URL}/admin/configs/license_status`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
