@@ -4,6 +4,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
+import SystemNoticeModal from './components/SystemNoticeModal';
+import SystemModule from './components/SystemModule';
 import MemberModal from "./components/MemberModal";
 import EntrenamientosModule from './components/EntrenamientosModule';
 import jsPDF from 'jspdf';
@@ -1045,7 +1047,9 @@ function AgendaModule({ members, API_URL }: any) {
         </div>
       )}
 
-      {/* Custom confirm modal overlay in AgendaModule */}
+      <SystemNoticeModal announcement={systemAnnouncement} />
+      
+      {/* Custom confirm modal overlay */} in AgendaModule */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/75 dark:bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-xs bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden text-black dark:text-white">
@@ -1112,6 +1116,7 @@ export default function AdminDashboard() {
   const [checkinStats, setCheckinStats] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [systemAnnouncement, setSystemAnnouncement] = useState<any>(null);
   const [licenseInfo, setLicenseInfo] = useState<{ status: string; last_paid_month?: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -1290,6 +1295,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchLicenseStatus();
+      // Fetch announcement
+      const annRes = await fetch(`${API_URL}/admin/configs/system_announcement`);
+      if (annRes.ok) {
+        const annData = await annRes.json();
+        setSystemAnnouncement(annData.value);
+      }
+
   }, []);
 
   const renderLicenseBanner = (size: 'login' | 'sidebar' | 'header') => {
@@ -1393,6 +1405,13 @@ export default function AdminDashboard() {
     try {
       setError(null);
       fetchLicenseStatus();
+      // Fetch announcement
+      const annRes = await fetch(`${API_URL}/admin/configs/system_announcement`);
+      if (annRes.ok) {
+        const annData = await annRes.json();
+        setSystemAnnouncement(annData.value);
+      }
+
       // 1. Fetch Members + Plans
       const [membersRes, plansRes] = await Promise.all([
         fetch(`${API_URL}/admin/members`),

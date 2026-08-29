@@ -5,13 +5,13 @@ import UserApp from './UserApp';
 import TotemPlan from './TotemPlan';
 
 function App() {
-  const isVercel = window.location.hostname.includes('vercel');
+  const isWeb = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1') && window.location.protocol !== 'file:';
 
   return (
     <Router>
       <Routes>
         {/* Kiosk View - Default entry point for physical access */}
-        <Route path="/" element={isVercel ? <Navigate to="/app" /> : <KioskView />} />
+        <Route path="/" element={isWeb ? <Navigate to="/app" /> : <KioskView />} />
 
         {/* Admin Dashboard - The Brain (Back-End/SaaS) */}
         <Route path="/admin" element={<AdminDashboard />} />
