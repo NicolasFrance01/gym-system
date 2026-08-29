@@ -9,10 +9,10 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="relative w-full max-w-md bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-[35px] p-6 md:p-8 shadow-2xl overflow-hidden text-black dark:text-white animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-[35px] p-6 md:p-8 shadow-2xl text-black dark:text-white animate-in zoom-in-95 duration-300 flex flex-col">
         
         {/* Glow background */}
-        <div className="absolute -top-20 -right-20 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl pointer-events-none overflow-hidden" />
 
         {/* Close button */}
         <button 
@@ -22,7 +22,7 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
           <X size={20} />
         </button>
 
-        <div className="flex flex-col items-center text-center space-y-4 overflow-y-auto custom-scrollbar pr-2 pt-2">
+        <div className="flex flex-col items-center text-center space-y-4 pt-2">
           <div className="flex items-center gap-4 mb-2">
             {/* Gym Icon */}
             <div className="w-14 h-14 bg-[#141b29] dark:bg-black/40 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
