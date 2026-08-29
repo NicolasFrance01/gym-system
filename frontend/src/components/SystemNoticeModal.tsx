@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { X, Info } from 'lucide-react';
 
 export default function SystemNoticeModal({ announcement, isOpen, onClose }: { announcement: any, isOpen?: boolean, onClose?: () => void }) {
