@@ -1116,6 +1116,7 @@ export default function AdminDashboard() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [systemAnnouncement, setSystemAnnouncement] = useState<any>(null);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [licenseInfo, setLicenseInfo] = useState<{ status: string; last_paid_month?: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -1287,16 +1288,19 @@ export default function AdminDashboard() {
         const data = await res.json();
         const value = data.value || {};
         
-        let calculatedStatus = 'VENCIDA';
+        let calculatedStatus = 'DEUDA';
         if (value.last_paid_month) {
            const paidDate = new Date(value.last_paid_month);
            const now = new Date();
            if (paidDate.getMonth() === now.getMonth() && paidDate.getFullYear() === now.getFullYear()) {
              calculatedStatus = 'AL DIA';
-           } else if (now.getDate() <= 5) {
+           } else {
              const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
              if (paidDate.getMonth() === lastMonth.getMonth() && paidDate.getFullYear() === lastMonth.getFullYear()) {
-               calculatedStatus = 'POR VENCER';
+               if (now.getDate() <= 10) calculatedStatus = 'POR VENCER';
+               else calculatedStatus = 'DEUDA';
+             } else {
+               calculatedStatus = 'DEUDA';
              }
            }
         }
@@ -1425,6 +1429,9 @@ export default function AdminDashboard() {
         if (annRes.ok) {
           const annData = await annRes.json();
           setSystemAnnouncement(annData.value);
+          if (annData.value?.active) {
+            setIsAnnouncementModalOpen(true);
+          }
         }
       });
 
@@ -1729,14 +1736,17 @@ export default function AdminDashboard() {
       case 'Sistema': return loggedUser?.id === 0 ? <SystemModule API_URL={API_URL} licenseInfo={licenseInfo} onRenewLicense={async () => {
         showConfirm("Confirmar Renovación", "¿Desea marcar la licencia como AL DIA para el mes en curso?", async () => {
           try {
-            const newStatus = { status: 'AL DIA', last_paid_month: new Date().toISOString() };
+            const currentHistory = Array.isArray((licenseInfo as any)?.history) ? (licenseInfo as any).history : [];
+            const newHistory = [{ date: new Date().toISOString(), user: loggedUser?.name || 'Master' }, ...currentHistory].slice(0, 50); // Keep last 50
+            const newStatus = { status: 'AL DIA', last_paid_month: new Date().toISOString(), history: newHistory };
+            
             const res = await fetch(`${API_URL}/admin/configs/license_status`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ value: newStatus })
             });
             if (res.ok) {
-              setLicenseInfo(newStatus);
+              setLicenseInfo(newStatus as any);
             } else {
               alert("Error al renovar la licencia");
             }
@@ -2074,7 +2084,19 @@ export default function AdminDashboard() {
           <div className="min-w-0"><h2 className="text-xl font-black text-black dark:text-white tracking-tighter uppercase truncate">{activeTab}</h2><p className="text-[7px] text-gray-500 dark:text-white/20 uppercase font-black tracking-[0.3em]">Fusion Fitness GYM</p></div>
 
           {/* License expired banner — header */}
-          {renderLicenseBanner('header')}
+          <div className="flex items-center gap-2">
+            {renderLicenseBanner('header')}
+            
+            {systemAnnouncement?.active && (
+              <button 
+                onClick={() => setIsAnnouncementModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 text-orange-500 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse border border-orange-500/20 hover:bg-orange-500/20 transition-colors"
+                title="Ver anuncio del sistema"
+              >
+                <Info size={12} /> Anuncio
+              </button>
+            )}
+          </div>
 
           <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-orange-500 rounded-xl shadow-lg shadow-orange-500/20 font-black text-[8px] uppercase tracking-widest hover:scale-105 transition-all whitespace-nowrap"><Download size={14}/> Reporte Global</button>
         </header>
@@ -2086,7 +2108,11 @@ export default function AdminDashboard() {
         )}
           {renderContent()}
         </div>
-        <SystemNoticeModal announcement={systemAnnouncement} />
+        <SystemNoticeModal 
+          announcement={systemAnnouncement} 
+          isOpen={isAnnouncementModalOpen} 
+          onClose={() => setIsAnnouncementModalOpen(false)} 
+        />
       </main>
     </div>
   );

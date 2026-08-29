@@ -50,7 +50,7 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
 
   const renderLicenseCard = () => {
     if (!licenseInfo) return null;
-    const { status, last_paid_month } = licenseInfo;
+    const { status, last_paid_month, history } = licenseInfo;
 
     let formattedDate = 'N/A';
     if (last_paid_month) {
@@ -71,14 +71,14 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
       bgClass = "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-400";
       badgeClass = "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300";
       Icon = AlertTriangle;
-    } else if (status === 'VENCIDA') {
+    } else if (status === 'DEUDA' || status === 'VENCIDA') {
       bgClass = "bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-700/60 text-red-700 dark:text-red-400";
       badgeClass = "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300";
       Icon = XCircle;
     }
 
     return (
-      <div className={`border rounded-[25px] p-6 ${bgClass}`}>
+      <div className={`border rounded-[25px] p-6 ${bgClass} flex flex-col h-full max-h-[500px]`}>
         <div className="flex items-center gap-3 mb-4">
           <Icon size={24} />
           <h3 className="text-sm font-black uppercase">Estado de Licencia Atlascore</h3>
@@ -100,6 +100,26 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
             >
               Marcar Licencia AL DIA
             </button>
+          )}
+
+          {history && history.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-black/10 dark:border-white/10 flex-1 overflow-hidden flex flex-col">
+              <h4 className="text-[10px] uppercase font-black tracking-widest mb-3 opacity-70">Historial de Actualizaciones</h4>
+              <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+                {history.map((h: any, i: number) => {
+                  let dStr = h.date;
+                  try {
+                    dStr = new Date(h.date).toLocaleString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                  } catch(e) {}
+                  return (
+                    <div key={i} className="flex justify-between items-center text-[9px] bg-black/5 dark:bg-white/5 rounded-lg px-3 py-2">
+                      <span className="font-bold opacity-75">{dStr}</span>
+                      <span className="font-black uppercase">{h.user || 'Admin'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       </div>

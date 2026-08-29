@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react';
 import { X, Info } from 'lucide-react';
 
-export default function SystemNoticeModal({ announcement }: { announcement: any }) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    if (!announcement || !announcement.active) {
-      return;
-    }
-    setIsVisible(true);
-  }, [announcement]);
-
-  if (!isVisible || !announcement || !announcement.active) return null;
+export default function SystemNoticeModal({ announcement, isOpen, onClose }: { announcement: any, isOpen?: boolean, onClose?: () => void }) {
+  if (!isOpen || !announcement || !announcement.active) return null;
 
   const handleDismiss = () => {
-    setIsVisible(false);
+    if (onClose) onClose();
   };
 
   return (
@@ -58,16 +49,30 @@ export default function SystemNoticeModal({ announcement }: { announcement: any 
           </div>
 
           <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-center space-y-3 mt-4 px-2">
-            <p>
-              Informamos que durante los días <strong>{announcement.date_start}</strong> y <strong>{announcement.date_end}</strong> se estará realizando la actualización del sistema, migrando de <strong>{announcement.version_from}</strong> a la nueva versión <strong>{announcement.version_to}</strong>.
-            </p>
-            <p>
-              La nueva versión quedará productiva y disponible a partir del <strong>{announcement.date_productive}</strong>.
-            </p>
-            <p className="text-xs opacity-80">
-              {announcement.description}
-            </p>
-            <p className="font-bold pt-2">
+            {(announcement.date_start || announcement.date_end || announcement.version_from || announcement.version_to) && (
+              <p>
+                Informamos que durante los días 
+                {announcement.date_start && <span> <strong>{announcement.date_start}</strong></span>}
+                {announcement.date_end && <span> y <strong>{announcement.date_end}</strong></span>}
+                {(announcement.version_from || announcement.version_to) && <span> se estará realizando la actualización del sistema</span>}
+                {announcement.version_from && <span>, migrando de <strong>{announcement.version_from}</strong></span>}
+                {announcement.version_to && <span> a la nueva versión <strong>{announcement.version_to}</strong></span>}.
+              </p>
+            )}
+            
+            {announcement.date_productive && (
+              <p>
+                La nueva versión quedará productiva y disponible a partir del <strong>{announcement.date_productive}</strong>.
+              </p>
+            )}
+
+            {announcement.description && (
+              <p className="text-xs opacity-80 mt-2">
+                {announcement.description}
+              </p>
+            )}
+
+            <p className="font-bold pt-2 mt-4">
               Atentamente,<br/>Equipo Atlascore
             </p>
           </div>
