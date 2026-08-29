@@ -46,42 +46,47 @@ def get_gym_stats(db: Session = Depends(get_db)):
 
 @router.get("/members", response_model=List[schemas.MemberSchema])
 def get_all_members(db: Session = Depends(get_db)):
-    members = db.query(models.Member).all()
-    now = datetime.datetime.utcnow()
-    updated = False
-    for m in members:
-        if m.status != "INACTIVO" and m.joined_at:
-            days_since = (now - m.joined_at).days
-            if days_since >= 30:
-                new_status = "DEUDA"
-            elif days_since >= 23:
-                new_status = "POR VENCER"
-            else:
-                new_status = "ACTIVO"
-            
-            if m.status != new_status:
-                m.status = new_status
-                updated = True
-    if updated:
-        db.commit()
+    try:
+        members = db.query(models.Member).all()
+        now = datetime.datetime.utcnow()
+        updated = False
+        for m in members:
+            if m.status != "INACTIVO" and m.joined_at:
+                days_since = (now - m.joined_at).days
+                if days_since >= 30:
+                    new_status = "DEUDA"
+                elif days_since >= 23:
+                    new_status = "POR VENCER"
+                else:
+                    new_status = "ACTIVO"
+                
+                if m.status != new_status:
+                    m.status = new_status
+                    updated = True
+        if updated:
+            db.commit()
 
-    result = []
-    for m in members:
-        # Convert to dict first to avoid Pydantic mutability constraints
-        m_dict = schemas.MemberSchema.from_orm(m).dict()
-        m_dict["billing_history"] = [
-            {
-                "id": p.id,
-                "date": p.created_at.strftime("%Y-%m-%d"),
-                "amount": p.amount,
-                "plan": m.membership_type or "Musculación",
-                "method": p.method,
-                "processed_by": p.stripe_id or "—",
-                "status": "PAGADO"
-            } for p in sorted(m.payments, key=lambda x: x.created_at, reverse=True)
-        ]
-        result.append(m_dict)
-    return result
+        result = []
+        for m in members:
+            # Convert to dict first to avoid Pydantic mutability constraints
+            m_dict = schemas.MemberSchema.from_orm(m).dict()
+            m_dict["billing_history"] = [
+                {
+                    "id": p.id,
+                    "date": p.created_at.strftime("%Y-%m-%d") if p.created_at else "",
+                    "amount": p.amount,
+                    "plan": m.membership_type or "Musculación",
+                    "method": p.method,
+                    "processed_by": p.stripe_id or "—",
+                    "status": "PAGADO"
+                } for p in sorted(m.payments, key=lambda x: x.created_at or datetime.datetime.min, reverse=True)
+            ]
+            result.append(m_dict)
+        return result
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @router.post("/members", response_model=schemas.MemberSchema)
 def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
