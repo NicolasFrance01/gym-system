@@ -2050,6 +2050,7 @@ export default function AdminDashboard() {
         )}
           {renderContent()}
         </div>
+        <SystemNoticeModal announcement={systemAnnouncement} />
       </main>
     </div>
   );
