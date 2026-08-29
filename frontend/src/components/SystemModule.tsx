@@ -16,6 +16,7 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
   });
   
   const [isSaving, setIsSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/admin/configs/system_announcement`)
@@ -28,6 +29,11 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
       .catch(console.error);
   }, [API_URL]);
 
+  const showToast = (text: string, type: 'success' | 'error') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -37,13 +43,13 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
         body: JSON.stringify({ value: announcement })
       });
       if (res.ok) {
-        alert("Anuncio del sistema guardado correctamente.");
+        showToast("Anuncio del sistema guardado correctamente.", 'success');
       } else {
-        alert("Error al guardar el anuncio.");
+        showToast("Error al guardar el anuncio.", 'error');
       }
     } catch (e) {
       console.error(e);
-      alert("Error de conexión al guardar el anuncio.");
+      showToast("Error de conexión al guardar el anuncio.", 'error');
     }
     setIsSaving(false);
   };
@@ -218,6 +224,16 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${toastMessage.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'} backdrop-blur-md`}>
+            {toastMessage.type === 'success' ? <CheckCircle size={20} /> : <AlertTriangle size={20} />}
+            <span className="text-sm font-black uppercase tracking-wider">{toastMessage.text}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
