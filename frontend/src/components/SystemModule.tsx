@@ -21,8 +21,8 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
     fetch(`${API_URL}/admin/configs/system_announcement`)
       .then(res => res.json())
       .then(data => {
-        if (data.value && data.value.title) {
-          setAnnouncement(data.value);
+        if (data.value) {
+          setAnnouncement(prev => ({ ...prev, ...data.value }));
         }
       })
       .catch(console.error);
@@ -78,50 +78,54 @@ export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: {
     }
 
     return (
-      <div className={`border rounded-[25px] p-6 ${bgClass} flex flex-col h-full max-h-[500px]`}>
-        <div className="flex items-center gap-3 mb-4">
-          <Icon size={24} />
-          <h3 className="text-sm font-black uppercase">Estado de Licencia Atlascore</h3>
-        </div>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-xs uppercase font-bold opacity-80">Estado Actual</span>
-            <span className={`text-xs font-black px-3 py-1 rounded-full ${badgeClass}`}>{status}</span>
+      <div className="flex flex-col h-full gap-4 max-h-[500px]">
+        {/* Main License Status Card */}
+        <div className={`border rounded-[25px] p-6 shrink-0 shadow-sm ${bgClass}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <Icon size={24} />
+            <h3 className="text-sm font-black uppercase">Estado de Licencia Atlascore</h3>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs uppercase font-bold opacity-80">Último mes abonado</span>
-            <span className="text-xs font-bold">{formattedDate}</span>
-          </div>
-          
-          {status !== 'AL DIA' && (
-            <button
-              onClick={onRenewLicense}
-              className="w-full mt-4 py-3 bg-orange-500 hover:bg-orange-600 text-black dark:text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-colors"
-            >
-              Marcar Licencia AL DIA
-            </button>
-          )}
-
-          {history && history.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-black/10 dark:border-white/10 flex-1 overflow-hidden flex flex-col">
-              <h4 className="text-[10px] uppercase font-black tracking-widest mb-3 opacity-70">Historial de Actualizaciones</h4>
-              <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar">
-                {history.map((h: any, i: number) => {
-                  let dStr = h.date;
-                  try {
-                    dStr = new Date(h.date).toLocaleString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                  } catch(e) {}
-                  return (
-                    <div key={i} className="flex justify-between items-center text-[9px] bg-black/5 dark:bg-white/5 rounded-lg px-3 py-2">
-                      <span className="font-bold opacity-75">{dStr}</span>
-                      <span className="font-black uppercase">{h.user || 'Admin'}</span>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-xs uppercase font-bold opacity-80">Estado Actual</span>
+              <span className={`text-xs font-black px-3 py-1 rounded-full ${badgeClass}`}>{status}</span>
             </div>
-          )}
+            <div className="flex justify-between items-center">
+              <span className="text-xs uppercase font-bold opacity-80">Último mes abonado</span>
+              <span className="text-xs font-bold">{formattedDate}</span>
+            </div>
+            
+            {status !== 'AL DIA' && (
+              <button
+                onClick={onRenewLicense}
+                className="w-full mt-4 py-3 bg-orange-500 hover:bg-orange-600 text-black dark:text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-md active:scale-95 transition-all"
+              >
+                Marcar Licencia AL DIA
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* History Card */}
+        {history && history.length > 0 && (
+          <div className="border rounded-[25px] p-6 bg-white dark:bg-[#141b29]/40 border-gray-200 dark:border-white/5 flex-1 overflow-hidden flex flex-col shadow-sm">
+            <h4 className="text-[10px] text-gray-500 dark:text-white/40 uppercase font-black tracking-widest mb-4">Historial de Actualizaciones</h4>
+            <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1">
+              {history.map((h: any, i: number) => {
+                let dStr = h.date;
+                try {
+                  dStr = new Date(h.date).toLocaleString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                } catch(e) {}
+                return (
+                  <div key={i} className="flex justify-between items-center text-[10px] bg-gray-50 dark:bg-black/20 rounded-xl px-4 py-3 border border-gray-100 dark:border-white/5">
+                    <span className="font-bold text-gray-700 dark:text-gray-300">{dStr}</span>
+                    <span className="font-black uppercase text-orange-600 dark:text-orange-400">{h.user || 'Admin'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
