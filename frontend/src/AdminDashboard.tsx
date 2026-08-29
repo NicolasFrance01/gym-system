@@ -2054,7 +2054,7 @@ export default function AdminDashboard() {
           <SidebarItem icon={<Users size={14} />} label="Socios" active={activeTab === 'Socios'} onClick={() => setActiveTab('Socios')} />
           <SidebarItem icon={<Settings size={14} />} label="Planes" active={activeTab === 'Planes'} onClick={() => setActiveTab('Planes')} />
           
-          {isMaster && (
+          {loggedUser?.id === 0 && (
             <>
               <SidebarItem icon={<img src="/ejercicio.png" alt="Ejercicios" className="w-4 h-4 opacity-50 dark:invert" />} label="Ejercicios" active={activeTab === 'Entrenamientos'} onClick={() => setActiveTab('Entrenamientos')} />
               <SidebarItem icon={<Calendar size={14} />} label="Agenda" active={activeTab === 'Agenda'} onClick={() => setActiveTab('Agenda')} />
