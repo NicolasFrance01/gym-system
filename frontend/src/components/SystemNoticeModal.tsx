@@ -9,7 +9,7 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="relative w-full max-w-md bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-[35px] p-8 shadow-2xl overflow-hidden text-black dark:text-white animate-in zoom-in-95 duration-300">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-[35px] p-6 md:p-8 shadow-2xl overflow-hidden text-black dark:text-white animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
         
         {/* Glow background */}
         <div className="absolute -top-20 -right-20 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -17,12 +17,12 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
         {/* Close button */}
         <button 
           onClick={handleDismiss} 
-          className="absolute top-6 right-6 text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
+          className="absolute top-6 right-6 z-10 text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
         >
           <X size={20} />
         </button>
 
-        <div className="flex flex-col items-center text-center space-y-4">
+        <div className="flex flex-col items-center text-center space-y-4 overflow-y-auto custom-scrollbar pr-2 pt-2">
           <div className="flex items-center gap-4 mb-2">
             {/* Gym Icon */}
             <div className="w-14 h-14 bg-[#141b29] dark:bg-black/40 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
@@ -75,10 +75,13 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
               Atentamente,<br/>Equipo Atlascore
             </p>
           </div>
-
+        </div>
+        
+        {/* Fixed footer button */}
+        <div className="pt-6 mt-auto">
           <button 
             onClick={handleDismiss}
-            className="w-full mt-6 py-3.5 bg-[#0a0a0a] dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-gray-200 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+            className="w-full py-3.5 bg-[#0a0a0a] dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-gray-200 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
           >
             Entendido
           </button>
