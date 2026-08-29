@@ -2024,6 +2024,9 @@ export default function AdminDashboard() {
             <>
               <div className="h-px bg-gray-200 dark:bg-white/5 my-4" />
               <SidebarItem icon={<DollarSign size={14} />} label="Finanzas" active={activeTab === 'Finanzas'} onClick={() => setActiveTab('Finanzas')} />
+              {loggedUser?.id === 0 && (
+                <SidebarItem icon={<Settings size={14} />} label="Sistema" active={activeTab === 'Sistema'} onClick={() => setActiveTab('Sistema')} />
+              )}
             </>
           )}
         </nav>
