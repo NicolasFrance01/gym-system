@@ -1282,10 +1282,10 @@ export default function AdminDashboard() {
 
   const fetchLicenseStatus = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/license-status`);
+      const res = await fetch(`${API_URL}/admin/configs/license_status`);
       if (res.ok) {
         const data = await res.json();
-        setLicenseInfo(data);
+        setLicenseInfo(data.value);
       }
     } catch (err) {
       console.error("Error fetching license status:", err);
@@ -1711,7 +1711,25 @@ export default function AdminDashboard() {
         } catch(e) { alert('Error de conexión al guardar la contraseña'); }
       }} />;
       case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => { showConfirm("¿Eliminar empleado?", "¿Estás seguro de que deseas eliminar este empleado?", async () => { const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', password:'1234'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
-      case 'Sistema': return loggedUser?.id === 0 ? <SystemModule API_URL={API_URL} licenseInfo={licenseInfo} onRenewLicense={() => {}} /> : null;
+      case 'Sistema': return loggedUser?.id === 0 ? <SystemModule API_URL={API_URL} licenseInfo={licenseInfo} onRenewLicense={async () => {
+        showConfirm("Confirmar Renovación", "¿Desea marcar la licencia como AL DIA para el mes en curso?", async () => {
+          try {
+            const newStatus = { status: 'active', last_paid_month: new Date().toISOString() };
+            const res = await fetch(`${API_URL}/admin/configs/license_status`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ value: newStatus })
+            });
+            if (res.ok) {
+              setLicenseInfo(newStatus);
+            } else {
+              alert("Error al renovar la licencia");
+            }
+          } catch (err) {
+            console.error("Error updating license status:", err);
+          }
+        });
+      }} /> : null;
       case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} members={members} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} filterType={filterType} setFilterType={setFilterType} /> : <NoAccess />;
       case 'Facturación': return (userRole === 'gerente' || userRole === 'administracion') ? <BillingModule members={members} onDeletePayment={(id: number) => { showConfirm("¿Eliminar Cobro?", "¿Estás seguro de que deseas eliminar este registro de cobro?", async () => { const res = await fetch(`${API_URL}/admin/payments/${id}`, { method: 'DELETE' }); if (res.ok) refreshData(); else alert('Error al eliminar'); }); }} /> : <NoAccess />;
       default: return (
