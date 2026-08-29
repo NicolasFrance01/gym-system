@@ -9,7 +9,7 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="relative w-full max-w-lg bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-[35px] p-6 md:p-8 shadow-2xl text-black dark:text-white animate-in zoom-in-95 duration-300 flex flex-col">
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-[30px] p-5 md:p-6 shadow-2xl text-black dark:text-white animate-in zoom-in-95 duration-300 flex flex-col">
         
         {/* Glow background */}
         <div className="absolute -top-20 -right-20 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl pointer-events-none overflow-hidden" />
@@ -22,24 +22,24 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
           <X size={20} />
         </button>
 
-        <div className="flex flex-col items-center text-center space-y-4 pt-2">
-          <div className="flex items-center gap-4 mb-2">
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="flex items-center gap-3">
             {/* Gym Icon */}
-            <div className="w-14 h-14 bg-[#141b29] dark:bg-black/40 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
-              <img src="/favicon.png" alt="Gym" className="w-10 h-10 object-contain dark:invert" />
+            <div className="w-12 h-12 bg-[#141b29] dark:bg-black/40 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
+              <img src="/favicon.png" alt="Gym" className="w-8 h-8 object-contain dark:invert" />
             </div>
             
             <div className="text-gray-300 animate-pulse">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </div>
 
             {/* Atlascore Icon */}
-            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-gray-100">
-              <img src="/logoAtlascore.png" alt="Atlascore" className="w-10 h-10 object-contain" />
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-gray-100">
+              <img src="/logoAtlascore.png" alt="Atlascore" className="w-8 h-8 object-contain" />
             </div>
           </div>
 
-          <h3 className="text-xl font-black uppercase tracking-tight text-gray-900 dark:text-white">
+          <h3 className="text-lg font-black uppercase tracking-tight text-gray-900 dark:text-white">
             {announcement.title}
           </h3>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase">
@@ -47,7 +47,7 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
             {announcement.subtitle}
           </div>
 
-          <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-center space-y-3 mt-4 px-2">
+          <div className="text-[13px] text-gray-600 dark:text-gray-300 leading-relaxed text-center space-y-2 mt-2 px-2">
             {(announcement.date_start || announcement.date_end || announcement.version_from || announcement.version_to) && (
               <p>
                 Informamos que durante los días 
@@ -71,17 +71,17 @@ export default function SystemNoticeModal({ announcement, isOpen, onClose }: { a
               </p>
             )}
 
-            <p className="font-bold pt-2 mt-4">
+            <p className="font-bold pt-1 mt-2">
               Atentamente,<br/>Equipo Atlascore
             </p>
           </div>
         </div>
         
         {/* Fixed footer button */}
-        <div className="pt-6 mt-auto">
+        <div className="pt-4 mt-auto">
           <button 
             onClick={handleDismiss}
-            className="w-full py-3.5 bg-[#0a0a0a] dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-gray-200 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+            className="w-full py-3 bg-[#0a0a0a] dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-gray-200 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
           >
             Entendido
           </button>
