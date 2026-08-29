@@ -1047,7 +1047,6 @@ function AgendaModule({ members, API_URL }: any) {
         </div>
       )}
 
-      <SystemNoticeModal announcement={systemAnnouncement} />
       
       {/* Custom confirm modal overlay in AgendaModule */}
       {confirmModal.isOpen && (
@@ -1296,11 +1295,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchLicenseStatus();
       // Fetch announcement
-      const annRes = await fetch(`${API_URL}/admin/configs/system_announcement`);
-      if (annRes.ok) {
-        const annData = await annRes.json();
-        setSystemAnnouncement(annData.value);
-      }
+      fetch(`${API_URL}/admin/configs/system_announcement`).then(async (annRes) => {
+        if (annRes.ok) {
+          const annData = await annRes.json();
+          setSystemAnnouncement(annData.value);
+        }
+      });
 
   }, []);
 
@@ -1406,11 +1406,12 @@ export default function AdminDashboard() {
       setError(null);
       fetchLicenseStatus();
       // Fetch announcement
-      const annRes = await fetch(`${API_URL}/admin/configs/system_announcement`);
-      if (annRes.ok) {
-        const annData = await annRes.json();
-        setSystemAnnouncement(annData.value);
-      }
+      fetch(`${API_URL}/admin/configs/system_announcement`).then(async (annRes) => {
+        if (annRes.ok) {
+          const annData = await annRes.json();
+          setSystemAnnouncement(annData.value);
+        }
+      });
 
       // 1. Fetch Members + Plans
       const [membersRes, plansRes] = await Promise.all([
@@ -1710,6 +1711,7 @@ export default function AdminDashboard() {
         } catch(e) { alert('Error de conexión al guardar la contraseña'); }
       }} />;
       case 'Staff': return (userRole === 'gerente' || userRole === 'administracion') ? <StaffModule staff={staff} onEdit={(s: any) => { setSelectedItem({...s}); setIsEditMode(true); setModalType('staff'); setIsModalOpen(true); }} onDelete={(id: any) => { showConfirm("¿Eliminar empleado?", "¿Estás seguro de que deseas eliminar este empleado?", async () => { const res = await fetch(`${API_URL}/admin/staff/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={() => { setSelectedItem({name:'', role:'Entrenador', shift:'Mañana', password:'1234'}); setIsEditMode(false); setModalType('staff'); setIsModalOpen(true); }} /> : <NoAccess />;
+      case 'Sistema': return loggedUser?.id === 0 ? <SystemModule API_URL={API_URL} licenseInfo={licenseInfo} onRenewLicense={() => {}} /> : null;
       case 'Finanzas': return userRole === 'gerente' ? <FinanceModule data={financeData} members={members} startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} filterType={filterType} setFilterType={setFilterType} /> : <NoAccess />;
       case 'Facturación': return (userRole === 'gerente' || userRole === 'administracion') ? <BillingModule members={members} onDeletePayment={(id: number) => { showConfirm("¿Eliminar Cobro?", "¿Estás seguro de que deseas eliminar este registro de cobro?", async () => { const res = await fetch(`${API_URL}/admin/payments/${id}`, { method: 'DELETE' }); if (res.ok) refreshData(); else alert('Error al eliminar'); }); }} /> : <NoAccess />;
       default: return (

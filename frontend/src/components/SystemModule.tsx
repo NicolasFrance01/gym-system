@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Save, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 
 export default function SystemModule({ API_URL, licenseInfo, onRenewLicense }: { API_URL: string, licenseInfo: any, onRenewLicense: () => void }) {
