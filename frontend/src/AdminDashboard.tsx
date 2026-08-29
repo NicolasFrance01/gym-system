@@ -1049,7 +1049,7 @@ function AgendaModule({ members, API_URL }: any) {
 
       <SystemNoticeModal announcement={systemAnnouncement} />
       
-      {/* Custom confirm modal overlay */} in AgendaModule */}
+      {/* Custom confirm modal overlay in AgendaModule */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/75 dark:bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-xs bg-white dark:bg-[#1b2435] border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden text-black dark:text-white">
