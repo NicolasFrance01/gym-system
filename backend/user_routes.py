@@ -292,6 +292,9 @@ def book_class(dni: str, payload: dict, db: Session = Depends(get_db)):
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de fecha inválido")
         
+    if class_date < datetime.date.today():
+        raise HTTPException(status_code=400, detail="No se puede reservar en una fecha pasada")
+        
     holiday = db.query(models.Holiday).filter(models.Holiday.date == date_str).first()
     if holiday:
         raise HTTPException(status_code=400, detail=f"No se puede reservar en un día no laborable: {holiday.description}")

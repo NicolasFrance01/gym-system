@@ -382,6 +382,16 @@ const fetchUserBookings = async (memberDni: string) => {
   const handleDayClick = async (dayNum: number) => {
     const now = new Date();
     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    
+    const clickDate = new Date(dateStr + "T00:00:00");
+    const todayDate = new Date();
+    clickDate.setHours(0,0,0,0);
+    todayDate.setHours(0,0,0,0);
+    
+    if (clickDate < todayDate) {
+      return;
+    }
+
     const holiday = holidays.find(h => h.date === dateStr);
     if (holiday) {
       showConfirm(
@@ -784,6 +794,14 @@ const fetchUserBookings = async (memberDni: string) => {
                              }
                              for (let i = 1; i <= daysInMonth; i++) {
                                const bookingDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                               
+                               const currentCellDate = new Date(bookingDateStr + "T00:00:00");
+                               const todayDate = new Date();
+                               currentCellDate.setHours(0,0,0,0);
+                               todayDate.setHours(0,0,0,0);
+                               const isPast = currentCellDate < todayDate;
+                               const isToday = currentCellDate.getTime() === todayDate.getTime();
+                               
                                const isBookedReal = bookings.some(b => {
                                  const dt = new Date(b.start_time);
                                  return dt.getFullYear() === now.getFullYear() && 
@@ -792,10 +810,24 @@ const fetchUserBookings = async (memberDni: string) => {
                                         b.status !== "cancelled";
                                });
                                const isHoliday = holidays.some(h => h.date === bookingDateStr);
+                               
+                               let dayClass = 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white cursor-pointer';
+                               if (isPast) {
+                                 dayClass = 'bg-[#141b29]/40 border-transparent text-white/10 cursor-not-allowed opacity-50';
+                               } else if (isHoliday) {
+                                 dayClass = 'bg-red-500/10 border-red-500/30 text-red-500 cursor-pointer';
+                               } else if (isBookedReal) {
+                                 dayClass = 'bg-blue-600 border-blue-500 text-white shadow-md cursor-pointer';
+                               }
+                               
+                               if (isToday && !isPast) {
+                                 dayClass += ' ring-2 ring-orange-500 border-orange-500';
+                               }
+
                                days.push(
                                  <div key={i} 
-                                   onClick={() => handleDayClick(i)} 
-                                   className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black cursor-pointer transition-all border ${isHoliday ? 'bg-red-500/10 border-red-500/30 text-red-500' : isBookedReal ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white'}`}>
+                                   onClick={() => !isPast && handleDayClick(i)} 
+                                   className={`h-12 flex items-center justify-center rounded-2xl text-sm font-black transition-all border ${dayClass}`}>
                                    {i}
                                  </div>
                                );

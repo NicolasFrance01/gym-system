@@ -526,6 +526,18 @@ def create_walk_in_booking(payload: dict, db: Session = Depends(get_db)):
     if holiday:
         raise HTTPException(status_code=400, detail=f"No se puede registrar asistencia en un día no laborable: {holiday.description}")
         
+    start_of_day = datetime.datetime.combine(class_date, datetime.time.min)
+    end_of_day = datetime.datetime.combine(class_date, datetime.time.max)
+    bookings_count = db.query(models.Booking).filter(
+        models.Booking.class_schedule_id == schedule_id,
+        models.Booking.start_time >= start_of_day,
+        models.Booking.start_time <= end_of_day,
+        models.Booking.status != "cancelled"
+    ).count()
+    
+    if bookings_count >= schedule.capacity:
+        raise HTTPException(status_code=400, detail="La clase está completa para este día")
+        
     existing = db.query(models.Booking).filter(
         models.Booking.member_id == member.id,
         models.Booking.class_schedule_id == schedule_id,

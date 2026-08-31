@@ -1,0 +1,2 @@
+with open("frontend/api/admin_routes.py", "a", encoding="utf-8") as f:
+    f.write("\n\n@router.get('/debug_migrate')\ndef debug_migrate():\n    from .database import engine\n    from sqlalchemy import text\n    try:\n        with engine.connect() as conn:\n            conn.execute(text('CREATE TABLE IF NOT EXISTS system_configs (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE, value JSON)'))\n            conn.commit()\n            return {'status': 'table created manually'}\n    except Exception as e:\n        return {'error': str(e)}\n")

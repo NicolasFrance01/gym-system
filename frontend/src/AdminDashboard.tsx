@@ -216,6 +216,15 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   const handleAddWalkIn = async (member: any) => {
+    const isHoliday = holidays.find(h => h.date === selectedDate);
+    if (isHoliday) {
+      alert("No se puede registrar asistencia en un día marcado como feriado.");
+      return;
+    }
+    if (activeSchedule && classBookings.length >= activeSchedule.capacity) {
+      alert("La clase ha alcanzado su capacidad máxima.");
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/admin/bookings/walk-in`, {
         method: 'POST',
@@ -284,6 +293,11 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   const handleMassClassSubmit = async () => {
+    const isHoliday = holidays.find(h => h.date === selectedDate);
+    if (isHoliday) {
+      alert("No se puede generar clases masivamente posicionado en un día marcado como feriado.");
+      return;
+    }
     try {
       const actName = massClassData.activity_name || (allActivities.length > 0 ? allActivities[0].name : "");
       const activity = allActivities.find(a => a.name === actName);
@@ -360,6 +374,11 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   const handleSaveClass = async () => {
+    const isHoliday = holidays.find(h => h.date === selectedDate);
+    if (isHoliday) {
+      alert("No se puede guardar una clase posicionado en un día marcado como feriado.");
+      return;
+    }
     try {
       const method = isEditingClass ? 'PUT' : 'POST';
       const url = isEditingClass 
@@ -654,9 +673,15 @@ function AgendaModule({ members, API_URL }: any) {
                     {filteredMembersSearch.length > 0 && (
                       <div className="absolute top-full left-0 right-0 z-50 bg-[#1b2435] border border-white/10 rounded-xl mt-1 overflow-hidden shadow-2xl">
                         {filteredMembersSearch.map((m: any) => (
-                          <div key={m.id} onClick={() => handleAddWalkIn(m)} className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-b-0 text-[10px] uppercase font-black flex justify-between items-center text-white">
+                          <div key={m.id} onClick={() => {
+                            if (classBookings.length >= activeSchedule.capacity) {
+                              alert("Sin Cupo");
+                              return;
+                            }
+                            handleAddWalkIn(m);
+                          }} className={`p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-b-0 text-[10px] uppercase font-black flex justify-between items-center ${classBookings.length >= activeSchedule.capacity ? 'opacity-50 text-white/50' : 'text-white'}`}>
                             <span>{m.name} <span className="text-white/40 font-normal">({m.dni})</span></span>
-                            <span className="text-[8px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-black uppercase">Añadir</span>
+                            <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase ${classBookings.length >= activeSchedule.capacity ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>{classBookings.length >= activeSchedule.capacity ? 'Sin Cupo' : 'Añadir'}</span>
                           </div>
                         ))}
                       </div>
@@ -1718,7 +1743,7 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{ setSelectedItem(m); setMemberCheckins([]); setCheckinStats(null); setModalType('history'); setIsModalOpen(true); fetch(`${API_URL}/admin/members/${m.id}/checkins`).then(r=>r.json()).then(data=>{ const checkinsList = Array.isArray(data) ? data : (data.checkins || []); const planName = m.membership_type || 'Básico'; const plan = plans.find((p:any) => p.name === planName); const daysPerWeek = plan ? (plan.daysPerWeek ?? plan.days_per_week ?? 3) : 3; const totalSessions = daysPerWeek * 4; const today = new Date(); let cycleStart = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); const joinedStr = m.joined_at; if(joinedStr){ const joined = new Date(joinedStr); cycleStart = new Date(joined.getFullYear(), joined.getMonth(), joined.getDate()); } const sessionsUsed = checkinsList.filter((c:any) => { const checkinDate = new Date(c.checkin_at.replace(' ', 'T')); return checkinDate >= cycleStart; }).length; const sessionsRemaining = Math.max(0, totalSessions - sessionsUsed); setMemberCheckins(checkinsList); setCheckinStats({ total: totalSessions, used: sessionsUsed, remaining: sessionsRemaining }); }).catch(()=>{}); }} onEdit={(m: any) => { const validPlan = plans.find((p:any) => p.name === m.membership_type)?.name || plans[0]?.name || ''; setSelectedItem({...m, membership_type: validPlan}); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={(id: any) => { showConfirm("¿Dar de baja socio?", "¿Estás seguro de que deseas dar de baja este socio?", async () => { const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
+      case 'Socios': return <MembersModule members={members} searchQuery={searchQuery} setSearchQuery={setSearchQuery} onHistory={(m:any)=>{ setSelectedItem(m); setMemberCheckins([]); setCheckinStats(null); setModalType('history'); setIsModalOpen(true); fetch(`${API_URL}/admin/members/${m.id}/checkins`).then(r=>r.json()).then(data=>{ const checkinsList = Array.isArray(data) ? data : (data.checkins || []); setMemberCheckins(checkinsList); setCheckinStats({ total: data.total_sessions || 0, used: data.sessions_used || 0, remaining: data.sessions_remaining || 0, plans_breakdown: data.plans_breakdown || null }); }).catch(()=>{}); }} onEdit={(m: any) => { const validPlan = plans.find((p:any) => p.name === m.membership_type)?.name || plans[0]?.name || ''; setSelectedItem({...m, membership_type: validPlan}); setIsEditMode(true); setModalType('member'); setIsModalOpen(true); }} onDelete={(id: any) => { showConfirm("¿Dar de baja socio?", "¿Estás seguro de que deseas dar de baja este socio?", async () => { const res = await fetch(`${API_URL}/admin/members/${id}`, {method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={() => { setSelectedItem({name:'', dni:'', phone:'', email:'', password:'1234', status:'ACTIVO', membership_type: plans[0]?.name || ''}); setIsEditMode(false); setModalType('member'); setIsModalOpen(true); }} onPayClick={(m: any) => { setSelectedItem(m); setIsPaymentModalOpen(true); }} />;
       case 'Planes': return <PlansModule plans={plans} onEdit={(p:any)=>{setSelectedItem({...p, allow_unification: !!p.allow_unification, classesInput: (p.classes || []).join(', ')}); setIsEditMode(true); setModalType('plan'); setIsModalOpen(true);}} onDelete={(p:any)=>{ showConfirm("¿Eliminar Plan?", `¿Estás seguro de que deseas eliminar el plan "${p.name}" del sistema?`, async () => { const res = await fetch(`${API_URL}/admin/plans/${p.id}`,{method:'DELETE'}); if(res.ok) refreshData(); }); }} onAddClick={()=>{setSelectedItem({name:'', price:0, daysPerWeek:3, classes:[], classesInput: '', allow_unification: false}); setIsEditMode(false); setModalType('plan'); setIsModalOpen(true);}} />;
       case 'Entrenamientos': return <EntrenamientosModule API_URL={API_URL} />;
       case 'Agenda': return <AgendaModule members={members} API_URL={API_URL} setConfirmModal={setConfirmModal} />;
