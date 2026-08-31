@@ -294,11 +294,6 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   const handleMassClassSubmit = async () => {
-    const isHoliday = holidays.find(h => h.date === selectedDate);
-    if (isHoliday) {
-      showConfirm("Día Feriado", "No se puede generar clases masivamente posicionado en un día marcado como feriado.", () => {});
-      return;
-    }
     try {
       const actName = massClassData.activity_name || (allActivities.length > 0 ? allActivities[0].name : "");
       const activity = allActivities.find(a => a.name === actName);
@@ -375,10 +370,12 @@ function AgendaModule({ members, API_URL }: any) {
   };
 
   const handleSaveClass = async () => {
-    const isHoliday = holidays.find(h => h.date === selectedDate);
-    if (isHoliday) {
-      showConfirm("Día Feriado", "No se puede guardar una clase posicionado en un día marcado como feriado.", () => {});
-      return;
+    if (classDayMode === 'specific' && newClassData.specific_date) {
+      const isHoliday = holidays.find(h => h.date === newClassData.specific_date);
+      if (isHoliday) {
+        showConfirm("Día Feriado", "No se puede guardar una clase en una fecha marcada como feriado.", () => {});
+        return;
+      }
     }
     try {
       const method = isEditingClass ? 'PUT' : 'POST';
@@ -470,7 +467,8 @@ function AgendaModule({ members, API_URL }: any) {
             </button>
           </td>
           {weekdayShortNames.map((_, dayIndex) => {
-            const cellSchedules = schedules.filter(s => s.day_of_week === dayIndex && s.start_time === slot.start && s.end_time === slot.end);
+            const targetDateStr = weekDates[dayIndex].toISOString().split('T')[0];
+            const cellSchedules = schedules.filter(s => (s.day_of_week === dayIndex || s.specific_date === targetDateStr) && s.start_time === slot.start && s.end_time === slot.end);
             return (
               <td 
                 key={dayIndex} 
