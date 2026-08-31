@@ -633,19 +633,6 @@ def create_mass_class_schedules(payload: schemas.MassClassScheduleSchema, db: Se
 @router.get("/activities")
 def get_activities(db: Session = Depends(get_db)):
     activities = db.query(models.Activity).all()
-    if not activities:
-        defaults = [
-            {"name": "Entrenamiento Funcional", "code": "EF", "color": "#3b82f6"},
-            {"name": "Pilates en Suelo", "code": "PS", "color": "#f97316"},
-            {"name": "Entrenamiento Personalizado", "code": "EP", "color": "#ec4899"},
-            {"name": "Salsa y Bachata", "code": "SB", "color": "#eab308"},
-            {"name": "Zumba", "code": "ZB", "color": "#ef4444"},
-            {"name": "Reguetón Juvenil", "code": "RJ", "color": "#06b6d4"}
-        ]
-        for d in defaults:
-            db.add(models.Activity(name=d["name"], code=d["code"], color=d["color"]))
-        db.commit()
-        activities = db.query(models.Activity).all()
     return activities
 
 @router.post("/activities")

@@ -24,7 +24,8 @@ function AgendaModule({ members, API_URL }: any) {
   const [holidayDesc, setHolidayDesc] = useState('');
   const [isHolidayModalOpen, setIsHolidayModalOpen] = useState(false);
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
-  const [newClassData, setNewClassData] = useState<{ id?: number, name: string, code: string, day_of_week: number, start_time: string, end_time: string, color: string, capacity: number }>({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: 0, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
+  const [classDayMode, setClassDayMode] = useState<'recurrent' | 'specific'>('recurrent');
+  const [newClassData, setNewClassData] = useState<{ id?: number, name: string, code: string, day_of_week: number | null, specific_date: string | null, start_time: string, end_time: string, color: string, capacity: number }>({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: 0, specific_date: null, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
   const [isEditingClass, setIsEditingClass] = useState(false);
 
   const [dbActivities, setDbActivities] = useState<any[]>([]);
@@ -218,7 +219,7 @@ function AgendaModule({ members, API_URL }: any) {
   const handleAddWalkIn = async (member: any) => {
     const isHoliday = holidays.find(h => h.date === selectedDate);
     if (isHoliday) {
-      alert("No se puede registrar asistencia en un día marcado como feriado.");
+      showConfirm("Día Feriado", "No se puede registrar asistencia en un día marcado como feriado.", () => {});
       return;
     }
     if (activeSchedule && classBookings.length >= activeSchedule.capacity) {
@@ -295,7 +296,7 @@ function AgendaModule({ members, API_URL }: any) {
   const handleMassClassSubmit = async () => {
     const isHoliday = holidays.find(h => h.date === selectedDate);
     if (isHoliday) {
-      alert("No se puede generar clases masivamente posicionado en un día marcado como feriado.");
+      showConfirm("Día Feriado", "No se puede generar clases masivamente posicionado en un día marcado como feriado.", () => {});
       return;
     }
     try {
@@ -376,7 +377,7 @@ function AgendaModule({ members, API_URL }: any) {
   const handleSaveClass = async () => {
     const isHoliday = holidays.find(h => h.date === selectedDate);
     if (isHoliday) {
-      alert("No se puede guardar una clase posicionado en un día marcado como feriado.");
+      showConfirm("Día Feriado", "No se puede guardar una clase posicionado en un día marcado como feriado.", () => {});
       return;
     }
     try {
@@ -480,11 +481,13 @@ function AgendaModule({ members, API_URL }: any) {
                     name: 'Entrenamiento Funcional',
                     code: 'EF',
                     day_of_week: dayIndex,
+                    specific_date: null,
                     start_time: slot.start,
                     end_time: slot.end,
                     color: '#3b82f6',
                     capacity: 15
                   });
+                  setClassDayMode('recurrent');
                   setIsEditingClass(false);
                   setIsClassModalOpen(true);
                 }}
@@ -530,7 +533,8 @@ function AgendaModule({ members, API_URL }: any) {
         <div className="flex items-center gap-3 flex-wrap">
           <input type="date" className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-2.5 text-black dark:text-white text-[10px] outline-none" value={selectedDate} onChange={e=>{ setSelectedDate(e.target.value); setActiveSchedule(null); }} />
           <button onClick={() => { 
-            setNewClassData({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: selectedWeekday, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
+            setNewClassData({ name: 'Entrenamiento Funcional', code: 'EF', day_of_week: selectedWeekday, specific_date: null, start_time: '08:30', end_time: '09:30', color: '#3b82f6', capacity: 15 });
+            setClassDayMode('recurrent');
             setIsEditingClass(false);
             setIsClassModalOpen(true);
           }} className="px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#0a0a0a] text-white dark:bg-[#F38E26] dark:text-[#0a0a0a] border border-[#F38E26] whitespace-nowrap">+ Agregar Clase Fija</button>
@@ -655,6 +659,7 @@ function AgendaModule({ members, API_URL }: any) {
                 <div className="flex gap-1">
                   <button onClick={() => {
                     setNewClassData(activeSchedule);
+                    setClassDayMode(activeSchedule.specific_date ? 'specific' : 'recurrent');
                     setIsEditingClass(true);
                     setIsClassModalOpen(true);
                   }} className="text-[8px] font-black text-gray-500 dark:text-white/30 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded">Editar</button>
@@ -999,9 +1004,17 @@ function AgendaModule({ members, API_URL }: any) {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[8px] text-gray-500 dark:text-white/20 uppercase font-black ml-2">Día</label>
-                  <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.day_of_week} onChange={e=>setNewClassData({...newClassData, day_of_week: parseInt(e.target.value)})}>
-                    {weekdayNames.map((n, i) => <option key={i} value={i}>{n}</option>)}
-                  </select>
+                  <div className="flex gap-2 mb-2 bg-[#141b29]/40 p-1 rounded-xl">
+                    <button type="button" onClick={() => setClassDayMode('recurrent')} className={`flex-1 text-[9px] py-1 rounded-lg uppercase font-black transition-all ${classDayMode === 'recurrent' ? 'bg-[#F38E26] text-white shadow' : 'text-gray-400 hover:text-white'}`}>Recurrente</button>
+                    <button type="button" onClick={() => setClassDayMode('specific')} className={`flex-1 text-[9px] py-1 rounded-lg uppercase font-black transition-all ${classDayMode === 'specific' ? 'bg-[#F38E26] text-white shadow' : 'text-gray-400 hover:text-white'}`}>F. Específica</button>
+                  </div>
+                  {classDayMode === 'recurrent' ? (
+                    <select className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.day_of_week ?? 0} onChange={e=>setNewClassData({...newClassData, day_of_week: parseInt(e.target.value), specific_date: null})}>
+                      {weekdayNames.map((n, i) => <option key={i} value={i}>{n}</option>)}
+                    </select>
+                  ) : (
+                    <input type="date" className="w-full bg-[#141b29]/40 dark:bg-black/40 border border-white/10 rounded-xl p-3 text-black dark:text-white text-xs outline-none focus:border-orange-500" value={newClassData.specific_date || ''} onChange={e=>setNewClassData({...newClassData, specific_date: e.target.value, day_of_week: null})} />
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

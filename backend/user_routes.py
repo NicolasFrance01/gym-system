@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from database import get_db
 import models
 import schemas
@@ -223,7 +223,12 @@ def get_user_class_schedules(date: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Formato de fecha inválido")
         
     weekday = query_date.weekday()
-    schedules = db.query(models.ClassSchedule).filter(models.ClassSchedule.day_of_week == weekday).all()
+    schedules = db.query(models.ClassSchedule).filter(
+        or_(
+            models.ClassSchedule.day_of_week == weekday,
+            models.ClassSchedule.specific_date == date
+        )
+    ).all()
     
     result = []
     for s in schedules:

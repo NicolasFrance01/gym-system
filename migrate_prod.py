@@ -29,6 +29,7 @@ with engine.connect() as conn:
         ("members", "routine", "JSON"),
         ("staff", "username", "VARCHAR"),
         ("staff", "shift", "VARCHAR DEFAULT 'Mañana'"),
+        ("class_schedules", "specific_date", "VARCHAR"),
     ]
 
     for table, column, col_type in columns_to_add:

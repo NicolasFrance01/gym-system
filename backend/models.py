@@ -62,7 +62,8 @@ class ClassSchedule(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     code = Column(String)
-    day_of_week = Column(Integer)  # 0=Lunes, 1=Martes...
+    day_of_week = Column(Integer, nullable=True)  # 0=Lunes, 1=Martes...
+    specific_date = Column(String, nullable=True) # "YYYY-MM-DD" para clases de un solo día
     start_time = Column(String)  # "08:30"
     end_time = Column(String)  # "09:30"
     color = Column(String, default="#3b82f6")

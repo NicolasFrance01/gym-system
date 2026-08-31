@@ -100,7 +100,8 @@ class BookingCreate(BaseModel):
 class ClassScheduleBase(BaseModel):
     name: str
     code: str
-    day_of_week: int
+    day_of_week: Optional[int] = None
+    specific_date: Optional[str] = None
     start_time: str
     end_time: str
     color: Optional[str] = "#3b82f6"
